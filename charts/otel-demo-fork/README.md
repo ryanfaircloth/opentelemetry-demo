@@ -17,7 +17,7 @@ The chart is published as an OCI artifact to GHCR. To install the chart with
 the release name my-otel-demo, run the following command:
 
 ```console
-helm install my-otel-demo oci://ghcr.io/ryanfaircloth/charts/otel-demo-fork --version 0.1.0
+helm install my-otel-demo oci://ghcr.io/ryanfaircloth/charts/otel-demo-fork --version 0.2.0
 ```
 
 ## Upgrading

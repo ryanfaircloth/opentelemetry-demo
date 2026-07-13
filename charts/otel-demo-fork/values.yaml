@@ -124,6 +124,41 @@ components:
   #         - secretName: demo-tls
   #           hosts:
   #             - demo.example.com
+  ## Gateway API HTTPRoute rules to add for the component
+  # httpRoute:
+  ## Enable the creation of an HTTPRoute. Default is false
+  #   enabled: false
+  ## Annotations to add to the HTTPRoute
+  #   annotations: {}
+  ## Gateway(s) this HTTPRoute attaches to
+  #   parentRefs:
+  #     - name: my-gateway
+  #       namespace: gateway-infra
+  #       sectionName: http
+  ## Hostnames this HTTPRoute matches
+  #   hostnames:
+  #     - demo.example.com
+  ## Routing rules; each rule's backendRef targets this component's Service on the given port
+  #   rules:
+  #     - matches:
+  #         - path:
+  #             type: PathPrefix
+  #             value: /
+  #       port: 8080
+  ## Additional HTTPRoutes - only created if httpRoute.enabled is true
+  ## Each additional HTTPRoute needs key "name" set to something unique
+  #   additionalHTTPRoutes: []
+  #     - name: extra-demo-route
+  #       parentRefs:
+  #         - name: my-gateway
+  #       hostnames:
+  #         - demo.example.com
+  #       rules:
+  #         - matches:
+  #             - path:
+  #                 type: PathPrefix
+  #                 value: /
+  #           port: 8080
   ## Command to use in the container spec, in case you don't want to go with the default command from the image.
   #   command: []
   ## Configuration to for this component; will create a Volume, and Mount backed by an optionally created ConfigMap.

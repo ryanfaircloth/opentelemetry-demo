@@ -308,3 +308,73 @@ spec:
 {{- end}}
 {{- end}}
 {{- end}}
+
+{{/*
+Demo component HTTPRoute template (Gateway API)
+*/}}
+{{- define "otel-demo.httproute" }}
+{{- $hasHTTPRoute := false}}
+{{- if .httpRoute }}
+{{- if .httpRoute.enabled }}
+{{- $hasHTTPRoute = true }}
+{{- end }}
+{{- end }}
+{{- $hasServicePorts := false}}
+{{- if .service }}
+{{- if .service.port }}
+{{- $hasServicePorts = true }}
+{{- end }}
+{{- end }}
+{{- if and $hasHTTPRoute (or .ports $hasServicePorts) }}
+{{- $httpRoutes := list .httpRoute }}
+{{- if .httpRoute.additionalHTTPRoutes }}
+{{-   $httpRoutes = concat $httpRoutes .httpRoute.additionalHTTPRoutes -}}
+{{- end }}
+{{- range $httpRoutes }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  {{- if .name }}
+  name: {{ $.name }}-{{ .name | lower }}
+  {{- else }}
+  name: {{ $.name }}
+  {{- end }}
+  labels:
+    {{- include "otel-demo.labels" $ | nindent 4 }}
+  {{- if .annotations }}
+  annotations:
+    {{ toYaml .annotations | nindent 4 }}
+  {{- end }}
+spec:
+  parentRefs:
+    {{- range .parentRefs }}
+    - name: {{ .name }}
+      {{- with .namespace }}
+      namespace: {{ . }}
+      {{- end }}
+      {{- with .sectionName }}
+      sectionName: {{ . }}
+      {{- end }}
+    {{- end }}
+  {{- if .hostnames }}
+  hostnames:
+    {{- range .hostnames }}
+    - {{ . | quote }}
+    {{- end }}
+  {{- end }}
+  rules:
+    {{- range .rules }}
+    - matches:
+        {{- range .matches }}
+        - path:
+            type: {{ .path.type }}
+            value: {{ .path.value }}
+        {{- end }}
+      backendRefs:
+        - name: {{ $.name }}
+          port: {{ .port }}
+    {{- end }}
+{{- end}}
+{{- end}}
+{{- end}}
