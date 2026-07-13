@@ -21,7 +21,7 @@ The chart is published as an OCI artifact to GHCR. To install the chart with
 the release name my-otel-demo, run the following command:
 
 ```console
-helm install my-otel-demo oci://ghcr.io/ryanfaircloth/charts/otel-demo-fork --version 0.5.0
+helm install my-otel-demo oci://ghcr.io/ryanfaircloth/charts/otel-demo-fork --version 0.5.1
 ```
 
 ## Upgrading
@@ -54,7 +54,7 @@ Installing the chart on OpenShift requires the following additional steps:
 
     ```console
     helm install my-otel-demo oci://ghcr.io/ryanfaircloth/charts/otel-demo-fork \
-        --version 0.5.0 \
+        --version 0.5.1 \
         --namespace otel-demo-fork \
         --set serviceAccount.create=false \
         --set serviceAccount.name=otel-demo-fork

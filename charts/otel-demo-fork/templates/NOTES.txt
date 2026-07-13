@@ -9,6 +9,43 @@
  ╚═════╝    ╚═╝   ╚══════╝╚══════╝    ╚═════╝ ╚══════╝╚═╝     ╚═╝ ╚═════╝
 
 
+{{- $anyHttpRoute := false }}
+{{- range $name, $config := .Values.components }}
+{{- if and $config.httpRoute $config.httpRoute.enabled }}
+{{- $anyHttpRoute = true }}
+{{- end }}
+{{- end }}
+{{- if and .Values.otelCollectorHTTPRoute .Values.otelCollectorHTTPRoute.enabled }}
+{{- $anyHttpRoute = true }}
+{{- end }}
+{{- if $anyHttpRoute }}
+
+- The following HTTPRoutes are configured (scheme depends on your Gateway's listener):
+{{- range $name, $config := .Values.components }}
+{{- if and $config.httpRoute $config.httpRoute.enabled }}
+{{- range $config.httpRoute.hostnames }}
+{{- $host := . }}
+{{- range $config.httpRoute.rules }}
+{{- range .matches }}
+  {{ printf "%-20s" $name }} http(s)://{{ $host }}{{ .path.value }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- if and .Values.otelCollectorHTTPRoute .Values.otelCollectorHTTPRoute.enabled }}
+{{- range .Values.otelCollectorHTTPRoute.hostnames }}
+{{- $host := . }}
+{{- range $.Values.otelCollectorHTTPRoute.rules }}
+{{- range .matches }}
+  {{ printf "%-20s" "otel-collector" }} http(s)://{{ $host }}{{ .path.value }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+  (this only lists each route's primary hostname/rules; run `kubectl get httproute` for the full picture, including any additionalHTTPRoutes)
+{{- end }}
+
 - This chart has no reverse proxy in front of it; each service is reached by
   port-forwarding it directly. Run these commands, then open the URLs below:
 
