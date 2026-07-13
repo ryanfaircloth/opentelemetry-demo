@@ -2,24 +2,7 @@
 opentelemetry-collector:
   config:
     exporters:
-      otlp/my-own-observability-endpoint:
+      otlp/observability-backend:
         endpoint: "my-observability-endpoint:4317"
         tls:
           insecure: true
-    service:
-      pipelines:
-        traces:
-          exporters: [otlp/my-own-observability-endpoint, debug, spanmetrics]
-        metrics:
-          exporters: [otlp/my-own-observability-endpoint, debug]
-        logs:
-          exporters: [otlp/my-own-observability-endpoint, debug]
-jaeger:
-  enabled: false
-
-prometheus:
-  enabled: false
-
-grafana:
-  enabled: false
-

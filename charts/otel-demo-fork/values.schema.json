@@ -37,18 +37,6 @@
     },
     "opentelemetry-collector": {
       "type": "object"
-    },
-    "jaeger": {
-      "type": "object"
-    },
-    "prometheus": {
-      "type": "object"
-    },
-    "grafana": {
-      "type": "object"
-    },
-    "opensearch": {
-      "type": "object"
     }
   },
   "required": [

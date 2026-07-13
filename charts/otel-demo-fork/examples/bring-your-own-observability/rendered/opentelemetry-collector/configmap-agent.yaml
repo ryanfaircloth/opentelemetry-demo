@@ -19,25 +19,8 @@ data:
       spanmetrics: {}
     exporters:
       debug: {}
-      opensearch:
-        http:
-          endpoint: http://opensearch:9200
-          tls:
-            insecure: true
-        logs_index: otel-logs
-        logs_index_time_format: yyyy-MM-dd
-      otlp/jaeger:
-        endpoint: jaeger:4317
-        sending_queue:
-          batch: {}
-        tls:
-          insecure: true
-      otlp/my-own-observability-endpoint:
+      otlp/observability-backend:
         endpoint: my-observability-endpoint:4317
-        tls:
-          insecure: true
-      otlphttp/prometheus:
-        endpoint: http://prometheus:9090/api/v1/otlp
         sending_queue:
           batch: {}
         tls:
@@ -230,7 +213,7 @@ data:
       pipelines:
         logs:
           exporters:
-          - otlp/my-own-observability-endpoint
+          - otlp/observability-backend
           - debug
           processors:
           - k8sattributes
@@ -242,7 +225,7 @@ data:
           - otlp
         metrics:
           exporters:
-          - otlp/my-own-observability-endpoint
+          - otlp/observability-backend
           - debug
           processors:
           - k8sattributes
@@ -260,7 +243,7 @@ data:
           - k8s_cluster
         traces:
           exporters:
-          - otlp/my-own-observability-endpoint
+          - otlp/observability-backend
           - debug
           - spanmetrics
           processors:

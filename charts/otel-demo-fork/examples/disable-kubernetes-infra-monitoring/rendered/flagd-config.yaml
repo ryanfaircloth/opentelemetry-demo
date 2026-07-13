@@ -6,7 +6,7 @@ metadata:
   name: flagd-config
   namespace: default
   labels:
-    helm.sh/chart: otel-demo-fork-0.2.0
+    helm.sh/chart: otel-demo-fork-0.3.0
     
     
     app.kubernetes.io/version: "2.2.0"

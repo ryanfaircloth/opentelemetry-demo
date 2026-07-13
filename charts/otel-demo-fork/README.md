@@ -17,7 +17,7 @@ The chart is published as an OCI artifact to GHCR. To install the chart with
 the release name my-otel-demo, run the following command:
 
 ```console
-helm install my-otel-demo oci://ghcr.io/ryanfaircloth/charts/otel-demo-fork --version 0.2.0
+helm install my-otel-demo oci://ghcr.io/ryanfaircloth/charts/otel-demo-fork --version 0.3.0
 ```
 
 ## Upgrading
@@ -193,67 +193,8 @@ parameters by default. The overriden parameters are specified below.
 | `service.type` | Service Type to use                             | `ClusterIP`                     |
 | `config`       | OpenTelemetry Collector configuration           | Configuration required for demo |
 
-#### Jaeger
-
-> **Note**
-> The following parameters have a `jaeger.` prefix.
-
-| Parameter             | Description                                               | Default            |
-|-----------------------|-----------------------------------------------------------|--------------------|
-| `enabled`             | Install the Jaeger sub-chart                              | `true`             |
-| `jaeger.storage.type` | Sets storage type fo memory storage                       | `memory`           |
-| `jaeger.extraEnv`     | Additional environment variables referenced in userconfig |                    |
-| `jaeger.resources`    | CPU/Memory resource requests/limits for Jaeger            | 400Mi memory limit |
-| `userconfig`          | Configuration used for Jaeger's collector instance        |                    |
-
-#### Prometheus
-
-> **Note**
-> The following parameters have a `prometheus.` prefix.
-
-| Parameter                              | Description                                    | Default                                                           |
-|----------------------------------------|------------------------------------------------|-------------------------------------------------------------------|
-| `enabled`                              | Install the Prometheus sub-chart               | `true`                                                            |
-| `alertmanager.enabled`                 | Install the alertmanager                       | `false`                                                           |
-| `configmapReload.prometheus.enabled`   | Install the configmap-reload container         | `false`                                                           |
-| `kube-state-metrics.enabled`           | Install the kube-state-metrics sub-chart       | `false`                                                           |
-| `prometheus-node-exporter.enabled`     | Install the Prometheus Node Exporter sub-chart | `false`                                                           |
-| `prometheus-pushgateway.enabled`       | Install the Prometheus Push Gateway sub-chart  | `false`                                                           |
-| `server.extraFlags`                    | Additional flags to add to Prometheus server   | `["enable-feature=exemplar-storage", "web.enable-otlp-receiver"]` |
-| `server.retention`                     | Metrics data retention time                    | `7d`                                                              |
-| `server.tsdb.out_of_order_time_window` | How long to allow for out of order data        | `30m`                                                             |
-| `server.otlp`                          | OTLP metrics ingest configuration              |                                                                   |
-| `server.persistentVolume.enabled`      | Create persistent volume for storage           | `false`                                                           |
-| `service.servicePort`                  | Service port used                              | `9090`                                                            |
-| `serverFiles.resources`                | CPU/Memory resource requests/limits            | 200Mi memory limit                                                |
-
-#### Grafana
-
-> **Note**
-> The following parameters have a `grafana.` prefix.
-
-| Parameter       | Description                         | Default                                                               |
-|-----------------|-------------------------------------|-----------------------------------------------------------------------|
-| `enabled`       | Install the Grafana sub-chart       | `true`                                                                |
-| `grafana.ini`   | Grafana's primary configuration     | Enables anonymous login, and proxy through the frontend-proxy service |
-| `adminPassword` | Password used by `admin` user       | `admin`                                                               |
-| `plugins`       | Array of plugins to enable          | `["grafana-opensearch-datasource"]`                                   |
-| `sidecar`       | Configuration for Grafana sidecar   | Enable alerts, dashboards, and data sources                           |
-| `resources`     | CPU/Memory resource requests/limits | 175Mi memory limit                                                    |
-
-#### OpenSearch
-
-> **Note**
-> The following parameters have a `opensearch.` prefix.
-
-| Parameter             | Description                                       | Default                                  |
-|-----------------------|---------------------------------------------------|------------------------------------------|
-| `enabled`             | Install the OpenSearch sub-chart                  | `true`                                   |
-| `fullnameOverride`    | Name that will be used by the sub-chart release   | `otel-demo-opensearch`                   |
-| `clusterName`         | Name of the OpenSearch cluster                    | `demo-cluster`                           |
-| `nodeGroup`           | OpenSearch Node group configuration               | `otel-demo`                              |
-| `singleNode`          | Deploy a single node OpenSearch cluster           | `true`                                   |
-| `opensearchJavaOpts`  | Java options for OpenSearch JVM                   | `-Xms400m -Xmx400m`                      |
-| `persistence.enabled` | Enable persistent storage for OpenSearch data     | `false`                                  |
-| `extraEnvs`           | Additional environment variables for OpenSearch   | Disables demo config and security plugin |
-| `resources`           | CPU/Memory resource requests/limits               | 1100Mi memory limit                      |
+This chart intentionally does not bundle an observability backend (tracing,
+metrics, or log storage/UI) — only the app and its own collector agent. Point
+`opentelemetry-collector.config.exporters."otlp/observability-backend"` at
+your platform's existing backend; see
+[examples/bring-your-own-observability](examples/bring-your-own-observability).

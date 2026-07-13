@@ -15,7 +15,10 @@
 
   The following services are available at these paths after the frontend-proxy service is exposed with port forwarding:
   Webstore             http://localhost:8080/
-  Jaeger UI            http://localhost:8080/jaeger/ui/
-  Grafana              http://localhost:8080/grafana/
   Load Generator UI    http://localhost:8080/loadgen/
   Feature Flags UI     http://localhost:8080/feature/
+
+  This chart deploys the demo application and its own instrumentation agent
+  only. Point the collector's otlp/observability-backend exporter at your
+  platform's existing observability backend (see values.yaml, and
+  examples/bring-your-own-observability for a worked example).
