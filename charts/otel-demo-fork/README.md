@@ -17,7 +17,7 @@ The chart is published as an OCI artifact to GHCR. To install the chart with
 the release name my-otel-demo, run the following command:
 
 ```console
-helm install my-otel-demo oci://ghcr.io/ryanfaircloth/charts/otel-demo-fork --version 0.3.0
+helm install my-otel-demo oci://ghcr.io/ryanfaircloth/charts/otel-demo-fork --version 0.3.1
 ```
 
 ## Upgrading
@@ -31,58 +31,39 @@ Installing the chart on OpenShift requires the following additional steps:
 1. Create a new project:
 
     ```console
-    oc new-project opentelemetry-demo
+    oc new-project otel-demo-fork
     ```
 
 2. Create a new service account:
 
     ```console
-    oc create sa opentelemetry-demo
+    oc create sa otel-demo-fork
     ```
 
 3. Add the service account to the `anyuid` SCC (may require cluster admin):
 
     ```console
-    oc adm policy add-scc-to-user anyuid -z opentelemetry-demo
+    oc adm policy add-scc-to-user anyuid -z otel-demo-fork
     ```
 
-4. Add `view` role to the service account to allow Prometheus seeing the
-services pods:
+4. Install the chart with the following command:
 
     ```console
-    oc adm policy add-role-to-user view -z opentelemetry-demo
-    ```
-
-5. Add `privileged` SCC to the service account to allow Grafana to run:
-
-    ```console
-    oc adm policy add-scc-to-user privileged -z opentelemetry-demo
-    ```
-
-6. Install the chart with the following command:
-
-    ```console
-    helm install my-otel-demo charts/opentelemetry-demo \
-        --namespace opentelemetry-demo \
+    helm install my-otel-demo oci://ghcr.io/ryanfaircloth/charts/otel-demo-fork \
+        --version 0.3.1 \
+        --namespace otel-demo-fork \
         --set serviceAccount.create=false \
-        --set serviceAccount.name=opentelemetry-demo \
-        --set prometheus.rbac.create=false \
-        --set prometheus.serviceAccounts.server.create=false \
-        --set prometheus.serviceAccounts.server.name=opentelemetry-demo \
-        --set grafana.rbac.create=false \
-        --set grafana.serviceAccount.create=false \
-        --set grafana.serviceAccount.name=opentelemetry-demo
+        --set serviceAccount.name=otel-demo-fork
     ```
 
 ## Chart Parameters
 
-Chart parameters are separated in 4 general sections:
+Chart parameters are separated in 3 general sections:
 
 - Default - Used to specify defaults applied to all demo components
 - Components - Used to configure the individual components (microservices) for
 the demo
-- Observability - Used to enable/disable dependencies
-- Sub-charts - Configuration for all sub-charts
+- Sub-charts - Configuration for the OpenTelemetry Collector sub-chart
 
 ### Default parameters (applied to all demo components)
 
@@ -148,6 +129,13 @@ component.
 | `ingress.hosts[].paths[].port`          | Port to use for the given path                                                           | `nil`                                                         |
 | `ingress.additionalIngresses`           | Array of additional ingress rules to add                                                 | `[]`                                                          |
 | `ingress.additionalIngresses[].name`    | Each additional ingress rule needs to have a unique name                                 | `nil`                                                         |
+| `httpRoute.enabled`                     | Enable the creation of a Gateway API HTTPRoute                                           | `false`                                                       |
+| `httpRoute.annotations`                 | Annotations to add to the HTTPRoute                                                      | `{}`                                                          |
+| `httpRoute.parentRefs`                  | Array of Gateway(s) this HTTPRoute attaches to                                           | `[]`                                                          |
+| `httpRoute.hostnames`                   | Array of hostnames this HTTPRoute matches                                                | `[]`                                                          |
+| `httpRoute.rules`                       | Array of routing rules; each backendRef targets this component's Service on `.port`      | `[]`                                                          |
+| `httpRoute.additionalHTTPRoutes`        | Array of additional HTTPRoutes to add                                                    | `[]`                                                          |
+| `httpRoute.additionalHTTPRoutes[].name` | Each additional HTTPRoute needs to have a unique name                                    | `nil`                                                         |
 | `command`                               | Command & arguments to pass to the container being spun up for this service              | `[]`                                                          |
 | `additionalVolumeMounts`                | Array of Volumes that will be mounted                                                    | `[]`                                                          |
 | `mountedConfigMaps[].name`              | Name of the Volume that will be used for the ConfigMap mount                             | `nil`                                                         |
@@ -167,17 +155,11 @@ component.
 
 ### Sub-charts
 
-The OpenTelemetry Demo Helm chart depends on 5 sub-charts:
-
-- OpenTelemetry Collector
-- Jaeger
-- Prometheus
-- Grafana
-- OpenSearch
-
-Parameters for each sub-chart can be specified within that sub-chart's
-respective top level. This chart will override some of the dependent sub-chart
-parameters by default. The overriden parameters are specified below.
+This chart depends on a single sub-chart, the OpenTelemetry Collector, which
+runs as the app's own instrumentation agent. Parameters for it can be
+specified within its top-level `opentelemetry-collector` key. This chart
+overrides some of the sub-chart's parameters by default; the overridden
+parameters are specified below.
 
 #### OpenTelemetry Collector
 

@@ -480,8 +480,13 @@ components:
         value: frontend
       - name: FRONTEND_PORT
         value: "8080"
+      # frontend-proxy's baked-in envoy config always defines grafana/jaeger/
+      # opamp STRICT_DNS clusters and needs a valid address:port here even
+      # though this chart doesn't deploy those (observability-platform, not
+      # app) services; point at loopback so envoy doesn't try to resolve a
+      # Kubernetes Service that doesn't exist.
       - name: GRAFANA_HOST
-        value: grafana
+        value: "127.0.0.1"
       - name: GRAFANA_PORT
         value: "80"
       - name: IMAGE_PROVIDER_HOST
@@ -489,13 +494,17 @@ components:
       - name: IMAGE_PROVIDER_PORT
         value: "8081"
       - name: JAEGER_HOST
-        value: jaeger
+        value: "127.0.0.1"
       - name: JAEGER_UI_PORT
         value: "16686"
       - name: LOCUST_WEB_HOST
         value: load-generator
       - name: LOCUST_WEB_PORT
         value: "8089"
+      - name: OPAMP_SERVER_HOST
+        value: "127.0.0.1"
+      - name: OPAMP_SERVER_UI_PORT
+        value: "4321"
       - name: OTEL_COLLECTOR_HOST
         value: $(OTEL_COLLECTOR_NAME)
       - name: OTEL_COLLECTOR_PORT_GRPC

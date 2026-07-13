@@ -5,6 +5,14 @@
 > another. If you need to upgrade the chart, you must first delete the existing
 > release and then install the new version.
 
+## To 0.3.0
+
+The `jaeger`, `prometheus`, `grafana`, and `opensearch` sub-charts and their
+configuration were removed. This chart now deploys only the demo application
+and its own OTel Collector agent; point
+`opentelemetry-collector.config.exporters."otlp/observability-backend"` at
+your platform's existing observability backend (see
+[examples/bring-your-own-observability](examples/bring-your-own-observability)).
 
 ## To 0.40.4
 
@@ -84,10 +92,12 @@ Helm client to the latest version.
 
 ## To 0.28
 
-The `configuration` property for components has been removed in favor of the new `mountedConfigMaps` property.
-This new property allows you to specify the contents of the configuration using the `data` sub-property. You will also
-need to specify the `mountPath` to use, and give the configuration a name. The old `configuration` property used
-`/etc/config` and `config` as values for these respectively. The following example shows how to migrate from the old
+The `configuration` property for components has been removed in favor of the
+new `mountedConfigMaps` property. This new property allows you to specify the
+contents of the configuration using the `data` sub-property. You will also
+need to specify the `mountPath` to use, and give the configuration a name. The
+old `configuration` property used `/etc/config` and `config` as values for
+these respectively. The following example shows how to migrate from the old
 `configuration` property to the new `mountedConfigMaps` property:
 
 ```yaml
@@ -108,9 +118,9 @@ mountedConfigMaps:
 ## To 0.24
 
 This release uses the [kubernetes attributes processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/k8sattributesprocessor)
-to add kubernetes metadata as resource attributes. If you override the processors array in your config, you will
-need to add the k8s attributes processor manually to restore `service.instance.id`
-resource attribute.
+to add kubernetes metadata as resource attributes. If you override the
+processors array in your config, you will need to add the k8s attributes
+processor manually to restore `service.instance.id` resource attribute.
 
 ## To 0.23
 
