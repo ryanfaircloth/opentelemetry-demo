@@ -1,0 +1,42 @@
+# fork: publish the otel-demo-fork helm chart as an OCI artifact to GHCR
+name: Helm chart release
+
+on:
+  push:
+    branches:
+      - fork/stable
+    paths:
+      - 'charts/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CHART_PATH: charts/otel-demo-fork
+  OCI_REPO: oci://ghcr.io/ryanfaircloth/charts
+
+jobs:
+  publish_chart:
+    name: Package and push helm chart
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        with:
+          persist-credentials: false
+      - name: Set up Helm
+        uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310  # v5.0.1
+      - name: Update chart dependencies
+        run: helm dependency update "$CHART_PATH"
+      - name: Lint chart
+        run: helm lint "$CHART_PATH"
+      - name: Package chart
+        run: helm package "$CHART_PATH" --destination dist
+      - name: Log in to GHCR
+        run: helm registry login ghcr.io --username "${{ github.repository_owner }}" --password "${{ github.token }}"
+      - name: Push chart
+        run: helm push dist/otel-demo-fork-*.tgz "$OCI_REPO"

@@ -53,6 +53,9 @@ composer.lock
 # Otel Demo specific
 docker-compose.override.yml
 
+# Helm chart dependency archives (fetched via `helm dependency update`)
+charts/*/charts/*.tgz
+
 src/frontend/cypress/videos
 src/frontend/cypress/screenshots
 src/shipping/target/
