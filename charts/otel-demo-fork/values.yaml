@@ -468,6 +468,21 @@ components:
         value: "0.0.0.0"
       - name: ENVOY_ADMIN_PORT
         value: "10000"
+      # frontend-proxy's baked-in envoy config always defines chatbot/
+      # firepit/grafana/jaeger/opamp STRICT_DNS clusters and needs a valid
+      # address:port here even though this chart doesn't deploy those
+      # services: chatbot needs an LLM-backed agent+mcp subsystem this chart
+      # doesn't wire up yet, and firepit/grafana/jaeger/opamp are
+      # observability-platform tooling, not the app. Point at loopback so
+      # envoy doesn't try to resolve a Kubernetes Service that doesn't exist.
+      - name: CHATBOT_HOST
+        value: "127.0.0.1"
+      - name: CHATBOT_PORT
+        value: "7860"
+      - name: FIREPIT_HOST
+        value: "127.0.0.1"
+      - name: FIREPIT_PORT
+        value: "8080"
       - name: FLAGD_HOST
         value: flagd
       - name: FLAGD_PORT
@@ -480,11 +495,6 @@ components:
         value: frontend
       - name: FRONTEND_PORT
         value: "8080"
-      # frontend-proxy's baked-in envoy config always defines grafana/jaeger/
-      # opamp STRICT_DNS clusters and needs a valid address:port here even
-      # though this chart doesn't deploy those (observability-platform, not
-      # app) services; point at loopback so envoy doesn't try to resolve a
-      # Kubernetes Service that doesn't exist.
       - name: GRAFANA_HOST
         value: "127.0.0.1"
       - name: GRAFANA_PORT
@@ -511,6 +521,12 @@ components:
         value: "4317"
       - name: OTEL_COLLECTOR_PORT_HTTP
         value: "4318"
+      - name: OTEL_SERVICE_NAMESPACE
+        value: otel-demo
+      - name: TELEMETRY_DOCS_HOST
+        value: telemetry-docs
+      - name: TELEMETRY_DOCS_PORT
+        value: "8000"
     resources:
       limits:
         memory: 65Mi
@@ -752,6 +768,25 @@ components:
     resources:
       limits:
         memory: 20Mi
+
+  telemetry-docs:
+    enabled: true
+    useDefault:
+      env: true
+    service:
+      port: 8000
+    podAnnotations:
+      resource.opentelemetry.io/service.namespace: otel-demo
+    env:
+      - name: TELEMETRY_DOCS_PORT
+        value: "8000"
+      - name: OTEL_COLLECTOR_PORT_GRPC
+        value: "4317"
+      - name: OTEL_COLLECTOR_HOST
+        value: $(OTEL_COLLECTOR_NAME)
+    resources:
+      limits:
+        memory: 100Mi
 
   flagd:
     enabled: true

@@ -5,6 +5,14 @@
 > another. If you need to upgrade the chart, you must first delete the existing
 > release and then install the new version.
 
+## To 0.4.0
+
+Adds a `telemetry-docs` component (the app's telemetry-schema documentation
+site), wired into `frontend-proxy`'s existing `/telemetry/` route.
+`frontend-proxy`'s baked-in envoy config also has routes for `chatbot` and
+`firepit` (continuous-profiling UI) that this chart still doesn't deploy;
+their env vars point at loopback rather than a nonexistent Service.
+
 ## To 0.3.0
 
 The `jaeger`, `prometheus`, `grafana`, and `opensearch` sub-charts and their

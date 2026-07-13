@@ -102,6 +102,9 @@
         "shipping": {
           "$ref": "#/definitions/Component"
         },
+        "telemetry-docs": {
+          "$ref": "#/definitions/Component"
+        },
         "kafka": {
           "$ref": "#/definitions/Component"
         },

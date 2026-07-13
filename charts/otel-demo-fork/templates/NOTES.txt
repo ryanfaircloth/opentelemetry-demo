@@ -17,6 +17,7 @@
   Webstore             http://localhost:8080/
   Load Generator UI    http://localhost:8080/loadgen/
   Feature Flags UI     http://localhost:8080/feature/
+  Telemetry Docs       http://localhost:8080/telemetry/
 
   This chart deploys the demo application and its own instrumentation agent
   only. Point the collector's otlp/observability-backend exporter at your
