@@ -289,6 +289,20 @@ jobs:
           buildkitd-config-inline: |
             [worker.oci]
             max-parallelism = 2
+      - name: Determine image tags
+        if: steps.check_changes.outputs.skip == 'false'
+        id: image_tags
+        run: |
+          TAGS="${{ inputs.ghcr_repo }}:${{ inputs.version }}-${{ matrix.file_tag.tag_suffix }}
+          ${{ inputs.ghcr_repo }}:latest-${{ matrix.file_tag.tag_suffix }}"
+          if [ -n "$DOCKER_USERNAME" ]; then
+            TAGS="${{ inputs.dockerhub_repo }}:${{ inputs.version }}-${{ matrix.file_tag.tag_suffix }}
+          ${{ inputs.dockerhub_repo }}:latest-${{ matrix.file_tag.tag_suffix }}
+          ${TAGS}"
+          fi
+          echo "tags<<EOF" >> "$GITHUB_OUTPUT"
+          echo "${TAGS}" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
       - name: Build and push demo images
         if: steps.check_changes.outputs.skip == 'false'
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a  # v7.3.0
@@ -301,10 +315,6 @@ jobs:
             OTEL_JAVA_AGENT_VERSION=${{ env.OTEL_JAVA_AGENT_VERSION }}
             OPENTELEMETRY_CPP_VERSION=${{ env.OPENTELEMETRY_CPP_VERSION }}
             OPAMP_GO_REF=${{ env.OPAMP_GO_REF }}
-          tags: |
-            ${{ inputs.dockerhub_repo }}:${{ inputs.version }}-${{matrix.file_tag.tag_suffix }}
-            ${{ inputs.dockerhub_repo }}:latest-${{matrix.file_tag.tag_suffix }}
-            ${{ inputs.ghcr_repo }}:${{ inputs.version }}-${{ matrix.file_tag.tag_suffix }}
-            ${{ inputs.ghcr_repo }}:latest-${{ matrix.file_tag.tag_suffix }}
+          tags: ${{ steps.image_tags.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha
