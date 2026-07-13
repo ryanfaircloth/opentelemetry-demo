@@ -17,5 +17,8 @@ jobs:
     permissions:
       contents: read  # required by the component-build-images reusable workflow
       packages: write  # required to push built images to GHCR
-    if: ${{ !github.event.repository.fork }}
     uses: ./.github/workflows/component-build-images.yml
+    with:
+      push: true
+      ghcr_repo: ghcr.io/ryanfaircloth/demo
+      dockerhub_repo: ryanfaircloth/demo

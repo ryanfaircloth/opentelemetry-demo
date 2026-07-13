@@ -269,13 +269,13 @@ jobs:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ github.token }}
-        if: ${{ steps.check_changes.outputs.skip == 'false' && inputs.push && !github.event.repository.fork }}
+        if: ${{ steps.check_changes.outputs.skip == 'false' && inputs.push }}
       - name: Log in to Docker Hub
         uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0  # v4.4.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-        if: ${{ steps.check_changes.outputs.skip == 'false' && inputs.push && !github.event.repository.fork }}
+        if: ${{ steps.check_changes.outputs.skip == 'false' && inputs.push && secrets.DOCKER_USERNAME != '' }}
       - name: Set up QEMU
         if: ${{ steps.check_changes.outputs.skip == 'false' && matrix.file_tag.setup-qemu }}
         uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8  # v4.2.0
@@ -295,7 +295,7 @@ jobs:
           context: ${{ matrix.file_tag.context }}
           file: ${{ matrix.file_tag.file }}
           platforms: linux/amd64,linux/arm64
-          push: ${{ inputs.push && !github.event.repository.fork }}
+          push: ${{ inputs.push }}
           build-args: |
             OTEL_JAVA_AGENT_VERSION=${{ env.OTEL_JAVA_AGENT_VERSION }}
             OPENTELEMETRY_CPP_VERSION=${{ env.OPENTELEMETRY_CPP_VERSION }}
