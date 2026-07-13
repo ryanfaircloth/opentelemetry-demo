@@ -1,0 +1,45 @@
+components:
+  frontend:
+    httpRoute:
+      enabled: true
+      parentRefs:
+        - name: default-gateway
+          sectionName: http
+      annotations:
+        test.io/route: default
+      hostnames:
+        - defaultgateway.example.com
+      rules:
+        - matches:
+            - path:
+                type: PathPrefix
+                value: /
+          port: 8080
+
+      additionalHTTPRoutes:
+        - name: additional-basic
+          parentRefs:
+            - name: default-gateway
+          hostnames:
+            - additional-basic.example.com
+          rules:
+            - matches:
+                - path:
+                    type: PathPrefix
+                    value: /
+              port: 8080
+
+        - name: additional-advanced
+          parentRefs:
+            - name: advanced-gateway
+              namespace: gateway-infra
+          annotations:
+            test.io/route: additional-advanced
+          hostnames:
+            - additional-advanced.example.com
+          rules:
+            - matches:
+                - path:
+                    type: Exact
+                    value: /
+              port: 8080

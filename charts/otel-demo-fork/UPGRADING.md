@@ -5,6 +5,30 @@
 > another. If you need to upgrade the chart, you must first delete the existing
 > release and then install the new version.
 
+## To 0.5.0
+
+Removes the `frontend-proxy` component and all per-component Ingress support
+(`ingress.*` under `components.[NAME]`); this chart now exposes components
+exclusively via Gateway API `HTTPRoute`. `frontend-proxy` did more than
+front the observability UIs removed in 0.3.0/0.4.0: it also ran the
+flagd-driven fault-injection HTTP filter (no chart-level replacement), gave
+the browser a same-origin path to `image-provider` that the webstore's
+images/logo/banner depend on, and was `load-generator`'s traffic target.
+
+`load-generator` now points directly at `frontend`. The webstore's images
+and the browser's own trace export both need frontend, image-provider, and
+the collector's `otlp-http` receiver exposed under one shared hostname; see
+[examples/public-hosted-httproute](examples/public-hosted-httproute) for the
+HTTPRoute wiring that replaces what `frontend-proxy` used to do, and
+`templates/NOTES.txt` for the per-service `kubectl port-forward` fallback
+when no Gateway is available.
+
+Adds a `telemetry-docs` component and an httpRoute rule's optional
+`rewritePath` (strips/replaces the matched path prefix before forwarding,
+e.g. so `/images/foo` reaches `image-provider` as `/foo`), and adds
+`otelCollectorHTTPRoute` for exposing the collector's `otlp-http` receiver
+(the sub-chart has no native Gateway API support).
+
 ## To 0.4.0
 
 Adds a `telemetry-docs` component (the app's telemetry-schema documentation

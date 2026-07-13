@@ -1,0 +1,98 @@
+# Replaces frontend-proxy's single-origin reverse-proxy behavior with
+# Gateway API: every HTTPRoute below shares the same parentRefs/hostnames,
+# so Gateway API merges them into one virtual host with path-based routing
+# (longest-prefix-match wins, same effect as Envoy's ordered routes).
+# Requires a Gateway API controller and a Gateway named "otel-demo-gateway"
+# to already exist in the cluster.
+
+components:
+  frontend:
+    envOverrides:
+      - name: PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+        value: https://otel-demo.example.com/otlp-http/v1/traces
+    httpRoute:
+      enabled: true
+      parentRefs:
+        - name: otel-demo-gateway
+      hostnames:
+        - otel-demo.example.com
+      rules:
+        - matches:
+            - path:
+                type: PathPrefix
+                value: /
+          port: 8080
+
+  image-provider:
+    httpRoute:
+      enabled: true
+      parentRefs:
+        - name: otel-demo-gateway
+      hostnames:
+        - otel-demo.example.com
+      rules:
+        - matches:
+            - path:
+                type: PathPrefix
+                value: /images
+          rewritePath: /
+          port: 8081
+
+  flagd:
+    httpRoute:
+      enabled: true
+      parentRefs:
+        - name: otel-demo-gateway
+      hostnames:
+        - otel-demo.example.com
+      rules:
+        - matches:
+            - path:
+                type: PathPrefix
+                value: /feature
+          rewritePath: /
+          port: 4000
+
+  load-generator:
+    httpRoute:
+      enabled: true
+      parentRefs:
+        - name: otel-demo-gateway
+      hostnames:
+        - otel-demo.example.com
+      rules:
+        - matches:
+            - path:
+                type: PathPrefix
+                value: /loadgen
+          rewritePath: /
+          port: 8089
+
+  telemetry-docs:
+    httpRoute:
+      enabled: true
+      parentRefs:
+        - name: otel-demo-gateway
+      hostnames:
+        - otel-demo.example.com
+      rules:
+        - matches:
+            - path:
+                type: PathPrefix
+                value: /telemetry
+          rewritePath: /
+          port: 8000
+
+otelCollectorHTTPRoute:
+  enabled: true
+  parentRefs:
+    - name: otel-demo-gateway
+  hostnames:
+    - otel-demo.example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /otlp-http
+      rewritePath: /
+      port: 4318

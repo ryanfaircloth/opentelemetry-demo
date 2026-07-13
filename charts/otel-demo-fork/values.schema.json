@@ -37,6 +37,9 @@
     },
     "opentelemetry-collector": {
       "type": "object"
+    },
+    "otelCollectorHTTPRoute": {
+      "$ref": "#/definitions/HTTPRoute"
     }
   },
   "required": [
@@ -73,9 +76,6 @@
           "$ref": "#/definitions/Component"
         },
         "frontend": {
-          "$ref": "#/definitions/Component"
-        },
-        "frontend-proxy": {
           "$ref": "#/definitions/Component"
         },
         "image-provider": {
@@ -215,9 +215,6 @@
         },
         "podSecurityContext": {
           "type": "object"
-        },
-        "ingress": {
-          "$ref": "#/definitions/Ingress"
         },
         "httpRoute": {
           "$ref": "#/definitions/HTTPRoute"
@@ -484,167 +481,6 @@
         }
       }
     },
-    "Ingress": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "enabled": {
-          "type": "boolean"
-        },
-        "ingressClassName": {
-          "type": "string"
-        },
-        "annotations": {
-          "type": "object"
-        },
-        "hosts": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-              "host": {
-                "type": "string"
-              },
-              "paths": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "properties": {
-                    "path": {
-                      "type": "string"
-                    },
-                    "pathType": {
-                      "type": "string",
-                      "enum": [
-                        "Exact",
-                        "Prefix",
-                        "ImplementationSpecific"
-                      ]
-                    },
-                    "port": {
-                      "type": "integer"
-                    }
-                  },
-                  "required": [
-                    "path",
-                    "pathType",
-                    "port"
-                  ]
-                }
-              }
-            },
-            "required": [
-              "paths"
-            ]
-          }
-        },
-        "tls": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-              "secretName": {
-                "type": "string"
-              },
-              "hosts": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-        },
-        "additionalIngresses": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-              "name": {
-                "type": "string"
-              },
-              "ingressClassName": {
-                "type": "string"
-              },
-              "annotations": {
-                "type": "object"
-              },
-              "hosts": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "properties": {
-                    "host": {
-                      "type": "string"
-                    },
-                    "paths": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "additionalProperties": false,
-                        "properties": {
-                          "path": {
-                            "type": "string"
-                          },
-                          "pathType": {
-                            "type": "string",
-                            "enum": [
-                              "Exact",
-                              "Prefix",
-                              "ImplementationSpecific"
-                            ]
-                          },
-                          "port": {
-                            "type": "integer"
-                          }
-                        },
-                        "required": [
-                          "path",
-                          "pathType",
-                          "port"
-                        ]
-                      }
-                    }
-                  },
-                  "required": [
-                    "paths"
-                  ]
-                }
-              },
-              "tls": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "properties": {
-                    "secretName": {
-                      "type": "string"
-                    },
-                    "hosts": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      }
-                    }
-                  }
-                }
-              }
-            },
-            "required": [
-              "name"
-            ]
-          }
-        }
-      },
-      "required": [
-        "enabled"
-      ]
-    },
     "HTTPRoute": {
       "type": "object",
       "additionalProperties": false,
@@ -720,6 +556,9 @@
                     "path"
                   ]
                 }
+              },
+              "rewritePath": {
+                "type": "string"
               },
               "port": {
                 "type": "integer"
@@ -808,6 +647,9 @@
                           "path"
                         ]
                       }
+                    },
+                    "rewritePath": {
+                      "type": "string"
                     },
                     "port": {
                       "type": "integer"

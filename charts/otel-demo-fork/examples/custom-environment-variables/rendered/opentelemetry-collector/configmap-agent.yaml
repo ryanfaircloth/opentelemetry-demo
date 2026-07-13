@@ -44,7 +44,7 @@ data:
         include:
           match_type: strict
           services:
-          - frontend-proxy
+          - frontend
       batch: {}
       k8sattributes:
         extract:

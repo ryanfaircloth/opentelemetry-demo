@@ -10,6 +10,10 @@ and is versioned independently of it.
 
 - Kubernetes 1.24+
 - Helm 4.0+
+- A [Gateway API](https://gateway-api.sigs.k8s.io/) controller and `Gateway`
+  (optional, only needed to expose components externally — see
+  [examples/public-hosted-httproute](examples/public-hosted-httproute)). With
+  neither, use `kubectl port-forward` per service; see `templates/NOTES.txt`.
 
 ## Installing the Chart
 
@@ -17,7 +21,7 @@ The chart is published as an OCI artifact to GHCR. To install the chart with
 the release name my-otel-demo, run the following command:
 
 ```console
-helm install my-otel-demo oci://ghcr.io/ryanfaircloth/charts/otel-demo-fork --version 0.4.0
+helm install my-otel-demo oci://ghcr.io/ryanfaircloth/charts/otel-demo-fork --version 0.5.0
 ```
 
 ## Upgrading
@@ -50,7 +54,7 @@ Installing the chart on OpenShift requires the following additional steps:
 
     ```console
     helm install my-otel-demo oci://ghcr.io/ryanfaircloth/charts/otel-demo-fork \
-        --version 0.4.0 \
+        --version 0.5.0 \
         --namespace otel-demo-fork \
         --set serviceAccount.create=false \
         --set serviceAccount.name=otel-demo-fork
@@ -91,6 +95,19 @@ component is configured with a common set of parameters. All components will
 be defined within `components.[NAME]` where `[NAME]` is the name of the demo
 component.
 
+This chart has no reverse proxy and no Ingress support; the only way to
+expose a component externally is a Gateway API `HTTPRoute`. Each
+component's HTTPRoute always targets that component's own Service, so
+exposing several components under one hostname (the way `frontend-proxy`
+used to, including the path-based routing that makes the webstore's images
+resolve) means giving each of their HTTPRoutes the same `parentRefs` and
+`hostnames` with different path matches — Gateway API merges routes
+attached to the same Gateway/hostname the same way multiple Ingress objects
+merge on one host. See
+[examples/public-hosted-httproute](examples/public-hosted-httproute) for a
+worked example, and `templates/NOTES.txt` for the default per-service
+port-forward commands.
+
 > **Note**
 > The following parameters require a `components.[NAME].` prefix where `[NAME]`
 > is the name of the demo component
@@ -119,21 +136,12 @@ component.
 | `podSecurityContext`                    | Pod security context s                                                                   | `{}`                                                          |
 | `podLabels`                             | Pod labels for this component                                                            | `{}`                                                          |
 | `podAnnotations`                        | Pod annotations for this component                                                       | `{}`                                                          |
-| `ingress.enabled`                       | Enable the creation of Ingress rules                                                     | `false`                                                       |
-| `ingress.annotations`                   | Annotations to add to the ingress rule                                                   | `{}`                                                          |
-| `ingress.ingressClassName`              | Ingress class to use. If not specified default Ingress class will be used.               | `nil`                                                         |
-| `ingress.hosts`                         | Array of Hosts to use for the ingress rule.                                              | `[]`                                                          |
-| `ingress.hosts[].paths`                 | Array of paths / routes to use for the ingress rule host.                                | `[]`                                                          |
-| `ingress.hosts[].paths[].path`          | Actual path route to use                                                                 | `nil`                                                         |
-| `ingress.hosts[].paths[].pathType`      | Path type to use for the given path. Typically this is `Prefix`.                         | `nil`                                                         |
-| `ingress.hosts[].paths[].port`          | Port to use for the given path                                                           | `nil`                                                         |
-| `ingress.additionalIngresses`           | Array of additional ingress rules to add                                                 | `[]`                                                          |
-| `ingress.additionalIngresses[].name`    | Each additional ingress rule needs to have a unique name                                 | `nil`                                                         |
 | `httpRoute.enabled`                     | Enable the creation of a Gateway API HTTPRoute                                           | `false`                                                       |
 | `httpRoute.annotations`                 | Annotations to add to the HTTPRoute                                                      | `{}`                                                          |
 | `httpRoute.parentRefs`                  | Array of Gateway(s) this HTTPRoute attaches to                                           | `[]`                                                          |
 | `httpRoute.hostnames`                   | Array of hostnames this HTTPRoute matches                                                | `[]`                                                          |
 | `httpRoute.rules`                       | Array of routing rules; each backendRef targets this component's Service on `.port`      | `[]`                                                          |
+| `httpRoute.rules[].rewritePath`         | Optional path-prefix rewrite applied before forwarding to the backend                    | `nil`                                                         |
 | `httpRoute.additionalHTTPRoutes`        | Array of additional HTTPRoutes to add                                                    | `[]`                                                          |
 | `httpRoute.additionalHTTPRoutes[].name` | Each additional HTTPRoute needs to have a unique name                                    | `nil`                                                         |
 | `command`                               | Command & arguments to pass to the container being spun up for this service              | `[]`                                                          |
@@ -180,3 +188,13 @@ metrics, or log storage/UI) — only the app and its own collector agent. Point
 `opentelemetry-collector.config.exporters."otlp/observability-backend"` at
 your platform's existing backend; see
 [examples/bring-your-own-observability](examples/bring-your-own-observability).
+
+#### OpenTelemetry Collector HTTPRoute
+
+The `opentelemetry-collector` sub-chart has no native Gateway API support, so
+this chart adds its own HTTPRoute for it (`templates/collector-httproute.yaml`),
+configured independently via a top-level `otelCollectorHTTPRoute` key (same
+shape as `components.[NAME].httpRoute`, including `rewritePath`). This is how
+a browser reaches the collector's `otlp-http` receiver directly for the
+frontend's client-side trace export; see
+[examples/public-hosted-httproute](examples/public-hosted-httproute).

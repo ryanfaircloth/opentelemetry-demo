@@ -86,45 +86,13 @@ components:
   #   resources: {}
   ## Container security context for setting user ID (UID), group ID (GID) and other security policies
   #   securityContext:
-  ## Ingresses rules to add for the to the component
-  # ingress:
-  ## Enable the creation of Ingress rules. Default is false
-  #   enabled: false
-  ## Annotations to add to the ingress rule
-  #   annotations: {}
-  ## Which Ingress class (controller) to use. Default is unspecified.
-  #   ingressClassName: nginx
-  ## Hosts definitions for the Ingress rule
-  #   hosts:
-  #     - host: demo.example.com
-  ## Each host can have multiple paths/routes
-  #       paths:
-  #         - path: /
-  #           pathType: Prefix
-  #           port: 8080
-  ## Optional TLS specifications for the Ingress rule
-  #   tls:
-  #     - secretName: demo-tls
-  #       hosts:
-  #         - demo.example.com
-  ## Additional ingresses - only created if ingress.enabled is true
-  ## Useful for when differently annotated ingress services are required
-  ## Each additional ingress needs key "name" set to something unique
-  #   additionalIngresses: []
-  #     - name: extra-demo-ingress
-  #       ingressClassName: nginx
-  #       annotations: {}
-  #       hosts:
-  #         - host: demo.example.com
-  #           paths:
-  #             - path: /
-  #               pathType: Prefix
-  #               port: 8080
-  #       tls:
-  #         - secretName: demo-tls
-  #           hosts:
-  #             - demo.example.com
-  ## Gateway API HTTPRoute rules to add for the component
+  ## Gateway API HTTPRoute rules to add for the component. This chart uses
+  ## Gateway API exclusively for exposing components externally (no Ingress
+  ## support); each component's HTTPRoute always targets that component's own
+  ## Service, so fanning traffic for multiple components out from one
+  ## hostname means giving each component's HTTPRoute the same parentRefs and
+  ## hostnames with different path matches (same shape as multiple Ingress
+  ## objects sharing a host) - see examples/public-hosted-httproute.
   # httpRoute:
   ## Enable the creation of an HTTPRoute. Default is false
   #   enabled: false
@@ -138,12 +106,15 @@ components:
   ## Hostnames this HTTPRoute matches
   #   hostnames:
   #     - demo.example.com
-  ## Routing rules; each rule's backendRef targets this component's Service on the given port
+  ## Routing rules; each rule's backendRef targets this component's Service on the given port.
+  ## rewritePath is optional; set it to strip/replace the matched path prefix before forwarding
+  ## (e.g. matching "/images" with rewritePath "/" forwards "/images/foo" upstream as "/foo").
   #   rules:
   #     - matches:
   #         - path:
   #             type: PathPrefix
   #             value: /
+  #       rewritePath: /
   #       port: 8080
   ## Additional HTTPRoutes - only created if httpRoute.enabled is true
   ## Each additional HTTPRoute needs key "name" set to something unique
@@ -438,101 +409,18 @@ components:
         value: http://$(OTEL_COLLECTOR_NAME):4317
       - name: WEB_OTEL_SERVICE_NAME
         value: frontend-web
+      # The browser sends its own traces straight to the collector's otlp-http
+      # receiver (which allows any CORS origin) rather than through a same-origin
+      # proxy. Expects `kubectl port-forward svc/otel-collector 4318:4318` in
+      # addition to port-forwarding frontend itself; override for real deployments.
       - name: PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
-        value: http://localhost:8080/otlp-http/v1/traces             # This expects users to use `kubectl port-forward ...`
+        value: http://localhost:4318/v1/traces
     resources:
       limits:
         memory: 250Mi
     securityContext:
       runAsUser: 1001  # nextjs
       runAsGroup: 1001
-      runAsNonRoot: true
-
-  frontend-proxy:
-    enabled: true
-    useDefault:
-      env: true
-    service:
-      port: 8080
-    podAnnotations:
-      resource.opentelemetry.io/service.namespace: otel-demo
-      io.opentelemetry.discovery.metrics/enabled: 'true'
-      io.opentelemetry.discovery.metrics/scraper: httpcheck
-      io.opentelemetry.discovery.metrics/config: |
-          targets:
-            - endpoint: "http://`endpoint`"
-    env:
-      - name: ENVOY_PORT
-        value: "8080"
-      - name: ENVOY_ADDR
-        value: "0.0.0.0"
-      - name: ENVOY_ADMIN_PORT
-        value: "10000"
-      # frontend-proxy's baked-in envoy config always defines chatbot/
-      # firepit/grafana/jaeger/opamp STRICT_DNS clusters and needs a valid
-      # address:port here even though this chart doesn't deploy those
-      # services: chatbot needs an LLM-backed agent+mcp subsystem this chart
-      # doesn't wire up yet, and firepit/grafana/jaeger/opamp are
-      # observability-platform tooling, not the app. Point at loopback so
-      # envoy doesn't try to resolve a Kubernetes Service that doesn't exist.
-      - name: CHATBOT_HOST
-        value: "127.0.0.1"
-      - name: CHATBOT_PORT
-        value: "7860"
-      - name: FIREPIT_HOST
-        value: "127.0.0.1"
-      - name: FIREPIT_PORT
-        value: "8080"
-      - name: FLAGD_HOST
-        value: flagd
-      - name: FLAGD_PORT
-        value: "8013"
-      - name: FLAGD_UI_HOST
-        value: flagd
-      - name: FLAGD_UI_PORT
-        value: "4000"
-      - name: FRONTEND_HOST
-        value: frontend
-      - name: FRONTEND_PORT
-        value: "8080"
-      - name: GRAFANA_HOST
-        value: "127.0.0.1"
-      - name: GRAFANA_PORT
-        value: "80"
-      - name: IMAGE_PROVIDER_HOST
-        value: image-provider
-      - name: IMAGE_PROVIDER_PORT
-        value: "8081"
-      - name: JAEGER_HOST
-        value: "127.0.0.1"
-      - name: JAEGER_UI_PORT
-        value: "16686"
-      - name: LOCUST_WEB_HOST
-        value: load-generator
-      - name: LOCUST_WEB_PORT
-        value: "8089"
-      - name: OPAMP_SERVER_HOST
-        value: "127.0.0.1"
-      - name: OPAMP_SERVER_UI_PORT
-        value: "4321"
-      - name: OTEL_COLLECTOR_HOST
-        value: $(OTEL_COLLECTOR_NAME)
-      - name: OTEL_COLLECTOR_PORT_GRPC
-        value: "4317"
-      - name: OTEL_COLLECTOR_PORT_HTTP
-        value: "4318"
-      - name: OTEL_SERVICE_NAMESPACE
-        value: otel-demo
-      - name: TELEMETRY_DOCS_HOST
-        value: telemetry-docs
-      - name: TELEMETRY_DOCS_PORT
-        value: "8000"
-    resources:
-      limits:
-        memory: 65Mi
-    securityContext:
-      runAsUser: 101  # envoy
-      runAsGroup: 101
       runAsNonRoot: true
 
   image-provider:
@@ -578,7 +466,7 @@ components:
       - name: LOCUST_SPAWN_RATE
         value: "1"
       - name: LOCUST_HOST
-        value: http://frontend-proxy:8080
+        value: http://frontend:8080
       - name: LOCUST_HEADLESS
         value: "false"
       - name: LOCUST_AUTOSTART
@@ -1107,3 +995,22 @@ opentelemetry-collector:
                     endpoint: http://otel-collector:4318
                     insecure: true
 
+
+## The opentelemetry-collector sub-chart has no native Gateway API support,
+## so this chart adds its own HTTPRoute (templates/collector-httproute.yaml)
+## for exposing the collector's otlp-http receiver (port 4318), e.g. so a
+## browser can reach it directly for frontend's client-side trace export.
+## Same shape as components[].httpRoute; disabled by default.
+# otelCollectorHTTPRoute:
+#   enabled: false
+#   parentRefs:
+#     - name: my-gateway
+#   hostnames:
+#     - demo.example.com
+#   rules:
+#     - matches:
+#         - path:
+#             type: PathPrefix
+#             value: /otlp-http
+#       rewritePath: /
+#       port: 4318

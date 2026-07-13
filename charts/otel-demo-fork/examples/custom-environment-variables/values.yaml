@@ -81,7 +81,7 @@ opentelemetry-collector:
         include:
           match_type: strict
           services:
-            - frontend-proxy
+            - frontend
         actions:
           - key: "app.eng.team"
             value: "ring"
