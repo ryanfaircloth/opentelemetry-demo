@@ -316,5 +316,10 @@ jobs:
             OPENTELEMETRY_CPP_VERSION=${{ env.OPENTELEMETRY_CPP_VERSION }}
             OPAMP_GO_REF=${{ env.OPAMP_GO_REF }}
           tags: ${{ steps.image_tags.outputs.tags }}
-          cache-from: type=gha
-          cache-to: type=gha
+          # Scoped per Dockerfile: without a scope, every matrix job (there
+          # are ~24) shares one gha cache namespace and clobbers the others'
+          # entries before they're ever reused, so expensive layers (e.g.
+          # currency's from-source opentelemetry-cpp build) rebuild from
+          # scratch on every run.
+          cache-from: type=gha,scope=${{ matrix.file_tag.tag_suffix }}
+          cache-to: type=gha,scope=${{ matrix.file_tag.tag_suffix }},mode=max
