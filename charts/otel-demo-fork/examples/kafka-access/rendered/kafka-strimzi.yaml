@@ -6,7 +6,7 @@ metadata:
   name: accounting-kafka-access
   namespace: default
   labels:
-    helm.sh/chart: otel-demo-fork-0.9.5
+    helm.sh/chart: otel-demo-fork-0.10.1
     
     
     app.kubernetes.io/version: "2.2.0"
@@ -19,7 +19,7 @@ spec:
   user:
     kind: KafkaUser
     apiGroup: kafka.strimzi.io
-    name: accounting
+    name: default-release-name-accounting
     namespace: kafka
   secretName: accounting-kafka-access
 ---
@@ -30,7 +30,7 @@ metadata:
   name: checkout-kafka-access
   namespace: default
   labels:
-    helm.sh/chart: otel-demo-fork-0.9.5
+    helm.sh/chart: otel-demo-fork-0.10.1
     
     
     app.kubernetes.io/version: "2.2.0"
@@ -43,7 +43,7 @@ spec:
   user:
     kind: KafkaUser
     apiGroup: kafka.strimzi.io
-    name: checkout
+    name: default-release-name-checkout
     namespace: kafka
   secretName: checkout-kafka-access
 ---
@@ -54,7 +54,7 @@ metadata:
   name: fraud-detection-kafka-access
   namespace: default
   labels:
-    helm.sh/chart: otel-demo-fork-0.9.5
+    helm.sh/chart: otel-demo-fork-0.10.1
     
     
     app.kubernetes.io/version: "2.2.0"
@@ -67,7 +67,7 @@ spec:
   user:
     kind: KafkaUser
     apiGroup: kafka.strimzi.io
-    name: fraud-detection
+    name: default-release-name-fraud-detection
     namespace: kafka
   secretName: fraud-detection-kafka-access
 ---
@@ -75,17 +75,18 @@ spec:
 apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaTopic
 metadata:
-  name: orders
+  name: default-release-name-orders
   namespace: kafka
   labels:
     strimzi.io/cluster: my-kafka-cluster
-    helm.sh/chart: otel-demo-fork-0.9.5
+    helm.sh/chart: otel-demo-fork-0.10.1
     
     
     app.kubernetes.io/version: "2.2.0"
     app.kubernetes.io/part-of: opentelemetry-demo
     app.kubernetes.io/managed-by: Helm
 spec:
+  topicName: orders
   partitions: 1
   replicas: 1
 ---
@@ -93,11 +94,11 @@ spec:
 apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaUser
 metadata:
-  name: accounting
+  name: default-release-name-accounting
   namespace: kafka
   labels:
     strimzi.io/cluster: my-kafka-cluster
-    helm.sh/chart: otel-demo-fork-0.9.5
+    helm.sh/chart: otel-demo-fork-0.10.1
     
     
     app.kubernetes.io/version: "2.2.0"
@@ -125,11 +126,11 @@ spec:
 apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaUser
 metadata:
-  name: checkout
+  name: default-release-name-checkout
   namespace: kafka
   labels:
     strimzi.io/cluster: my-kafka-cluster
-    helm.sh/chart: otel-demo-fork-0.9.5
+    helm.sh/chart: otel-demo-fork-0.10.1
     
     
     app.kubernetes.io/version: "2.2.0"
@@ -152,11 +153,11 @@ spec:
 apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaUser
 metadata:
-  name: fraud-detection
+  name: default-release-name-fraud-detection
   namespace: kafka
   labels:
     strimzi.io/cluster: my-kafka-cluster
-    helm.sh/chart: otel-demo-fork-0.9.5
+    helm.sh/chart: otel-demo-fork-0.10.1
     
     
     app.kubernetes.io/version: "2.2.0"

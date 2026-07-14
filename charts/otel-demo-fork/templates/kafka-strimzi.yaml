@@ -19,25 +19,35 @@ since sprig's default treats any falsy value as unset. */}}
 {{- $clusterName := required "kafkaAccess.cluster.name is required when kafkaAccess.manageResources is true" $cluster.name }}
 {{- $clusterNamespace := required "kafkaAccess.cluster.namespace is required when kafkaAccess.manageResources is true" $cluster.namespace }}
 {{- $topic := $ka.topic | default "orders" }}
+{{- /* KafkaTopic/KafkaUser are rendered into the shared cluster's namespace
+($clusterNamespace), which other otel-demo-fork releases may point their own
+kafkaAccess.cluster at - prefix their object names so two releases sharing a
+cluster never collide on the same name. spec.topicName keeps the actual
+Kafka topic string ($topic) independent of the KafkaTopic CR's object name,
+and the KafkaUser's SASL username (which Strimzi ties to metadata.name)
+independent of the component name. */}}
+{{- $resourcePrefix := printf "%s-%s" .Release.Namespace .Release.Name }}
 apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaTopic
 metadata:
-  name: {{ $topic }}
+  name: {{ $resourcePrefix }}-{{ $topic }}
   namespace: {{ $clusterNamespace }}
   labels:
     strimzi.io/cluster: {{ $clusterName }}
     {{- include "otel-demo.labels" . | nindent 4 }}
 spec:
+  topicName: {{ $topic }}
   partitions: {{ ($cluster.topic).partitions | default 1 }}
   replicas: {{ ($cluster.topic).replicationFactor | default 1 }}
 {{- range $name, $component := .Values.components }}
 {{- if and $component.enabled $component.kafka }}
 {{- $role := required (printf "components.%s.kafka.role is required when kafkaAccess.manageResources is true" $name) $component.kafka.role }}
+{{- $userName := printf "%s-%s" $resourcePrefix $name }}
 ---
 apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaUser
 metadata:
-  name: {{ $name }}
+  name: {{ $userName }}
   namespace: {{ $clusterNamespace }}
   labels:
     strimzi.io/cluster: {{ $clusterName }}
@@ -64,7 +74,7 @@ spec:
           - Describe
       - resource:
           type: group
-          name: {{ $component.kafka.consumerGroup | default $name }}
+          name: {{ $component.kafka.consumerGroup | default $userName }}
         operations:
           - Read
     {{- else }}
@@ -85,7 +95,7 @@ spec:
   user:
     kind: KafkaUser
     apiGroup: kafka.strimzi.io
-    name: {{ $name }}
+    name: {{ $userName }}
     namespace: {{ $clusterNamespace }}
   secretName: {{ $name }}-kafka-access
 {{- end }}
