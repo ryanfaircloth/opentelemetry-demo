@@ -327,7 +327,15 @@ jobs:
   merge_manifests:
     name: Merge ${{ matrix.file_tag.tag_suffix }} manifest
     needs: build_images
-    if: inputs.push
+    # fork: build_images is one matrix job spanning every image and both
+    # arches; GitHub Actions skips ALL dependents of a needed job if ANY of
+    # its matrix legs fail, not just the ones that share a matrix value. A
+    # bare `if: inputs.push` would let one image's build failure (e.g. a
+    # transient upstream package-registry outage) block every other image's
+    # manifest merge too. `!cancelled()` makes this job always attempt to
+    # run; a merge only actually fails for the specific image(s) whose
+    # digest artifacts are missing because their own build failed.
+    if: ${{ inputs.push && !cancelled() }}
     runs-on: ubuntu-latest
 
     permissions:
