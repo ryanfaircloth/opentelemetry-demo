@@ -246,9 +246,10 @@ func main() {
 	svc.kafkaBrokerSvcAddr = os.Getenv("KAFKA_ADDR")
 
 	if svc.kafkaBrokerSvcAddr != "" {
-		svc.KafkaProducerClient, err = kafka.CreateKafkaProducer([]string{svc.kafkaBrokerSvcAddr}, logger)
+		svc.KafkaProducerClient, err = createKafkaProducerWithRetry(svc.kafkaBrokerSvcAddr)
 		if err != nil {
-			logger.Error(err.Error())
+			logger.Error(fmt.Sprintf("Giving up connecting to Kafka: %v", err))
+			os.Exit(1)
 		}
 	}
 
@@ -293,6 +294,39 @@ func mustMapEnv(target *string, envKey string) {
 		panic(fmt.Sprintf("environment variable %q not set", envKey))
 	}
 	*target = v
+}
+
+// kafkaConnectMaxWait bounds how long createKafkaProducerWithRetry retries a
+// failing Kafka connection before giving up. It's intentionally generous -
+// the point of retrying in-process is to make an external "wait for kafka"
+// init container unnecessary.
+const kafkaConnectMaxWait = 2 * time.Minute
+
+// createKafkaProducerWithRetry retries kafka.CreateKafkaProducer with
+// backoff. Sarama connects lazily on first Produce(), so a broker that is
+// merely slow to come up (rather than misconfigured) wouldn't otherwise
+// surface here - it would instead panic later on a nil KafkaProducerClient
+// the first time an order is placed.
+func createKafkaProducerWithRetry(brokerAddr string) (sarama.AsyncProducer, error) {
+	deadline := time.Now().Add(kafkaConnectMaxWait)
+	backoff := time.Second
+	for attempt := 1; ; attempt++ {
+		producer, err := kafka.CreateKafkaProducer([]string{brokerAddr}, logger)
+		if err == nil {
+			return producer, nil
+		}
+		if time.Now().After(deadline) {
+			return nil, fmt.Errorf("failed to create Kafka producer after %d attempts: %w", attempt, err)
+		}
+		logger.Warn("Kafka not ready yet, retrying",
+			slog.Int("attempt", attempt),
+			slog.Duration("backoff", backoff),
+			slog.Any("error", err))
+		time.Sleep(backoff)
+		if backoff < 30*time.Second {
+			backoff *= 2
+		}
+	}
 }
 
 func (cs *checkout) Check(ctx context.Context, req *healthpb.HealthCheckRequest) (*healthpb.HealthCheckResponse, error) {

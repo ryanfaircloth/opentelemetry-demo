@@ -38,6 +38,7 @@ fun main() {
     val flagdProvider = FlagdProvider(options)
     OpenFeatureAPI.getInstance().setProvider(flagdProvider)
 
+    logger.info("Connecting to Kafka bootstrap.servers=${System.getenv("KAFKA_ADDR")}, topic=$topic, groupId=$groupID")
     val props = buildConsumerProps()
     val consumer = KafkaConsumer<String, ByteArray>(props).apply {
         subscribe(listOf(topic))
@@ -47,18 +48,31 @@ fun main() {
 
     consumer.use {
         while (true) {
-            totalCount = consumer
-                .poll(ofMillis(100))
-                .fold(totalCount) { accumulator, record ->
-                    val newCount = accumulator + 1
-                    if (getFeatureFlagValue("kafkaQueueProblems") > 0) {
-                        logger.info("FeatureFlag 'kafkaQueueProblems' is enabled, sleeping 1 second")
-                        Thread.sleep(1000)
-                    }
+            // KafkaConsumer already retries transient broker disconnects/timeouts
+            // internally, but catch RetriableException here too as a fallback so a
+            // rare escape doesn't crash the whole process - just log and poll again.
+            val records = try {
+                consumer.poll(ofMillis(100))
+            } catch (e: org.apache.kafka.common.errors.RetriableException) {
+                logger.warn("Retriable error polling Kafka, will retry: ${e.message}")
+                continue
+            }
+
+            totalCount = records.fold(totalCount) { accumulator, record ->
+                if (getFeatureFlagValue("kafkaQueueProblems") > 0) {
+                    logger.info("FeatureFlag 'kafkaQueueProblems' is enabled, sleeping 1 second")
+                    Thread.sleep(1000)
+                }
+                try {
                     val orders = OrderResult.parseFrom(record.value())
+                    val newCount = accumulator + 1
                     logger.info("Consumed record with orderId: ${orders.orderId}, and updated total count to: $newCount")
                     newCount
+                } catch (e: Exception) {
+                    logger.error("Failed to process record at offset ${record.offset()}, skipping", e)
+                    accumulator
                 }
+            }
         }
     }
 }

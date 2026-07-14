@@ -21,6 +21,18 @@ namespace Accounting
         public static partial void KafkaConnecting(ILogger logger, string servers);
 
         [LoggerMessage(
+            Level = LogLevel.Debug,
+            EventName = "accounting.kafka.client_log",
+            Message = "Kafka client [{facility}]: {message}")]
+        public static partial void KafkaClientLog(ILogger logger, string facility, string message);
+
+        [LoggerMessage(
+            Level = LogLevel.Warning,
+            EventName = "accounting.kafka.client_error",
+            Message = "Kafka client error (fatal={isFatal}): {reason}")]
+        public static partial void KafkaClientError(ILogger logger, string reason, bool isFatal);
+
+        [LoggerMessage(
             Level = LogLevel.Error,
             EventName = "accounting.kafka.consume_failed",
             Message = "Consume error: {reason}")]

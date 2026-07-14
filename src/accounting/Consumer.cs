@@ -42,10 +42,10 @@ internal class Consumer : BackgroundService
         var servers = Environment.GetEnvironmentVariable("KAFKA_ADDR")
             ?? throw new InvalidOperationException("The KAFKA_ADDR environment variable is not set.");
 
-        _consumer = BuildConsumer(servers);
-        _consumer.Subscribe(TopicName);
-
         Log.KafkaConnecting(_logger, servers);
+
+        _consumer = BuildConsumer(servers, _logger);
+        _consumer.Subscribe(TopicName);
 
         _dbConnectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING");
     }
@@ -139,7 +139,7 @@ internal class Consumer : BackgroundService
         }
     }
 
-    private static IConsumer<string, byte[]> BuildConsumer(string servers)
+    private static IConsumer<string, byte[]> BuildConsumer(string servers, ILogger logger)
     {
         var conf = new ConsumerConfig
         {
@@ -153,6 +153,10 @@ internal class Consumer : BackgroundService
         ApplySecurityConfig(conf);
 
         return new ConsumerBuilder<string, byte[]>(conf)
+            .SetLogHandler((_, logMessage) => Log.KafkaClientLog(logger, logMessage.Facility, logMessage.Message))
+            // Reports broker-level issues (e.g. all brokers down, DNS failures) that
+            // librdkafka retries internally and does not throw as a ConsumeException.
+            .SetErrorHandler((_, error) => Log.KafkaClientError(logger, error.Reason, error.IsFatal))
             .Build();
     }
 

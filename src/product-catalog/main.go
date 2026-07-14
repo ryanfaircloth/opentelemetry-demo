@@ -55,13 +55,25 @@ type productCatalog struct {
 
 var (
 	logger *slog.Logger
-	db     *sql.DB
-	reg    metric.Registration
+	// bootLogger writes straight to stdout, independent of the OTel log
+	// pipeline, so startup failures are visible in `kubectl logs` even if the
+	// process dies (e.g. via os.Exit) before the OTel SDK's batched log
+	// processor gets a chance to flush over the network.
+	bootLogger *slog.Logger
+	db         *sql.DB
+	reg        metric.Registration
 )
 
 func init() {
 	logger = otelslog.NewLogger("product-catalog")
+	bootLogger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
 }
+
+// dbConnectMaxWait bounds how long initDatabase retries a failing Postgres
+// connection before giving up. It's intentionally generous - the point of
+// retrying in-process is to make an external "wait for postgres" init
+// container unnecessary.
+const dbConnectMaxWait = 2 * time.Minute
 
 func initDatabase() error {
 	connStr := os.Getenv("DB_CONNECTION_STRING")
@@ -90,11 +102,30 @@ func initDatabase() error {
 		return fmt.Errorf("failed to register database metrics: %w", err)
 	}
 
-	// Test the connection
-	if err := db.Ping(); err != nil {
-		return fmt.Errorf("failed to ping database: %w", err)
+	// Retry the initial connectivity check with backoff: a fresh Postgres
+	// instance (e.g. a CNPG Cluster still initializing) commonly isn't
+	// accepting connections yet by the time this container starts.
+	deadline := time.Now().Add(dbConnectMaxWait)
+	backoff := time.Second
+	for attempt := 1; ; attempt++ {
+		pingErr := db.Ping()
+		if pingErr == nil {
+			break
+		}
+		if time.Now().After(deadline) {
+			return fmt.Errorf("failed to ping database after %d attempts: %w", attempt, pingErr)
+		}
+		bootLogger.Warn("Database not ready yet, retrying",
+			slog.Int("attempt", attempt),
+			slog.Duration("backoff", backoff),
+			slog.Any("error", pingErr))
+		time.Sleep(backoff)
+		if backoff < 30*time.Second {
+			backoff *= 2
+		}
 	}
 
+	bootLogger.Info("Database connection established")
 	logger.Info("Database connection established")
 	return nil
 }
@@ -105,7 +136,7 @@ func main() {
 	// Initialize OpenTelemetry SDK with otelconf
 	sdk, err := otelconf.NewSDK(otelconf.WithContext(ctx))
 	if err != nil {
-		logger.Error(fmt.Sprintf("Failed to initialize OpenTelemetry SDK: %v", err))
+		bootLogger.Error("Failed to initialize OpenTelemetry SDK", slog.Any("error", err))
 		os.Exit(1)
 	}
 	defer func() {
@@ -123,7 +154,11 @@ func main() {
 
 	// Initialize database connection
 	if err := initDatabase(); err != nil {
+		bootLogger.Error("Error initializing database", slog.Any("error", err))
 		logger.Error(fmt.Sprintf("Error initializing database: %v", err))
+		if shutdownErr := sdk.Shutdown(ctx); shutdownErr != nil {
+			bootLogger.Error("Error shutting down OpenTelemetry SDK", slog.Any("error", shutdownErr))
+		}
 		os.Exit(1)
 	}
 	defer func() {
