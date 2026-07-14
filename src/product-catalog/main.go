@@ -65,8 +65,65 @@ var (
 )
 
 func init() {
-	logger = otelslog.NewLogger("product-catalog")
+	// The OTel logs pipeline (otelconf, configured via OTEL_CONFIG_FILE /
+	// OTEL_LOGS_EXPORTER) is OTLP-only in this repo's deployments - there is
+	// no console exporter. That means WARN/Error logs made through `logger`
+	// would be invisible to `kubectl logs`/`docker logs` if the collector is
+	// unreachable. Fan WARN+ records out to stdout as well so operational
+	// visibility doesn't depend on the collector.
+	otelHandler := otelslog.NewHandler("product-catalog")
+	stdoutWarnHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelWarn})
+	logger = slog.New(newFanoutHandler(otelHandler, stdoutWarnHandler))
 	bootLogger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
+}
+
+// fanoutHandler is a slog.Handler that forwards every record to a set of
+// underlying handlers, letting each handler's own Enabled check (e.g. a
+// minimum level) decide whether it actually emits the record.
+type fanoutHandler struct {
+	handlers []slog.Handler
+}
+
+func newFanoutHandler(handlers ...slog.Handler) *fanoutHandler {
+	return &fanoutHandler{handlers: handlers}
+}
+
+func (h *fanoutHandler) Enabled(ctx context.Context, level slog.Level) bool {
+	for _, handler := range h.handlers {
+		if handler.Enabled(ctx, level) {
+			return true
+		}
+	}
+	return false
+}
+
+func (h *fanoutHandler) Handle(ctx context.Context, record slog.Record) error {
+	var firstErr error
+	for _, handler := range h.handlers {
+		if !handler.Enabled(ctx, record.Level) {
+			continue
+		}
+		if err := handler.Handle(ctx, record.Clone()); err != nil && firstErr == nil {
+			firstErr = err
+		}
+	}
+	return firstErr
+}
+
+func (h *fanoutHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	next := make([]slog.Handler, len(h.handlers))
+	for i, handler := range h.handlers {
+		next[i] = handler.WithAttrs(attrs)
+	}
+	return newFanoutHandler(next...)
+}
+
+func (h *fanoutHandler) WithGroup(name string) slog.Handler {
+	next := make([]slog.Handler, len(h.handlers))
+	for i, handler := range h.handlers {
+		next[i] = handler.WithGroup(name)
+	}
+	return newFanoutHandler(next...)
 }
 
 // dbConnectMaxWait bounds how long initDatabase retries a failing Postgres

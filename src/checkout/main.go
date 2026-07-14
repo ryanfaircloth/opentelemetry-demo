@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -49,6 +50,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/health"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
@@ -139,6 +141,50 @@ func initLoggerProvider() *sdklog.LoggerProvider {
 	return loggerProvider
 }
 
+// multiHandler fans out log records to multiple slog.Handlers. It's used so
+// logs reach both the OTLP exporter and stdout, keeping WARN+ visible via
+// `docker logs`/`kubectl logs` even when the collector is unreachable.
+type multiHandler struct {
+	handlers []slog.Handler
+}
+
+func (m *multiHandler) Enabled(ctx context.Context, level slog.Level) bool {
+	for _, h := range m.handlers {
+		if h.Enabled(ctx, level) {
+			return true
+		}
+	}
+	return false
+}
+
+func (m *multiHandler) Handle(ctx context.Context, r slog.Record) error {
+	var errs []error
+	for _, h := range m.handlers {
+		if h.Enabled(ctx, r.Level) {
+			if err := h.Handle(ctx, r.Clone()); err != nil {
+				errs = append(errs, err)
+			}
+		}
+	}
+	return errors.Join(errs...)
+}
+
+func (m *multiHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	newHandlers := make([]slog.Handler, len(m.handlers))
+	for i, h := range m.handlers {
+		newHandlers[i] = h.WithAttrs(attrs)
+	}
+	return &multiHandler{handlers: newHandlers}
+}
+
+func (m *multiHandler) WithGroup(name string) slog.Handler {
+	newHandlers := make([]slog.Handler, len(m.handlers))
+	for i, h := range m.handlers {
+		newHandlers[i] = h.WithGroup(name)
+	}
+	return &multiHandler{handlers: newHandlers}
+}
+
 type checkout struct {
 	productCatalogSvcAddr string
 	cartSvcAddr           string
@@ -186,7 +232,13 @@ func main() {
 	// this *must* be called after the logger provider is initialized
 	// otherwise the Sarama producer in kafka/producer.go will not be
 	// able to log properly
-	logger = otelslog.NewLogger("checkout")
+	//
+	// Logs fan out to both the OTLP exporter and stdout, so WARN+ logs
+	// (e.g. Kafka/gRPC connection retries) are still visible via
+	// `docker logs`/`kubectl logs` if the collector is unreachable.
+	otelHandler := otelslog.NewLogger("checkout").Handler()
+	stdoutHandler := slog.NewJSONHandler(os.Stdout, nil)
+	logger = slog.New(&multiHandler{handlers: []slog.Handler{otelHandler, stdoutHandler}})
 	slog.SetDefault(logger)
 
 	err := runtime.Start(runtime.WithMinimumReadMemStatsInterval(time.Second))
@@ -496,16 +548,66 @@ func (cs *checkout) prepareOrderItemsAndShippingQuoteFromCart(ctx context.Contex
 	return out, nil
 }
 
+// grpcConnectMaxWait bounds how long mustCreateClient retries a failing
+// downstream gRPC connection before giving up. Mirrors kafkaConnectMaxWait -
+// checkout's downstream services are all required for it to function, so a
+// connection that never comes up should be a fatal startup error rather than
+// a broken client that fails on first use.
+const grpcConnectMaxWait = 2 * time.Minute
+
 func mustCreateClient(svcAddr string) *grpc.ClientConn {
 	c, err := grpc.NewClient(svcAddr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 	)
 	if err != nil {
-		logger.Error(fmt.Sprintf("could not connect to %s service, err: %+v", svcAddr, err))
+		logger.Error(fmt.Sprintf("could not create client for %s service, err: %+v", svcAddr, err))
+		os.Exit(1)
+	}
+
+	if err := waitForConnectionReady(c, svcAddr); err != nil {
+		logger.Error(fmt.Sprintf("giving up connecting to %s service: %v", svcAddr, err))
+		os.Exit(1)
 	}
 
 	return c
+}
+
+// waitForConnectionReady blocks until conn leaves its initial idle state and
+// reaches Ready (or Idle, if it settles there between attempts), retrying
+// with exponential backoff. grpc.NewClient's connection is lazy/non-blocking,
+// so without this a connectivity problem wouldn't surface until the first
+// RPC call.
+func waitForConnectionReady(conn *grpc.ClientConn, svcAddr string) error {
+	deadline := time.Now().Add(grpcConnectMaxWait)
+	backoff := time.Second
+	for attempt := 1; ; attempt++ {
+		state := conn.GetState()
+		if state == connectivity.Ready {
+			return nil
+		}
+
+		conn.Connect()
+		waitCtx, cancel := context.WithTimeout(context.Background(), backoff)
+		conn.WaitForStateChange(waitCtx, state)
+		cancel()
+
+		newState := conn.GetState()
+		if newState == connectivity.Ready || newState == connectivity.Idle {
+			return nil
+		}
+		if time.Now().After(deadline) {
+			return fmt.Errorf("connection to %s not ready after %d attempts, last state: %s", svcAddr, attempt, newState)
+		}
+		logger.Warn("service not ready yet, retrying",
+			slog.String("addr", svcAddr),
+			slog.Int("attempt", attempt),
+			slog.String("state", newState.String()),
+			slog.Duration("backoff", backoff))
+		if backoff < 30*time.Second {
+			backoff *= 2
+		}
+	}
 }
 
 func (cs *checkout) quoteShipping(ctx context.Context, address *pb.Address, items []*pb.CartItem) (*pb.Money, error) {

@@ -10,7 +10,8 @@ use std::{collections::HashMap, env};
 
 use anyhow::{Context, Result};
 use opentelemetry::{trace::get_active_span, KeyValue};
-use tracing::info;
+use std::time::Duration;
+use tracing::{info, warn};
 
 use super::shipping_types::Quote;
 
@@ -25,6 +26,7 @@ pub async fn create_quote_from_count(count: u32) -> Result<Quote, tonic::Status>
         Ok(float) => float,
         Err(err) => {
             let msg = format!("{}", err);
+            warn!("Failed to get quote from quote service: {}", msg);
             return Err(tonic::Status::unknown(msg));
         }
     };
@@ -65,12 +67,36 @@ async fn request_quote(count: u32) -> Result<f64, anyhow::Error> {
     let mut reqbody = HashMap::new();
     reqbody.insert("numberOfItems", count);
 
-    let mut response = client
-        .post(quote_service_addr)
-        .trace_request()
-        .send_json(&reqbody)
-        .await
-        .map_err(|err| anyhow::anyhow!("Failed to call quote service: {err}"))?;
+    // Only the initial connection/send is retried here: transient network
+    // errors (e.g. connection refused/timeout) are worth a couple of quick
+    // retries, but a response that was successfully sent and read is an
+    // application-level result that should not be retried.
+    const MAX_ATTEMPTS: u32 = 3;
+    let mut delay = Duration::from_millis(300);
+    let mut attempt: u32 = 0;
+
+    let mut response = loop {
+        attempt += 1;
+        match client
+            .post(quote_service_addr.clone())
+            .trace_request()
+            .send_json(&reqbody)
+            .await
+        {
+            Ok(response) => break response,
+            Err(err) if attempt < MAX_ATTEMPTS => {
+                warn!(
+                    "Attempt {} to call quote service failed: {}. Retrying in {:?}",
+                    attempt, err, delay
+                );
+                actix_web::rt::time::sleep(delay).await;
+                delay *= 2;
+            }
+            Err(err) => {
+                return Err(anyhow::anyhow!("Failed to call quote service: {err}"));
+            }
+        }
+    };
 
     let bytes = response
         .body()

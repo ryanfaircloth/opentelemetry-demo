@@ -1,6 +1,7 @@
 # Copyright The OpenTelemetry Authors
 # SPDX-License-Identifier: Apache-2.0
 
+require "logger"
 require "ostruct"
 require "pony"
 require "sinatra"
@@ -17,12 +18,36 @@ require "opentelemetry/instrumentation/sinatra"
 
 set :port, ENV["EMAIL_PORT"]
 
-# Initialize OpenFeature SDK with flagd provider
+# Plain stdlib logger so WARN/ERROR always reach the console, independent of
+# whether the OTLP collector is reachable.
+$console_logger = Logger.new($stdout)
+$console_logger.level = Logger::WARN
+
+# Initialize OpenFeature SDK with flagd provider, retrying with exponential
+# backoff since flagd may not be up yet when this service starts.
 flagd_client = OpenFeature::Flagd::Provider.build_client
-flagd_client.configure do |config|
-  config.host = ENV.fetch("FLAGD_HOST", "localhost")
-  config.port = ENV.fetch("FLAGD_PORT", 8013).to_i
-  config.tls = ENV.fetch("FLAGD_TLS", "false") == "true"
+
+retry_delay = 1
+total_waited = 0
+max_total_wait = 120
+
+begin
+  flagd_client.configure do |config|
+    config.host = ENV.fetch("FLAGD_HOST", "localhost")
+    config.port = ENV.fetch("FLAGD_PORT", 8013).to_i
+    config.tls = ENV.fetch("FLAGD_TLS", "false") == "true"
+  end
+rescue StandardError => e
+  if total_waited >= max_total_wait
+    $console_logger.error("Failed to configure flagd client after #{total_waited}s, giving up: #{e.message}")
+    exit(1)
+  end
+
+  $console_logger.warn("Failed to configure flagd client (retrying in #{retry_delay}s): #{e.message}")
+  sleep retry_delay
+  total_waited += retry_delay
+  retry_delay = [retry_delay * 2, 30].min
+  retry
 end
 
 OpenFeature::SDK.configure do |config|
@@ -56,6 +81,7 @@ end
 
 error do
   OpenTelemetry::Trace.current_span.record_exception(env['sinatra.error'])
+  $console_logger.error("Unhandled exception while processing request: #{env['sinatra.error'].message}")
 end
 
 def send_email(data)

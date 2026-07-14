@@ -31,7 +31,9 @@ var builder = WebApplication.CreateBuilder(args);
 string valkeyAddress = builder.Configuration["VALKEY_ADDR"];
 if (string.IsNullOrEmpty(valkeyAddress))
 {
-    Console.WriteLine("VALKEY_ADDR environment variable is required.");
+    using var bootstrapLoggerFactory = LoggerFactory.Create(logging => logging.AddConsole());
+    var bootstrapLogger = bootstrapLoggerFactory.CreateLogger("cart.Startup");
+    cart.Log.MissingValkeyAddr(bootstrapLogger);
     Environment.Exit(1);
 }
 
@@ -42,7 +44,32 @@ builder.Logging
 builder.Services.AddSingleton<ICartStore>(x =>
 {
     var store = new ValkeyCartStore(x.GetRequiredService<ILogger<ValkeyCartStore>>(), valkeyAddress);
-    store.Initialize();
+    var startupLogger = x.GetRequiredService<ILogger<Program>>();
+
+    var delay = TimeSpan.FromSeconds(1);
+    var maxDelay = TimeSpan.FromSeconds(30);
+    var deadline = DateTime.UtcNow + TimeSpan.FromMinutes(2);
+    while (true)
+    {
+        try
+        {
+            store.Initialize();
+            break;
+        }
+        catch (Exception ex)
+        {
+            if (DateTime.UtcNow >= deadline)
+            {
+                cart.Log.CartStoreInitializationFailed(startupLogger, ex);
+                Environment.Exit(1);
+            }
+
+            cart.Log.CartStoreInitializationRetry(startupLogger, delay.TotalSeconds, ex);
+            Thread.Sleep(delay);
+            delay = TimeSpan.FromSeconds(Math.Min(delay.TotalSeconds * 2, maxDelay.TotalSeconds));
+        }
+    }
+
     return store;
 });
 

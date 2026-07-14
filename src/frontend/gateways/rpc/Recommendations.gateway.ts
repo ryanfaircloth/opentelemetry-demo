@@ -3,6 +3,7 @@
 
 import { ChannelCredentials } from '@grpc/grpc-js';
 import { ListRecommendationsResponse, RecommendationServiceClient } from '../../protos/demo';
+import Log from '../../utils/Log';
 
 const { RECOMMENDATION_ADDR = '' } = process.env;
 
@@ -14,7 +15,10 @@ const RecommendationsGateway = () => ({
       client.listRecommendations({ userId, productIds }, (error, response) =>
         error ? reject(error) : resolve(response)
       )
-    );
+    ).catch((error) => {
+      Log.error('RecommendationsGateway.listRecommendations failed', error);
+      throw error;
+    });
   },
 });
 

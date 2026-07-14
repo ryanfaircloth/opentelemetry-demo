@@ -46,4 +46,13 @@ internal static partial class Log
 
     [LoggerMessage(Level = LogLevel.Information, EventName = "cart.health_watch.request", Message = "Received health watch request for service: {service}")]
     public static partial void HealthWatchRequest(ILogger logger, string service);
+
+    [LoggerMessage(Level = LogLevel.Critical, EventName = "cart.startup.missing_valkey_addr", Message = "VALKEY_ADDR environment variable is required.")]
+    public static partial void MissingValkeyAddr(ILogger logger);
+
+    [LoggerMessage(Level = LogLevel.Warning, EventName = "cart.startup.retry", Message = "Failed to initialize cart store, retrying in {delaySeconds}s")]
+    public static partial void CartStoreInitializationRetry(ILogger logger, double delaySeconds, Exception exception);
+
+    [LoggerMessage(Level = LogLevel.Error, EventName = "cart.startup.failed", Message = "Failed to initialize cart store within the startup retry budget; exiting")]
+    public static partial void CartStoreInitializationFailed(ILogger logger, Exception exception);
 }

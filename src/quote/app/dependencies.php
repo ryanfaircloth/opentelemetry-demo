@@ -10,6 +10,7 @@ use App\Application\Settings\SettingsInterface;
 use DI\ContainerBuilder;
 use OpenTelemetry\API\Globals;
 use OpenTelemetry\Contrib\Logs\Monolog\Handler;
+use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -20,11 +21,15 @@ return function (ContainerBuilder $containerBuilder) {
         LoggerInterface::class => function (ContainerInterface $c) {
             $settings = $c->get(SettingsInterface::class);
             $loggerSettings = $settings->get('logger');
-            $handler = new Handler(
+            $otelHandler = new Handler(
                 Globals::loggerProvider(),
                 LogLevel::INFO,
             );
-            return new Logger($loggerSettings['name'], [$handler]);
+            $consoleLevel = $loggerSettings['level'] === LogLevel::DEBUG
+                ? LogLevel::WARNING
+                : $loggerSettings['level'];
+            $consoleHandler = new StreamHandler('php://stdout', $consoleLevel);
+            return new Logger($loggerSettings['name'], [$otelHandler, $consoleHandler]);
         },
     ]);
 };

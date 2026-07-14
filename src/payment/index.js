@@ -57,7 +57,8 @@ const address = ip + `:${process.env['PAYMENT_PORT']}`;
 
 server.bindAsync(address, grpc.ServerCredentials.createInsecure(), (err, port) => {
   if (err) {
-    return logger.error({ err })
+    logger.error({ err })
+    process.exit(1)
   }
 
   logger.info(`payment gRPC server started on ${address}`)

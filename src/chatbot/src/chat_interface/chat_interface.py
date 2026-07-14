@@ -5,11 +5,15 @@
 
 import logging
 import os
+import time
 import uuid
 
 import gradio as gr
 import requests
 from pydantic import BaseModel
+
+RETRYABLE_STATUS_CODES = (502, 503, 504)
+RETRY_BACKOFF_SECONDS = (0.5, 1, 2)
 
 
 class ChatUiConfig(BaseModel):
@@ -34,9 +38,43 @@ class ChatAgentUI:
                 "history": history,
             }
             logging.info(f"Sending request {payload} to Agent")
-            response = requests.post(
-                self.config.agentBaseUrl, json=payload, timeout=self.config.timeout
-            )
+
+            max_attempts = len(RETRY_BACKOFF_SECONDS)
+            response = None
+            for attempt in range(1, max_attempts + 1):
+                is_last_attempt = attempt == max_attempts
+                try:
+                    response = requests.post(
+                        self.config.agentBaseUrl,
+                        json=payload,
+                        timeout=self.config.timeout,
+                    )
+                    if (
+                        response.status_code in RETRYABLE_STATUS_CODES
+                        and not is_last_attempt
+                    ):
+                        backoff = RETRY_BACKOFF_SECONDS[attempt - 1]
+                        logging.warning(
+                            f"Attempt {attempt}/{max_attempts} got HTTP "
+                            f"{response.status_code} from Agent, retrying in "
+                            f"{backoff}s"
+                        )
+                        time.sleep(backoff)
+                        continue
+                    break
+                except (
+                    requests.exceptions.ConnectionError,
+                    requests.exceptions.Timeout,
+                ) as retry_err:
+                    if is_last_attempt:
+                        raise
+                    backoff = RETRY_BACKOFF_SECONDS[attempt - 1]
+                    logging.warning(
+                        f"Attempt {attempt}/{max_attempts} failed with "
+                        f"{retry_err}, retrying in {backoff}s"
+                    )
+                    time.sleep(backoff)
+
             response.raise_for_status()
 
             agent_data = response.json().get("response", {})

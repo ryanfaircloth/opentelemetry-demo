@@ -8,6 +8,7 @@ package frauddetection
 import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.clients.consumer.ConsumerConfig.*
 import org.apache.kafka.clients.consumer.KafkaConsumer
+import org.apache.kafka.common.KafkaException
 import org.apache.kafka.common.config.SaslConfigs
 import org.apache.kafka.common.config.SslConfigs
 import org.apache.kafka.common.serialization.ByteArrayDeserializer
@@ -40,9 +41,7 @@ fun main() {
 
     logger.info("Connecting to Kafka bootstrap.servers=${System.getenv("KAFKA_ADDR")}, topic=$topic, groupId=$groupID")
     val props = buildConsumerProps()
-    val consumer = KafkaConsumer<String, ByteArray>(props).apply {
-        subscribe(listOf(topic))
-    }
+    val consumer = connectConsumerWithRetry(props)
 
     var totalCount = 0L
 
@@ -77,6 +76,35 @@ fun main() {
     }
 }
 
+// Retries the initial connection/subscription against Kafka with exponential
+// backoff, since a broker that is still starting up (e.g. during a cluster
+// rollout) would otherwise crash the process on the very first attempt.
+// Config/programming errors (anything other than KafkaException) are not
+// retried since retrying can't fix them.
+fun connectConsumerWithRetry(props: Properties): KafkaConsumer<String, ByteArray> {
+    val totalBudgetMillis = 120_000L
+    val maxDelayMillis = 30_000L
+    var delayMillis = 1_000L
+    val deadline = System.currentTimeMillis() + totalBudgetMillis
+
+    while (true) {
+        try {
+            return KafkaConsumer<String, ByteArray>(props).apply {
+                subscribe(listOf(topic))
+            }
+        } catch (e: KafkaException) {
+            val now = System.currentTimeMillis()
+            if (now >= deadline) {
+                logger.error("Failed to connect to Kafka after retrying for ${totalBudgetMillis}ms, giving up: ${e.message}", e)
+                exitProcess(1)
+            }
+            logger.warn("Failed to connect to Kafka, retrying in ${delayMillis}ms: ${e.message}")
+            Thread.sleep(delayMillis)
+            delayMillis = minOf(delayMillis * 2, maxDelayMillis)
+        }
+    }
+}
+
 fun buildConsumerProps(): Properties {
     val props = Properties()
     props[KEY_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java.name
@@ -90,7 +118,7 @@ fun buildConsumerProps(): Properties {
     props[AUTO_OFFSET_RESET_CONFIG] = "earliest"
     val bootstrapServers = System.getenv("KAFKA_ADDR")
     if (bootstrapServers == null) {
-        println("KAFKA_ADDR is not supplied")
+        logger.error("KAFKA_ADDR is not supplied")
         exitProcess(1)
     }
     props[BOOTSTRAP_SERVERS_CONFIG] = bootstrapServers

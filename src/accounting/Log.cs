@@ -28,6 +28,18 @@ namespace Accounting
 
         [LoggerMessage(
             Level = LogLevel.Warning,
+            EventName = "accounting.kafka.connect_retrying",
+            Message = "Kafka not ready yet (attempt {attempt}), retrying in {backoff}: {reason}")]
+        public static partial void KafkaConnectRetrying(ILogger logger, int attempt, TimeSpan backoff, string reason);
+
+        [LoggerMessage(
+            Level = LogLevel.Error,
+            EventName = "accounting.kafka.connect_failed",
+            Message = "Failed to connect to Kafka after {attempt} attempts, giving up.")]
+        public static partial void KafkaConnectFailed(ILogger logger, int attempt, Exception exception);
+
+        [LoggerMessage(
+            Level = LogLevel.Warning,
             EventName = "accounting.kafka.client_error",
             Message = "Kafka client error (fatal={isFatal}): {reason}")]
         public static partial void KafkaClientError(ILogger logger, string reason, bool isFatal);

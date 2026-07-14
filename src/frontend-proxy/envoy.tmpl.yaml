@@ -35,6 +35,10 @@ static_resources:
                     - name: frontend
                       domains:
                         - "*"
+                      retry_policy:
+                        retry_on: "connect-failure,refused-stream,unavailable,cancelled,resource-exhausted,5xx"
+                        num_retries: 2
+                        per_try_timeout: 5s
                       routes:
                         - match: { path: "/loadgen" }
                           redirect: { path_redirect: "/loadgen/" }
@@ -68,11 +72,12 @@ static_resources:
                             { cluster: image-provider, prefix_rewrite: "/" }
                         - match: { prefix: "/flagservice/" }
                           route:
-                            {
-                              cluster: flagservice,
-                              prefix_rewrite: "/",
-                              timeout: 0s,
-                            }
+                            cluster: flagservice
+                            prefix_rewrite: "/"
+                            timeout: 0s
+                            retry_policy:
+                              retry_on: "connect-failure,refused-stream,unavailable,cancelled,resource-exhausted,5xx"
+                              num_retries: 2
                         - match: { prefix: "/feature" }
                           route:
                             cluster: flagd-ui
@@ -92,6 +97,9 @@ static_resources:
                             timeout: 0s
                             upgrade_configs:
                               - upgrade_type: websocket
+                            retry_policy:
+                              retry_on: "connect-failure,refused-stream,unavailable,cancelled,resource-exhausted,5xx"
+                              num_retries: 2
                         - match: { prefix: "/" }  # Default/catch-all route - keep last since prefix:"/" matches everything
                           route: { cluster: frontend }
                 http_filters:
@@ -107,6 +115,12 @@ static_resources:
                     typed_config:
                       "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
                 access_log:
+                  - name: envoy.access_loggers.stdout
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.access_loggers.stream.v3.StdoutAccessLog
+                      log_format:
+                        text_format_source:
+                          inline_string: "[%START_TIME%] \"%REQ(:METHOD)% %REQ(X-ENVOY-ORIGINAL-PATH?:PATH)% %PROTOCOL%\" %RESPONSE_CODE% %RESPONSE_FLAGS% %RESPONSE_CODE_DETAILS% %BYTES_RECEIVED% %BYTES_SENT% %DURATION% \"%REQ(X-FORWARDED-FOR)%\" \"%REQ(USER-AGENT)%\" \"%REQ(X-REQUEST-ID)%\" \"%UPSTREAM_HOST%\" %UPSTREAM_CLUSTER%\n"
                   - name: envoy.access_loggers.open_telemetry
                     typed_config:
                       "@type": "type.googleapis.com/envoy.extensions.access_loggers.open_telemetry.v3.OpenTelemetryAccessLogConfig"

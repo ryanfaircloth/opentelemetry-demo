@@ -8,6 +8,7 @@ using Npgsql;
 using Oteldemo;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
+using System.Threading;
 
 namespace Accounting;
 
@@ -30,6 +31,11 @@ internal class Consumer : BackgroundService
 {
     private static readonly string TopicName = Environment.GetEnvironmentVariable("KAFKA_TOPIC") ?? "orders";
 
+    // Bounds how long the constructor retries a failing Kafka connection
+    // before giving up. Mirrors product-catalog's initDatabase() retry budget.
+    private static readonly TimeSpan KafkaConnectMaxWait = TimeSpan.FromMinutes(2);
+    private static readonly TimeSpan KafkaConnectMaxBackoff = TimeSpan.FromSeconds(30);
+
     private readonly ILogger _logger;
     private readonly IConsumer<string, byte[]> _consumer;
     private readonly string? _dbConnectionString;
@@ -44,10 +50,42 @@ internal class Consumer : BackgroundService
 
         Log.KafkaConnecting(_logger, servers);
 
-        _consumer = BuildConsumer(servers, _logger);
-        _consumer.Subscribe(TopicName);
+        _consumer = ConnectWithRetry(servers, _logger);
 
         _dbConnectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING");
+    }
+
+    // Retries building the consumer and subscribing with exponential backoff:
+    // a broker that isn't reachable yet at startup (e.g. Kafka still coming
+    // up) shouldn't crash the host immediately. Config errors (e.g. a missing
+    // KAFKA_ADDR) are thrown before this is reached and are not retried here.
+    private static IConsumer<string, byte[]> ConnectWithRetry(string servers, ILogger logger)
+    {
+        var deadline = DateTime.UtcNow.Add(KafkaConnectMaxWait);
+        var backoff = TimeSpan.FromSeconds(1);
+
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                var consumer = BuildConsumer(servers, logger);
+                consumer.Subscribe(TopicName);
+                return consumer;
+            }
+            catch (KafkaException e)
+            {
+                if (DateTime.UtcNow >= deadline)
+                {
+                    Log.KafkaConnectFailed(logger, attempt, e);
+                    Environment.Exit(1);
+                    throw;
+                }
+
+                Log.KafkaConnectRetrying(logger, attempt, backoff, e.Message);
+                Thread.Sleep(backoff);
+                backoff = TimeSpan.FromSeconds(Math.Min(backoff.TotalSeconds * 2, KafkaConnectMaxBackoff.TotalSeconds));
+            }
+        }
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)

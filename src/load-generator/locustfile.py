@@ -6,6 +6,7 @@
 import json
 import os
 import random
+import sys
 import uuid
 import logging
 
@@ -54,9 +55,12 @@ logger_provider.add_log_record_processor(BatchLogRecordProcessor(log_exporter))
 # Create logging handler that will include trace context
 handler = LoggingHandler(level=logging.INFO, logger_provider=logger_provider)
 
-# Configure root logger
+# Configure root logger. The locust entrypoint is invoked with
+# --skip-log-setup, so locust never installs its own console handler -
+# add one here so logs reach stdout regardless of collector reachability.
 root_logger = logging.getLogger()
 root_logger.addHandler(handler)
+root_logger.addHandler(logging.StreamHandler(sys.stdout))
 root_logger.setLevel(logging.INFO)
 
 # Configure metrics

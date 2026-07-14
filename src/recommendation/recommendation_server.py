@@ -7,6 +7,8 @@
 # Python
 import os
 import random
+import sys
+import time
 from concurrent import futures
 
 # Pip
@@ -145,13 +147,41 @@ if __name__ == "__main__":
     logger_provider.add_log_record_processor(BatchLogRecordProcessor(log_exporter))
     handler = LoggingHandler(level=logging.NOTSET, logger_provider=logger_provider)
 
-    # Attach OTLP handler to logger
+    # Attach OTLP handler to logger, plus a console handler so WARN+ is
+    # always visible even if the collector is unreachable
     logger = logging.getLogger('main')
     logger.addHandler(handler)
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(logging.WARNING)
+    logger.addHandler(console_handler)
+    logger.setLevel(logging.INFO)
 
     catalog_addr = must_map_env('PRODUCT_CATALOG_ADDR')
     pc_channel = grpc.insecure_channel(catalog_addr)
     product_catalog_stub = demo_pb2_grpc.ProductCatalogServiceStub(pc_channel)
+
+    # product-catalog is a hard dependency; wait for the channel to become
+    # ready with backoff before serving, rather than failing on first use
+    wait_start = time.time()
+    total_budget_seconds = 120
+    backoff_seconds = 1
+    while True:
+        try:
+            grpc.channel_ready_future(pc_channel).result(timeout=backoff_seconds)
+            break
+        except grpc.FutureTimeoutError:
+            elapsed = time.time() - wait_start
+            if elapsed >= total_budget_seconds:
+                logger.error(
+                    f'product-catalog at {catalog_addr} did not become ready within '
+                    f'{total_budget_seconds}s; exiting'
+                )
+                sys.exit(1)
+            logger.warning(
+                f'product-catalog at {catalog_addr} not ready yet, retrying '
+                f'(elapsed {elapsed:.0f}s/{total_budget_seconds}s)'
+            )
+            backoff_seconds = min(backoff_seconds * 2, 30)
 
     # Create gRPC server
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))

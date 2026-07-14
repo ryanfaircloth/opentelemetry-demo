@@ -7,12 +7,54 @@ use open_feature_flagd::{FlagdOptions, FlagdProvider};
 use opentelemetry_instrumentation_actix_web::{RequestMetrics, RequestTracing};
 use std::env;
 use std::sync::Arc;
-use tracing::info;
+use std::time::Duration;
+use tracing::{error, info, warn};
 
 mod telemetry_conf;
 use telemetry_conf::init_otel;
 mod shipping_service;
 use shipping_service::{get_quote, ship_order};
+
+/// Initializes the flagd provider, retrying with exponential backoff on
+/// failure instead of panicking on the first transient connection error.
+async fn init_flagd_provider_with_retry() -> FlagdProvider {
+    let total_budget = Duration::from_secs(120);
+    let mut delay = Duration::from_secs(1);
+    let max_delay = Duration::from_secs(30);
+    let start = std::time::Instant::now();
+    let mut attempt: u32 = 0;
+
+    loop {
+        attempt += 1;
+        match FlagdProvider::new(FlagdOptions {
+            cache_settings: None,
+            ..Default::default()
+        })
+        .await
+        {
+            Ok(provider) => return provider,
+            Err(err) => {
+                if start.elapsed() >= total_budget {
+                    error!(
+                        "Failed to initialize flagd provider after {} attempts over {:?}: {}",
+                        attempt,
+                        start.elapsed(),
+                        err
+                    );
+                    std::process::exit(1);
+                }
+
+                warn!(
+                    "Attempt {} to initialize flagd provider failed: {}. Retrying in {:?}",
+                    attempt, err, delay
+                );
+
+                actix_web::rt::time::sleep(delay).await;
+                delay = std::cmp::min(delay * 2, max_delay);
+            }
+        }
+    }
+}
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -47,12 +89,7 @@ async fn main() -> std::io::Result<()> {
         message = "Shipping service is running"
     );
 
-    let provider = FlagdProvider::new(FlagdOptions {
-        cache_settings: None,
-        ..Default::default()
-    })
-    .await
-    .expect("Failed to initialize flagd provider");
+    let provider = init_flagd_provider_with_retry().await;
 
     let flag_provider = web::Data::from(Arc::new(provider) as Arc<dyn FeatureProvider>);
 

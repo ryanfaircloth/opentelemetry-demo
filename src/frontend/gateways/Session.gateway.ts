@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { v4 } from 'uuid';
+import Log from '../utils/Log';
 
 interface ISession {
   userId: string;
@@ -26,7 +27,7 @@ const SessionGateway = () => ({
           return parsed;
         }
       } catch (e) {
-        console.warn('Failed to parse session from localStorage', e);
+        Log.warn('Failed to parse session from localStorage', e);
       }
     }
     localStorage.setItem(sessionKey, JSON.stringify(defaultSession));
