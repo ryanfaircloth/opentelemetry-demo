@@ -9,7 +9,8 @@ COPY ./src/email/Gemfile.lock Gemfile.lock
 
 RUN apk update && \
     apk add make gcc musl-dev gcompat && \
-    bundle install
+    bundle install && \
+    rm -rf /usr/local/bundle/cache
 
 FROM docker.io/library/ruby:4.0.5-alpine3.22@sha256:fae3127404cb61d6897d7eed08e65ec7ccc96ba0542dc7c44712efa9b2ef78f0
 
