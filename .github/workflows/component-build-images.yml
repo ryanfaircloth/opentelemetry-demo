@@ -54,9 +54,14 @@ jobs:
       - name: Check clean work tree
         run: make check-clean-work-tree
 
-  build_and_push_images:
-    name: Build and push ${{ matrix.file_tag.tag_suffix }} image
-    runs-on: ubuntu-latest
+  build_images:
+    # fork: each image is built natively per architecture (no QEMU emulation)
+    # and pushed by digest; a separate merge_manifests job assembles the
+    # multi-arch manifest list. This is what lets currency's from-source
+    # opentelemetry-cpp build (and every other image) compile arm64 on a
+    # native arm64 runner instead of under emulation on an amd64 runner.
+    name: Build ${{ matrix.file_tag.tag_suffix }} (${{ matrix.platform.arch }})
+    runs-on: ${{ matrix.platform.runner }}
     needs: protobufcheck
 
     permissions:
@@ -70,107 +75,89 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        platform:
+          - runner: ubuntu-latest
+            arch: amd64
+            docker_platform: linux/amd64
+          - runner: ubuntu-24.04-arm
+            arch: arm64
+            docker_platform: linux/arm64
         file_tag:
           - file: ./src/accounting/Dockerfile
             tag_suffix: accounting
             context: ./
-            setup-qemu: true
           - file: ./src/ad/Dockerfile
             tag_suffix: ad
             context: ./
-            setup-qemu: true
           - file: ./src/agent/Dockerfile
             tag_suffix: agent
             context: ./
-            setup-qemu: true
           - file: ./src/cart/src/Dockerfile
             tag_suffix: cart
             context: ./
-            setup-qemu: false
           - file: ./src/chatbot/Dockerfile
             tag_suffix: chatbot
             context: ./
-            setup-qemu: true
           - file: ./src/checkout/Dockerfile
             tag_suffix: checkout
             context: ./
-            setup-qemu: true
           - file: ./src/currency/Dockerfile
             tag_suffix: currency
             context: ./
-            setup-qemu: true
           - file: ./src/email/Dockerfile
             tag_suffix: email
             context: ./
-            setup-qemu: true
           - file: ./src/flagd-ui/Dockerfile
             tag_suffix: flagd-ui
             context: ./
-            setup-qemu: true
           - file: ./src/fraud-detection/Dockerfile
             tag_suffix: fraud-detection
             context: ./
-            setup-qemu: true
           - file: ./src/frontend/Dockerfile
             tag_suffix: frontend
             context: ./
-            setup-qemu: true
           - file: ./src/frontend-proxy/Dockerfile
             tag_suffix: frontend-proxy
             context: ./
-            setup-qemu: true
           - file: ./src/frontend/Dockerfile.cypress
             tag_suffix: frontend-tests
             context: ./
-            setup-qemu: true
           - file: ./src/image-provider/Dockerfile
             tag_suffix: image-provider
             context: ./
-            setup-qemu: true
           - file: ./src/kafka/Dockerfile
             tag_suffix: kafka
             context: ./
-            setup-qemu: true
           - file: ./src/load-generator/Dockerfile
             tag_suffix: load-generator
             context: ./
-            setup-qemu: true
           - file: ./src/opamp-server/Dockerfile
             tag_suffix: opamp-server
             context: ./
-            setup-qemu: true
           - file: ./src/mcp/Dockerfile
             tag_suffix: mcp
             context: ./
-            setup-qemu: true
           - file: ./src/opensearch/Dockerfile
             tag_suffix: opensearch
             context: ./
-            setup-qemu: true
           - file: ./src/payment/Dockerfile
             tag_suffix: payment
             context: ./
-            setup-qemu: true
           - file: ./src/product-catalog/Dockerfile
             tag_suffix: product-catalog
             context: ./
-            setup-qemu: true
           - file: ./src/quote/Dockerfile
             tag_suffix: quote
             context: ./
-            setup-qemu: true
           - file: ./src/recommendation/Dockerfile
             tag_suffix: recommendation
             context: ./
-            setup-qemu: true
           - file: ./src/shipping/Dockerfile
             tag_suffix: shipping
             context: ./
-            setup-qemu: true
           - file: ./src/telemetry-docs/Dockerfile
             tag_suffix: telemetry-docs
             context: ./
-            setup-qemu: true
 
     steps:
       - name: Checkout code
@@ -277,49 +264,290 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
         if: ${{ steps.check_changes.outputs.skip == 'false' && inputs.push && env.DOCKER_USERNAME != '' }}
-      - name: Set up QEMU
-        if: ${{ steps.check_changes.outputs.skip == 'false' && matrix.file_tag.setup-qemu }}
-        uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8  # v4.2.0
-        with:
-          image: tonistiigi/binfmt:master
       - name: Set up Docker Buildx
         if: steps.check_changes.outputs.skip == 'false'
         uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c  # v4.2.0
-        with:
-          buildkitd-config-inline: |
-            [worker.oci]
-            max-parallelism = 2
-      - name: Determine image tags
-        if: steps.check_changes.outputs.skip == 'false'
-        id: image_tags
+      - name: Determine target image names
+        if: ${{ steps.check_changes.outputs.skip == 'false' && inputs.push }}
+        id: image_names
         run: |
-          TAGS="${{ inputs.ghcr_repo }}:${{ inputs.version }}-${{ matrix.file_tag.tag_suffix }}
-          ${{ inputs.ghcr_repo }}:latest-${{ matrix.file_tag.tag_suffix }}"
+          NAMES="${{ inputs.ghcr_repo }}"
           if [ -n "$DOCKER_USERNAME" ]; then
-            TAGS="${{ inputs.dockerhub_repo }}:${{ inputs.version }}-${{ matrix.file_tag.tag_suffix }}
-          ${{ inputs.dockerhub_repo }}:latest-${{ matrix.file_tag.tag_suffix }}
-          ${TAGS}"
+            NAMES="${NAMES},${{ inputs.dockerhub_repo }}"
           fi
-          echo "tags<<EOF" >> "$GITHUB_OUTPUT"
-          echo "${TAGS}" >> "$GITHUB_OUTPUT"
-          echo "EOF" >> "$GITHUB_OUTPUT"
-      - name: Build and push demo images
-        if: steps.check_changes.outputs.skip == 'false'
+          echo "names=${NAMES}" >> "$GITHUB_OUTPUT"
+      - name: Build and push image by digest
+        if: ${{ steps.check_changes.outputs.skip == 'false' && inputs.push }}
+        id: build
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a  # v7.3.0
         with:
           context: ${{ matrix.file_tag.context }}
           file: ${{ matrix.file_tag.file }}
-          platforms: linux/amd64,linux/arm64
-          push: ${{ inputs.push }}
+          platforms: ${{ matrix.platform.docker_platform }}
           build-args: |
             OTEL_JAVA_AGENT_VERSION=${{ env.OTEL_JAVA_AGENT_VERSION }}
             OPENTELEMETRY_CPP_VERSION=${{ env.OPENTELEMETRY_CPP_VERSION }}
             OPAMP_GO_REF=${{ env.OPAMP_GO_REF }}
-          tags: ${{ steps.image_tags.outputs.tags }}
-          # Scoped per Dockerfile: without a scope, every matrix job (there
-          # are ~24) shares one gha cache namespace and clobbers the others'
-          # entries before they're ever reused, so expensive layers (e.g.
-          # currency's from-source opentelemetry-cpp build) rebuild from
-          # scratch on every run.
-          cache-from: type=gha,scope=${{ matrix.file_tag.tag_suffix }}
-          cache-to: type=gha,scope=${{ matrix.file_tag.tag_suffix }},mode=max
+          outputs: type=image,name=${{ steps.image_names.outputs.names }},push-by-digest=true,name-canonical=true,push=true
+          # Scoped per Dockerfile and arch: without a scope, matrix jobs share
+          # one gha cache namespace and clobber each other's entries before
+          # they're ever reused, so expensive layers (e.g. currency's
+          # from-source opentelemetry-cpp build) rebuild from scratch.
+          cache-from: type=gha,scope=${{ matrix.file_tag.tag_suffix }}-${{ matrix.platform.arch }}
+          cache-to: type=gha,scope=${{ matrix.file_tag.tag_suffix }}-${{ matrix.platform.arch }},mode=max
+      - name: Validate build (no push)
+        if: ${{ steps.check_changes.outputs.skip == 'false' && !inputs.push }}
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a  # v7.3.0
+        with:
+          context: ${{ matrix.file_tag.context }}
+          file: ${{ matrix.file_tag.file }}
+          platforms: ${{ matrix.platform.docker_platform }}
+          push: false
+          build-args: |
+            OTEL_JAVA_AGENT_VERSION=${{ env.OTEL_JAVA_AGENT_VERSION }}
+            OPENTELEMETRY_CPP_VERSION=${{ env.OPENTELEMETRY_CPP_VERSION }}
+            OPAMP_GO_REF=${{ env.OPAMP_GO_REF }}
+          cache-from: type=gha,scope=${{ matrix.file_tag.tag_suffix }}-${{ matrix.platform.arch }}
+          cache-to: type=gha,scope=${{ matrix.file_tag.tag_suffix }}-${{ matrix.platform.arch }},mode=max
+      - name: Export digest
+        if: ${{ steps.check_changes.outputs.skip == 'false' && inputs.push }}
+        run: |
+          mkdir -p /tmp/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "/tmp/digests/${digest#sha256:}"
+      - name: Upload digest
+        if: ${{ steps.check_changes.outputs.skip == 'false' && inputs.push }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: digests-${{ matrix.file_tag.tag_suffix }}-${{ matrix.platform.arch }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  merge_manifests:
+    name: Merge ${{ matrix.file_tag.tag_suffix }} manifest
+    needs: build_images
+    if: inputs.push
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read  # required to read Dockerfiles and source files
+      packages: write  # required to push built images to GHCR
+
+    env:
+      RELEASE_VERSION: "${{ github.event.release.tag_name }}"
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        file_tag:
+          - file: ./src/accounting/Dockerfile
+            tag_suffix: accounting
+            context: ./
+          - file: ./src/ad/Dockerfile
+            tag_suffix: ad
+            context: ./
+          - file: ./src/agent/Dockerfile
+            tag_suffix: agent
+            context: ./
+          - file: ./src/cart/src/Dockerfile
+            tag_suffix: cart
+            context: ./
+          - file: ./src/chatbot/Dockerfile
+            tag_suffix: chatbot
+            context: ./
+          - file: ./src/checkout/Dockerfile
+            tag_suffix: checkout
+            context: ./
+          - file: ./src/currency/Dockerfile
+            tag_suffix: currency
+            context: ./
+          - file: ./src/email/Dockerfile
+            tag_suffix: email
+            context: ./
+          - file: ./src/flagd-ui/Dockerfile
+            tag_suffix: flagd-ui
+            context: ./
+          - file: ./src/fraud-detection/Dockerfile
+            tag_suffix: fraud-detection
+            context: ./
+          - file: ./src/frontend/Dockerfile
+            tag_suffix: frontend
+            context: ./
+          - file: ./src/frontend-proxy/Dockerfile
+            tag_suffix: frontend-proxy
+            context: ./
+          - file: ./src/frontend/Dockerfile.cypress
+            tag_suffix: frontend-tests
+            context: ./
+          - file: ./src/image-provider/Dockerfile
+            tag_suffix: image-provider
+            context: ./
+          - file: ./src/kafka/Dockerfile
+            tag_suffix: kafka
+            context: ./
+          - file: ./src/load-generator/Dockerfile
+            tag_suffix: load-generator
+            context: ./
+          - file: ./src/opamp-server/Dockerfile
+            tag_suffix: opamp-server
+            context: ./
+          - file: ./src/mcp/Dockerfile
+            tag_suffix: mcp
+            context: ./
+          - file: ./src/opensearch/Dockerfile
+            tag_suffix: opensearch
+            context: ./
+          - file: ./src/payment/Dockerfile
+            tag_suffix: payment
+            context: ./
+          - file: ./src/product-catalog/Dockerfile
+            tag_suffix: product-catalog
+            context: ./
+          - file: ./src/quote/Dockerfile
+            tag_suffix: quote
+            context: ./
+          - file: ./src/recommendation/Dockerfile
+            tag_suffix: recommendation
+            context: ./
+          - file: ./src/shipping/Dockerfile
+            tag_suffix: shipping
+            context: ./
+          - file: ./src/telemetry-docs/Dockerfile
+            tag_suffix: telemetry-docs
+            context: ./
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Load environment variables from .env file
+        run: |
+          if [ -f .env ]; then
+            # Filter out comments and empty lines, then add each variable to $GITHUB_ENV
+            grep -vE '^\s*#|^\s*$' .env | while read -r line; do
+              echo "$line" >> $GITHUB_ENV
+            done
+          else
+            echo ".env file not found!"
+            exit 1
+          fi
+      - name: Check for changes and set push options
+        id: check_changes
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.event.before }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          DOCKER_CONTEXT: ${{ matrix.file_tag.context }}
+          DOCKERFILE: ${{ matrix.file_tag.file }}
+          FORCE_BUILD: ${{ inputs.force_build }}
+          HEAD_SHA: ${{ github.event.merge_group.head_sha || github.sha }}
+        run: |
+          DOCKERFILE_DIR=$(dirname "${DOCKERFILE}")
+          ZERO_SHA=0000000000000000000000000000000000000000
+
+          commit_exists() {
+            [ -n "$1" ] && [ "$1" != "$ZERO_SHA" ] && git cat-file -e "${1}^{commit}" 2>/dev/null
+          }
+
+          use_default_branch_merge_base() {
+            echo "Using merge base with ${DEFAULT_BRANCH}."
+            git fetch --no-tags origin "${DEFAULT_BRANCH}" || true
+            BASE_SHA=$(git merge-base "$HEAD_SHA" "origin/${DEFAULT_BRANCH}" || true)
+          }
+
+          if [ "$FORCE_BUILD" = true ]; then
+            echo "Force build is enabled, proceeding with build."
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if ! commit_exists "$HEAD_SHA"; then
+            echo "Head SHA ${HEAD_SHA} is unavailable, using checked out HEAD."
+            HEAD_SHA=$(git rev-parse HEAD)
+          fi
+
+          case "${GITHUB_EVENT_NAME}" in
+            pull_request|merge_group)
+              if ! commit_exists "$BASE_SHA"; then
+                echo "Base SHA unavailable for ${GITHUB_EVENT_NAME}."
+                use_default_branch_merge_base
+              fi
+              ;;
+            push)
+              if [ "${GITHUB_REF_NAME}" = "${DEFAULT_BRANCH}" ]; then
+                if ! commit_exists "$BASE_SHA"; then
+                  echo "No usable base SHA available for default branch push, proceeding with build."
+                  echo "skip=false" >> "$GITHUB_OUTPUT"
+                  exit 0
+                fi
+              else
+                use_default_branch_merge_base
+              fi
+              ;;
+            *)
+              if ! commit_exists "$BASE_SHA"; then
+                echo "No usable base SHA available for ${GITHUB_EVENT_NAME}, proceeding with build."
+                echo "skip=false" >> "$GITHUB_OUTPUT"
+                exit 0
+              fi
+              ;;
+          esac
+
+          if ! commit_exists "$BASE_SHA"; then
+            echo "No usable base SHA available, proceeding with build."
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          FILES_CHANGED=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" -- "$DOCKERFILE_DIR")
+          if [ -z "$FILES_CHANGED" ]; then
+            echo "No changes in ${DOCKERFILE_DIR}, skipping build for ${DOCKERFILE}."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Changes detected in ${DOCKERFILE_DIR}, proceeding with build for ${DOCKERFILE}."
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Download digests
+        if: steps.check_changes.outputs.skip == 'false'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+        with:
+          path: /tmp/digests
+          pattern: digests-${{ matrix.file_tag.tag_suffix }}-*
+          merge-multiple: true
+      - name: Log in to container registry
+        if: steps.check_changes.outputs.skip == 'false'
+        uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0  # v4.4.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ github.token }}
+      - name: Log in to Docker Hub
+        if: ${{ steps.check_changes.outputs.skip == 'false' && env.DOCKER_USERNAME != '' }}
+        uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0  # v4.4.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Set up Docker Buildx
+        if: steps.check_changes.outputs.skip == 'false'
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c  # v4.2.0
+      - name: Create and push GHCR manifest list
+        if: steps.check_changes.outputs.skip == 'false'
+        working-directory: /tmp/digests
+        run: |
+          # shellcheck disable=SC2046  # word-splitting is intentional: one arg per digest file
+          docker buildx imagetools create \
+            -t "${{ inputs.ghcr_repo }}:${{ inputs.version }}-${{ matrix.file_tag.tag_suffix }}" \
+            -t "${{ inputs.ghcr_repo }}:latest-${{ matrix.file_tag.tag_suffix }}" \
+            $(printf '${{ inputs.ghcr_repo }}@sha256:%s ' *)
+      - name: Create and push Docker Hub manifest list
+        if: ${{ steps.check_changes.outputs.skip == 'false' && env.DOCKER_USERNAME != '' }}
+        working-directory: /tmp/digests
+        run: |
+          # shellcheck disable=SC2046  # word-splitting is intentional: one arg per digest file
+          docker buildx imagetools create \
+            -t "${{ inputs.dockerhub_repo }}:${{ inputs.version }}-${{ matrix.file_tag.tag_suffix }}" \
+            -t "${{ inputs.dockerhub_repo }}:latest-${{ matrix.file_tag.tag_suffix }}" \
+            $(printf '${{ inputs.dockerhub_repo }}@sha256:%s ' *)
