@@ -5,8 +5,11 @@
 
 package frauddetection
 
+import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.clients.consumer.ConsumerConfig.*
 import org.apache.kafka.clients.consumer.KafkaConsumer
+import org.apache.kafka.common.config.SaslConfigs
+import org.apache.kafka.common.config.SslConfigs
 import org.apache.kafka.common.serialization.ByteArrayDeserializer
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.logging.log4j.LogManager
@@ -35,22 +38,7 @@ fun main() {
     val flagdProvider = FlagdProvider(options)
     OpenFeatureAPI.getInstance().setProvider(flagdProvider)
 
-    val props = Properties()
-    props[KEY_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java.name
-    props[VALUE_DESERIALIZER_CLASS_CONFIG] = ByteArrayDeserializer::class.java.name
-    props[GROUP_ID_CONFIG] = groupID
-    // Read from the start of the topic so a freshly-joined consumer group still
-    // processes orders produced before it finished joining, matching the
-    // accounting consumer's behaviour. Without this the Kafka default of
-    // "latest" silently drops those orders, so fraud-detection may emit no
-    // telemetry on a quiet/cold start.
-    props[AUTO_OFFSET_RESET_CONFIG] = "earliest"
-    val bootstrapServers = System.getenv("KAFKA_ADDR")
-    if (bootstrapServers == null) {
-        println("KAFKA_ADDR is not supplied")
-        exitProcess(1)
-    }
-    props[BOOTSTRAP_SERVERS_CONFIG] = bootstrapServers
+    val props = buildConsumerProps()
     val consumer = KafkaConsumer<String, ByteArray>(props).apply {
         subscribe(listOf(topic))
     }
@@ -73,6 +61,40 @@ fun main() {
                 }
         }
     }
+}
+
+fun buildConsumerProps(): Properties {
+    val props = Properties()
+    props[KEY_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java.name
+    props[VALUE_DESERIALIZER_CLASS_CONFIG] = ByteArrayDeserializer::class.java.name
+    props[GROUP_ID_CONFIG] = groupID
+    // Read from the start of the topic so a freshly-joined consumer group still
+    // processes orders produced before it finished joining, matching the
+    // accounting consumer's behaviour. Without this the Kafka default of
+    // "latest" silently drops those orders, so fraud-detection may emit no
+    // telemetry on a quiet/cold start.
+    props[AUTO_OFFSET_RESET_CONFIG] = "earliest"
+    val bootstrapServers = System.getenv("KAFKA_ADDR")
+    if (bootstrapServers == null) {
+        println("KAFKA_ADDR is not supplied")
+        exitProcess(1)
+    }
+    props[BOOTSTRAP_SERVERS_CONFIG] = bootstrapServers
+
+    // SASL/TLS from the KAFKA_PROTOCOL, KAFKA_SASL_MECHANISM,
+    // KAFKA_SASL_JAAS_CONFIG, and KAFKA_SSL_TRUSTSTORE_CRT env vars, matching
+    // the KafkaAccess-operator secret contract
+    // (https://github.com/strimzi/kafka-access-operator). Absent
+    // KAFKA_PROTOCOL (or PLAINTEXT), the plaintext/no-auth behavior is unchanged.
+    val securityProtocol = System.getenv("KAFKA_PROTOCOL")
+    if (!securityProtocol.isNullOrEmpty() && securityProtocol != "PLAINTEXT") {
+        props[CommonClientConfigs.SECURITY_PROTOCOL_CONFIG] = securityProtocol
+        System.getenv("KAFKA_SASL_MECHANISM")?.let { props[SaslConfigs.SASL_MECHANISM] = it }
+        System.getenv("KAFKA_SASL_JAAS_CONFIG")?.let { props[SaslConfigs.SASL_JAAS_CONFIG] = it }
+        System.getenv("KAFKA_SSL_TRUSTSTORE_CRT")?.let { props[SslConfigs.SSL_TRUSTSTORE_CERTIFICATES_CONFIG] = it }
+    }
+
+    return props
 }
 
 /**

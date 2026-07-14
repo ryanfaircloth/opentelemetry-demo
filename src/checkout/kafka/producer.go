@@ -3,11 +3,15 @@
 package kafka
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
 
 	"github.com/IBM/sarama"
+	"github.com/xdg-go/scram"
 )
 
 var (
@@ -20,6 +24,55 @@ func getTopic() string {
 		return topic
 	}
 	return "orders"
+}
+
+// configureSecurity sets up SASL/TLS on saramaConfig from the KAFKA_PROTOCOL,
+// KAFKA_SASL_MECHANISM, KAFKA_SASL_USERNAME, KAFKA_SASL_PASSWORD, and
+// KAFKA_SSL_TRUSTSTORE_CRT env vars, matching the KafkaAccess-operator secret
+// contract (https://github.com/strimzi/kafka-access-operator). Absent
+// KAFKA_PROTOCOL (or PLAINTEXT), the plaintext/no-auth behavior is unchanged.
+func configureSecurity(saramaConfig *sarama.Config) error {
+	protocol := os.Getenv("KAFKA_PROTOCOL")
+	if protocol == "" || protocol == "PLAINTEXT" {
+		return nil
+	}
+
+	if strings.HasPrefix(protocol, "SASL_") {
+		saramaConfig.Net.SASL.Enable = true
+		saramaConfig.Net.SASL.User = os.Getenv("KAFKA_SASL_USERNAME")
+		saramaConfig.Net.SASL.Password = os.Getenv("KAFKA_SASL_PASSWORD")
+		saramaConfig.Net.SASL.Handshake = true
+
+		switch os.Getenv("KAFKA_SASL_MECHANISM") {
+		case "SCRAM-SHA-512":
+			saramaConfig.Net.SASL.Mechanism = sarama.SASLTypeSCRAMSHA512
+			saramaConfig.Net.SASL.SCRAMClientGeneratorFunc = func() sarama.SCRAMClient {
+				return &XDGSCRAMClient{HashGeneratorFcn: scram.SHA512}
+			}
+		case "SCRAM-SHA-256":
+			saramaConfig.Net.SASL.Mechanism = sarama.SASLTypeSCRAMSHA256
+			saramaConfig.Net.SASL.SCRAMClientGeneratorFunc = func() sarama.SCRAMClient {
+				return &XDGSCRAMClient{HashGeneratorFcn: scram.SHA256}
+			}
+		default:
+			saramaConfig.Net.SASL.Mechanism = sarama.SASLTypePlaintext
+		}
+	}
+
+	if strings.HasSuffix(protocol, "SSL") {
+		saramaConfig.Net.TLS.Enable = true
+		tlsConfig := &tls.Config{}
+		if caPEM := os.Getenv("KAFKA_SSL_TRUSTSTORE_CRT"); caPEM != "" {
+			pool := x509.NewCertPool()
+			if !pool.AppendCertsFromPEM([]byte(caPEM)) {
+				return fmt.Errorf("failed to parse KAFKA_SSL_TRUSTSTORE_CRT as PEM")
+			}
+			tlsConfig.RootCAs = pool
+		}
+		saramaConfig.Net.TLS.Config = tlsConfig
+	}
+
+	return nil
 }
 
 type saramaLogger struct {
@@ -52,6 +105,10 @@ func CreateKafkaProducer(brokers []string, logger *slog.Logger) (sarama.AsyncPro
 
 	// So we can know the partition and offset of messages.
 	saramaConfig.Producer.Return.Successes = true
+
+	if err := configureSecurity(saramaConfig); err != nil {
+		return nil, err
+	}
 
 	producer, err := sarama.NewAsyncProducer(brokers, saramaConfig)
 	if err != nil {

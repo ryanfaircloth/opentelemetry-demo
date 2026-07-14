@@ -43,6 +43,22 @@ serviceAccount:
   # If not set and create is true, a name is generated using the fullname template
   name: ""
 
+# Global switch controlling how accounting/checkout/fraud-detection obtain
+# their Kafka connection details.
+kafkaAccess:
+  # "kafkaAccess" (default): each Kafka-using component reads its connection
+  #   details (bootstrap servers, SASL/TLS credentials) from the Secret named
+  #   in its own components.<name>.kafka.existingSecretName, as produced by a
+  #   Strimzi KafkaAccess custom resource (https://github.com/strimzi/kafka-access-operator).
+  #   The bundled `components.kafka` broker is disabled in this mode.
+  # "legacy" (deprecated): restores the original bundled single-broker,
+  #   plaintext, no-auth Kafka and hardcoded KAFKA_ADDR/KAFKA_TOPIC env vars.
+  #   Also re-enables the bundled `components.kafka` broker.
+  mode: kafkaAccess
+  legacy:
+    bootstrapServers: kafka:9092
+    topic: orders
+
 components:
   ## Demo Components are named objects (services) with several properties
   # demoService:
@@ -109,12 +125,27 @@ components:
   ## Routing rules; each rule's backendRef targets this component's Service on the given port.
   ## rewritePath is optional; set it to strip/replace the matched path prefix before forwarding
   ## (e.g. matching "/images" with rewritePath "/" forwards "/images/foo" upstream as "/foo").
+  ## name is optional; set it to give the rendered rule a name so a SecurityPolicy (or other
+  ## policy) can target it via sectionName.
+  ## matches[].headers is optional; same shape as upstream HTTPHeaderMatch (type/name/value),
+  ## letting a rule match on request headers (e.g. to route by User-Agent around an auth gate).
   #   rules:
-  #     - matches:
+  #     - name: default
+  #       matches:
   #         - path:
   #             type: PathPrefix
   #             value: /
   #       rewritePath: /
+  #       port: 8080
+  #     - name: bypass-auth
+  #       matches:
+  #         - path:
+  #             type: PathPrefix
+  #             value: /
+  #           headers:
+  #             - type: Exact
+  #               name: User-Agent
+  #               value: python-requests
   #       port: 8080
   ## Additional HTTPRoutes - only created if httpRoute.enabled is true
   ## Each additional HTTPRoute needs key "name" set to something unique
@@ -179,11 +210,13 @@ components:
       env: true
     podAnnotations:
       resource.opentelemetry.io/service.namespace: otel-demo
+    # KAFKA_ADDR/KAFKA_TOPIC and (in kafkaAccess mode) the SASL/TLS env vars
+    # are generated from this block - see .Values.kafkaAccess and
+    # otel-demo.pod.kafkaEnv.
+    kafka:
+      topic: orders
+      existingSecretName: accounting-kafka-access
     env:
-      - name: KAFKA_ADDR
-        value: kafka:9092
-      - name: KAFKA_TOPIC
-        value: orders
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: http://$(OTEL_COLLECTOR_NAME):4318
       - name: DB_CONNECTION_STRING
@@ -193,10 +226,6 @@ components:
     resources:
       limits:
         memory: 120Mi
-    initContainers:
-      - name: wait-for-kafka
-        image: busybox:latest
-        command: ["sh", "-c", "until nc -z -v -w30 kafka 9092; do echo waiting for kafka; sleep 2; done;"]
 
   ad:
     enabled: true
@@ -258,6 +287,9 @@ components:
       port: 8080
     podAnnotations:
       resource.opentelemetry.io/service.namespace: otel-demo
+    kafka:
+      topic: orders
+      existingSecretName: checkout-kafka-access
     env:
       - name: CHECKOUT_PORT
         value: "8080"
@@ -273,10 +305,6 @@ components:
         value: product-catalog:8080
       - name: SHIPPING_ADDR
         value: http://shipping:8080
-      - name: KAFKA_ADDR
-        value: kafka:9092
-      - name: KAFKA_TOPIC
-        value: orders
       - name: FLAGD_HOST
         value: flagd
       - name: FLAGD_PORT
@@ -288,10 +316,6 @@ components:
     resources:
       limits:
         memory: 20Mi
-    initContainers:
-      - name: wait-for-kafka
-        image: busybox:latest
-        command: ["sh", "-c", "until nc -z -v -w30 kafka 9092; do echo waiting for kafka; sleep 2; done;"]
 
   currency:
     enabled: true
@@ -343,11 +367,10 @@ components:
       env: true
     podAnnotations:
       resource.opentelemetry.io/service.namespace: otel-demo
+    kafka:
+      topic: orders
+      existingSecretName: fraud-detection-kafka-access
     env:
-      - name: KAFKA_ADDR
-        value: kafka:9092
-      - name: KAFKA_TOPIC
-        value: orders
       - name: FLAGD_HOST
         value: flagd
       - name: FLAGD_PORT
@@ -361,10 +384,6 @@ components:
     resources:
       limits:
         memory: 300Mi
-    initContainers:
-      - name: wait-for-kafka
-        image: busybox:latest
-        command: ["sh", "-c", "until nc -z -v -w30 kafka 9092; do echo waiting for kafka; sleep 2; done;"]
 
   frontend:
     enabled: true

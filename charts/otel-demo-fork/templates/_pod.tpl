@@ -45,6 +45,89 @@ should be last.
 
 
 {{/*
+Get Kafka client env vars for a component that declares a `.kafka` block.
+- legacy mode: literal KAFKA_ADDR/KAFKA_TOPIC (today's behavior).
+- kafkaAccess mode (default): KAFKA_ADDR/KAFKA_TOPIC plus SASL/TLS env vars
+  sourced from the Secret named in `.kafka.existingSecretName`, as produced
+  by a Strimzi KafkaAccess custom resource. Every key besides
+  bootstrap.servers is optional, since not every auth mode uses SASL or TLS.
+*/}}
+{{- define "otel-demo.pod.kafkaEnv" -}}
+{{- if .kafka }}
+{{- $mode := (.kafkaAccess).mode | default "kafkaAccess" }}
+{{- if eq $mode "legacy" }}
+- name: KAFKA_ADDR
+  value: {{ (.kafkaAccess.legacy).bootstrapServers | default "kafka:9092" | quote }}
+- name: KAFKA_TOPIC
+  value: {{ .kafka.topic | default (.kafkaAccess.legacy).topic | default "orders" | quote }}
+{{- else }}
+{{- $secret := required (printf "components.%s.kafka.existingSecretName is required when kafkaAccess.mode is \"kafkaAccess\"" .name) .kafka.existingSecretName }}
+- name: KAFKA_TOPIC
+  value: {{ .kafka.topic | default "orders" | quote }}
+- name: KAFKA_ADDR
+  valueFrom:
+    secretKeyRef:
+      name: {{ $secret }}
+      key: bootstrap.servers
+- name: KAFKA_PROTOCOL
+  valueFrom:
+    secretKeyRef:
+      name: {{ $secret }}
+      key: security.protocol
+      optional: true
+- name: KAFKA_SASL_MECHANISM
+  valueFrom:
+    secretKeyRef:
+      name: {{ $secret }}
+      key: sasl.mechanism
+      optional: true
+- name: KAFKA_SASL_USERNAME
+  valueFrom:
+    secretKeyRef:
+      name: {{ $secret }}
+      key: username
+      optional: true
+- name: KAFKA_SASL_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: {{ $secret }}
+      key: password
+      optional: true
+- name: KAFKA_SASL_JAAS_CONFIG
+  valueFrom:
+    secretKeyRef:
+      name: {{ $secret }}
+      key: sasl.jaas.config
+      optional: true
+- name: KAFKA_SSL_TRUSTSTORE_CRT
+  valueFrom:
+    secretKeyRef:
+      name: {{ $secret }}
+      key: ssl.truststore.crt
+      optional: true
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{/*
+Get Kafka wait-for initContainer for a component that declares a `.kafka`
+block. Only emitted in legacy mode: SASL/TLS connections make a bare TCP
+`nc -z` probe meaningless, and all three Kafka clients already retry/back off
+on connect failure, so kafkaAccess mode relies on that instead.
+*/}}
+{{- define "otel-demo.pod.kafkaInitContainer" -}}
+{{- if .kafka }}
+{{- $mode := (.kafkaAccess).mode | default "kafkaAccess" }}
+{{- if eq $mode "legacy" }}
+{{- $bootstrapServers := (.kafkaAccess.legacy).bootstrapServers | default "kafka:9092" }}
+- name: wait-for-kafka
+  image: busybox:latest
+  command: ["sh", "-c", "until nc -z -v -w30 {{ $bootstrapServers | replace `:` ` ` }}; do echo waiting for kafka; sleep 2; done;"]
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{/*
 Get Pod ports
 */}}
 {{- define "otel-demo.pod.ports" -}}

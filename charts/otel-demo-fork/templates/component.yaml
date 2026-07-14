@@ -1,3 +1,5 @@
+{{- $kafkaAccess := $.Values.kafkaAccess | default dict }}
+{{- $kafkaAccessMode := $kafkaAccess.mode | default "kafkaAccess" }}
 {{- range $name, $config := .Values.components }}
     {{- $config := set . "Capabilities" $.Capabilities }}
     {{- $config := set . "Template" $.Template }}
@@ -7,8 +9,18 @@
     {{- $config := set . "serviceAccount" $.Values.serviceAccount }}
     {{- $config := set . "observability" $.Values.observability }}
     {{- $config := set . "defaultValues" $.Values.default }}
+    {{- $config := set . "kafkaAccess" $kafkaAccess }}
 
-    {{- if $config.enabled -}}
+    {{/* The bundled single-broker Kafka is deprecated legacy-mode-only: it is
+    force-disabled whenever kafkaAccess.mode is not "legacy", regardless of
+    its own `enabled` value, so switching the single global mode switch back
+    to "legacy" is enough to bring it back without touching this flag. */}}
+    {{- $enabled := $config.enabled }}
+    {{- if and (eq $config.name "kafka") (ne $kafkaAccessMode "legacy") }}
+      {{- $enabled = false }}
+    {{- end }}
+
+    {{- if $enabled -}}
         {{- include "otel-demo.deployment" $config -}}
         {{- include "otel-demo.service" $config -}}
         {{- include "otel-demo.httproute" $config -}}

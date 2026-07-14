@@ -1,0 +1,123 @@
+# Sample resources for a Kafka admin to apply in the Strimzi Kafka cluster's
+# own namespace (not this chart's release namespace) - one KafkaUser and one
+# KafkaAccess per app, each producing the Secret referenced by
+# components.<name>.kafka.existingSecretName in values.yaml. The topic itself
+# ("orders") is expected to already exist or be created by the Kafka admin;
+# this chart does not manage KafkaTopic resources.
+#
+# See https://github.com/strimzi/kafka-access-operator for the KafkaAccess
+# operator this depends on.
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaUser
+metadata:
+  name: checkout
+  labels:
+    strimzi.io/cluster: my-kafka-cluster
+spec:
+  authentication:
+    type: scram-sha-512
+  authorization:
+    type: simple
+    acls:
+      - resource:
+          type: topic
+          name: orders
+        operations:
+          - Write
+          - Describe
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaUser
+metadata:
+  name: accounting
+  labels:
+    strimzi.io/cluster: my-kafka-cluster
+spec:
+  authentication:
+    type: scram-sha-512
+  authorization:
+    type: simple
+    acls:
+      - resource:
+          type: topic
+          name: orders
+        operations:
+          - Read
+          - Describe
+      - resource:
+          type: group
+          name: accounting
+        operations:
+          - Read
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaUser
+metadata:
+  name: fraud-detection
+  labels:
+    strimzi.io/cluster: my-kafka-cluster
+spec:
+  authentication:
+    type: scram-sha-512
+  authorization:
+    type: simple
+    acls:
+      - resource:
+          type: topic
+          name: orders
+        operations:
+          - Read
+          - Describe
+      - resource:
+          type: group
+          name: fraud-detection
+        operations:
+          - Read
+---
+apiVersion: access.strimzi.io/v1alpha1
+kind: KafkaAccess
+metadata:
+  name: checkout-kafka-access
+  namespace: otel-demo # the chart's release namespace
+spec:
+  kafka:
+    name: my-kafka-cluster
+    namespace: kafka # the Kafka cluster's namespace
+  user:
+    kind: KafkaUser
+    apiGroup: kafka.strimzi.io
+    name: checkout
+    namespace: kafka
+  secretName: checkout-kafka-access
+---
+apiVersion: access.strimzi.io/v1alpha1
+kind: KafkaAccess
+metadata:
+  name: accounting-kafka-access
+  namespace: otel-demo
+spec:
+  kafka:
+    name: my-kafka-cluster
+    namespace: kafka
+  user:
+    kind: KafkaUser
+    apiGroup: kafka.strimzi.io
+    name: accounting
+    namespace: kafka
+  secretName: accounting-kafka-access
+---
+apiVersion: access.strimzi.io/v1alpha1
+kind: KafkaAccess
+metadata:
+  name: fraud-detection-kafka-access
+  namespace: otel-demo
+spec:
+  kafka:
+    name: my-kafka-cluster
+    namespace: kafka
+  user:
+    kind: KafkaUser
+    apiGroup: kafka.strimzi.io
+    name: fraud-detection
+    namespace: kafka
+  secretName: fraud-detection-kafka-access

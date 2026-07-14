@@ -35,6 +35,9 @@
     "components": {
       "$ref": "#/definitions/Components"
     },
+    "kafkaAccess": {
+      "$ref": "#/definitions/KafkaAccess"
+    },
     "opentelemetry-collector": {
       "type": "object"
     },
@@ -227,6 +230,9 @@
         },
         "additionalVolumes": {
           "type": "array"
+        },
+        "kafka": {
+          "$ref": "#/definitions/ComponentKafka"
         }
       },
       "required": [
@@ -234,6 +240,45 @@
         "useDefault"
       ],
       "title": "Service"
+    },
+    "ComponentKafka": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "topic": {
+          "type": "string"
+        },
+        "existingSecretName": {
+          "type": "string"
+        }
+      },
+      "title": "ComponentKafka"
+    },
+    "KafkaAccess": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "kafkaAccess",
+            "legacy"
+          ]
+        },
+        "legacy": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "bootstrapServers": {
+              "type": "string"
+            },
+            "topic": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "title": "KafkaAccess"
     },
     "Env": {
       "type": "object",
@@ -524,6 +569,9 @@
             "type": "object",
             "additionalProperties": false,
             "properties": {
+              "name": {
+                "type": "string"
+              },
               "matches": {
                 "type": "array",
                 "items": {
@@ -550,6 +598,32 @@
                         "type",
                         "value"
                       ]
+                    },
+                    "headers": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "Exact",
+                              "RegularExpression"
+                            ]
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "value"
+                        ]
+                      }
                     }
                   },
                   "required": [
@@ -615,6 +689,9 @@
                   "type": "object",
                   "additionalProperties": false,
                   "properties": {
+                    "name": {
+                      "type": "string"
+                    },
                     "matches": {
                       "type": "array",
                       "items": {
@@ -641,6 +718,32 @@
                               "type",
                               "value"
                             ]
+                          },
+                          "headers": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "properties": {
+                                "type": {
+                                  "type": "string",
+                                  "enum": [
+                                    "Exact",
+                                    "RegularExpression"
+                                  ]
+                                },
+                                "name": {
+                                  "type": "string"
+                                },
+                                "value": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "name",
+                                "value"
+                              ]
+                            }
                           }
                         },
                         "required": [

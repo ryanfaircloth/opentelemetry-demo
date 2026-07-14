@@ -1,0 +1,21 @@
+# kafkaAccess mode is the chart default, shown here explicitly for clarity.
+# It requires a Kafka admin to have already created, per app, a KafkaUser and
+# a KafkaAccess custom resource (see strimzi-resources.yaml in this folder)
+# targeting the Strimzi Kafka cluster and its topic(s) in their own namespace.
+# Each KafkaAccess produces a Secret with the name referenced below.
+kafkaAccess:
+  mode: kafkaAccess
+
+components:
+  accounting:
+    kafka:
+      topic: orders
+      existingSecretName: accounting-kafka-access
+  checkout:
+    kafka:
+      topic: orders
+      existingSecretName: checkout-kafka-access
+  fraud-detection:
+    kafka:
+      topic: orders
+      existingSecretName: fraud-detection-kafka-access

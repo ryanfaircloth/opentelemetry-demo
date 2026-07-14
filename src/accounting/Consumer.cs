@@ -150,8 +150,51 @@ internal class Consumer : BackgroundService
             EnableAutoCommit = true
         };
 
+        ApplySecurityConfig(conf);
+
         return new ConsumerBuilder<string, byte[]>(conf)
             .Build();
+    }
+
+    // Configures SASL/TLS from the KAFKA_PROTOCOL, KAFKA_SASL_MECHANISM,
+    // KAFKA_SASL_USERNAME, KAFKA_SASL_PASSWORD, and KAFKA_SSL_TRUSTSTORE_CRT
+    // env vars, matching the KafkaAccess-operator secret contract
+    // (https://github.com/strimzi/kafka-access-operator). Absent
+    // KAFKA_PROTOCOL (or PLAINTEXT), the plaintext/no-auth behavior is unchanged.
+    private static void ApplySecurityConfig(ClientConfig conf)
+    {
+        var protocol = Environment.GetEnvironmentVariable("KAFKA_PROTOCOL");
+        if (string.IsNullOrEmpty(protocol) || protocol == "PLAINTEXT")
+        {
+            return;
+        }
+
+        conf.SecurityProtocol = protocol switch
+        {
+            "SSL" => SecurityProtocol.Ssl,
+            "SASL_PLAINTEXT" => SecurityProtocol.SaslPlaintext,
+            "SASL_SSL" => SecurityProtocol.SaslSsl,
+            _ => throw new InvalidOperationException($"Unsupported KAFKA_PROTOCOL '{protocol}'.")
+        };
+
+        if (protocol.StartsWith("SASL_"))
+        {
+            conf.SaslMechanism = Environment.GetEnvironmentVariable("KAFKA_SASL_MECHANISM") switch
+            {
+                "SCRAM-SHA-512" => SaslMechanism.ScramSha512,
+                "SCRAM-SHA-256" => SaslMechanism.ScramSha256,
+                "PLAIN" or null or "" => SaslMechanism.Plain,
+                var mechanism => throw new InvalidOperationException($"Unsupported KAFKA_SASL_MECHANISM '{mechanism}'.")
+            };
+            conf.SaslUsername = Environment.GetEnvironmentVariable("KAFKA_SASL_USERNAME");
+            conf.SaslPassword = Environment.GetEnvironmentVariable("KAFKA_SASL_PASSWORD");
+        }
+
+        var caCert = Environment.GetEnvironmentVariable("KAFKA_SSL_TRUSTSTORE_CRT");
+        if (!string.IsNullOrEmpty(caCert))
+        {
+            conf.SslCaPem = caCert;
+        }
     }
 
     public override void Dispose()

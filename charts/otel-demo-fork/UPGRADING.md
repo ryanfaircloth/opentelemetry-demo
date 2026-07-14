@@ -5,6 +5,29 @@
 > another. If you need to upgrade the chart, you must first delete the existing
 > release and then install the new version.
 
+## To 0.6.0
+
+Adds a `kafkaAccess` global switch (default `kafkaAccess`) controlling how
+`accounting`, `checkout`, and `fraud-detection` obtain their Kafka connection
+details, and **disables the bundled single-broker, plaintext, no-auth
+`components.kafka` by default**. In the new default mode each of those three
+components reads its bootstrap servers and (if applicable) SASL/TLS
+credentials from a Secret produced by a
+[Strimzi KafkaAccess](https://github.com/strimzi/kafka-access-operator)
+custom resource, named via the new `components.<name>.kafka.existingSecretName`
+value - see [examples/kafka-access](examples/kafka-access) for sample
+`KafkaUser`/`KafkaAccess` resources and values.
+
+To restore the previous behavior (bundled broker, hardcoded
+`kafka:9092`/plaintext), set `kafkaAccess.mode: legacy`. This is the only
+switch needed; `components.kafka.enabled` does not need to be touched.
+
+The `opentelemetry-collector` `kafkametrics` receiver
+(`opentelemetry-collector.config.receivers.kafkametrics`) still only scrapes
+the legacy bundled broker (`kafka:9092`). If you adopt `kafkaAccess` mode
+against an external Strimzi cluster, reconfigure or disable that receiver
+yourself.
+
 ## To 0.5.0
 
 Removes the `frontend-proxy` component and all per-component Ingress support

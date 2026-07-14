@@ -64,6 +64,7 @@ spec:
           {{- end }}
           env:
             {{- include "otel-demo.pod.env" . | nindent 12 }}
+            {{- include "otel-demo.pod.kafkaEnv" . | nindent 12 }}
           resources:
             {{- .resources | toYaml | nindent 12 }}
           {{- if or .defaultValues.securityContext .securityContext }}
@@ -135,9 +136,15 @@ spec:
             {{- .volumeMounts | toYaml | nindent 12 }}
           {{- end }}
         {{- end }}
-      {{- if .initContainers }}
+      {{- $kafkaInitContainer := include "otel-demo.pod.kafkaInitContainer" . }}
+      {{- if or .initContainers (trim $kafkaInitContainer) }}
       initContainers:
+        {{- if .initContainers }}
         {{- tpl (toYaml .initContainers) . | nindent 8 }}
+        {{- end }}
+        {{- if (trim $kafkaInitContainer) }}
+        {{- $kafkaInitContainer | nindent 8 }}
+        {{- end }}
       {{- end}}
       volumes:
         {{- range .mountedConfigMaps }}
@@ -293,11 +300,25 @@ spec:
   {{- end }}
   rules:
     {{- range .rules }}
-    - matches:
+    -
+      {{- if .name }}
+      name: {{ .name }}
+      {{- end }}
+      matches:
         {{- range .matches }}
         - path:
             type: {{ .path.type }}
             value: {{ .path.value }}
+          {{- if .headers }}
+          headers:
+            {{- range .headers }}
+            - {{- if .type }}
+              type: {{ .type }}
+              {{- end }}
+              name: {{ .name }}
+              value: {{ .value }}
+            {{- end }}
+          {{- end }}
         {{- end }}
       {{- if .rewritePath }}
       filters:
