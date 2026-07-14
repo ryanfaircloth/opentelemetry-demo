@@ -1,0 +1,13 @@
+{{/* cnpg-mode Postgres only - see templates/posgresql-init-config.yaml for
+the legacy-mode equivalent. */}}
+{{- if eq ((.Values.postgresAccess).mode | default "cnpg") "cnpg" -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgresql-cnpg-init
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "otel-demo.labels" . | nindent 4 }}
+data:
+  {{ (.Files.Glob "postgresql/cnpg/*.sql").AsConfig | nindent 2 }}
+{{- end }}

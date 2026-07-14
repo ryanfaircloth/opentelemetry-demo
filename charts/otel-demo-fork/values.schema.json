@@ -38,6 +38,9 @@
     "kafkaAccess": {
       "$ref": "#/definitions/KafkaAccess"
     },
+    "postgresAccess": {
+      "$ref": "#/definitions/PostgresAccess"
+    },
     "opentelemetry-collector": {
       "type": "object"
     },
@@ -233,6 +236,9 @@
         },
         "kafka": {
           "$ref": "#/definitions/ComponentKafka"
+        },
+        "postgres": {
+          "$ref": "#/definitions/ComponentPostgres"
         }
       },
       "required": [
@@ -253,6 +259,27 @@
         }
       },
       "title": "ComponentKafka"
+    },
+    "ComponentPostgres": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "type": "string",
+          "enum": [
+            "dotnet",
+            "uri",
+            "libpq"
+          ]
+        },
+        "legacy": {
+          "type": "string"
+        },
+        "existingSecretName": {
+          "type": "string"
+        }
+      },
+      "title": "ComponentPostgres"
     },
     "KafkaAccess": {
       "type": "object",
@@ -279,6 +306,56 @@
         }
       },
       "title": "KafkaAccess"
+    },
+    "PostgresAccess": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "cnpg",
+            "legacy"
+          ]
+        },
+        "cnpg": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "clusterName": {
+              "type": "string"
+            },
+            "instances": {
+              "type": "integer"
+            },
+            "storage": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "size": {
+                  "type": "string"
+                },
+                "storageClass": {
+                  "type": "string"
+                }
+              }
+            },
+            "imageName": {
+              "type": "string"
+            },
+            "resources": {
+              "type": "object"
+            },
+            "superuserPassword": {
+              "type": "string"
+            },
+            "podAnnotations": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "title": "PostgresAccess"
     },
     "Env": {
       "type": "object",

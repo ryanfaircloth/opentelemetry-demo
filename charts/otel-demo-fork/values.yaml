@@ -59,6 +59,68 @@ kafkaAccess:
     bootstrapServers: kafka:9092
     topic: orders
 
+# Global switch controlling how accounting/product-catalog/product-reviews
+# obtain their Postgres connection details.
+postgresAccess:
+  # "cnpg" (default): a single-instance CloudNativePG (https://cloudnative-pg.io/)
+  #   Cluster custom resource is rendered (see templates/postgresql-cnpg.yaml).
+  #   This assumes the CNPG operator is already installed in the target
+  #   cluster - it is not bundled as a chart dependency, same as the Strimzi
+  #   assumption made by kafkaAccess above. Each Postgres-using component
+  #   reads its connection details from the Secret CNPG generates
+  #   (<cnpg.clusterName>-app by default, or components.<name>.postgres.existingSecretName
+  #   to override per component). The bundled `components.postgresql`
+  #   Deployment is disabled in this mode.
+  # "legacy" (deprecated): restores the original bundled single-instance,
+  #   no-TLS, plaintext-credential Postgres Deployment and hardcoded
+  #   DB_CONNECTION_STRING env vars. Also re-enables `components.postgresql`.
+  mode: cnpg
+  cnpg:
+    clusterName: postgresql
+    instances: 1
+    storage:
+      size: 1Gi
+      storageClass: ""
+    # Optional; empty uses the CNPG operator's default supported Postgres image.
+    imageName: ""
+    resources: {}
+    # CNPG's superuser role is always named "postgres" and is disabled by
+    # default. It's enabled here (with this fixed demo password, stored in a
+    # chart-managed Secret referenced via spec.superuserSecret) so the
+    # existing io.opentelemetry.discovery.metrics/* scraper annotations below
+    # keep working exactly as they do for the bundled legacy Deployment
+    # (components.postgresql.podAnnotations) - same demo-only credential
+    # posture as the rest of this chart, not a change in security stance.
+    superuserPassword: otel
+    # Applied via spec.inheritedMetadata so the OTel discovery scraper picks
+    # up the CNPG-managed pods the same way it picks up the bundled Deployment.
+    podAnnotations:
+      resource.opentelemetry.io/service.namespace: otel-demo
+      io.opentelemetry.discovery.metrics/enabled: 'true'
+      io.opentelemetry.discovery.metrics/scraper: postgresql
+      io.opentelemetry.discovery.metrics/config: |
+        username: postgres
+        password: otel
+        metrics:
+          postgresql.blks_hit:
+            enabled: true
+          postgresql.blks_read:
+            enabled: true
+          postgresql.tup_fetched:
+            enabled: true
+          postgresql.tup_returned:
+            enabled: true
+          postgresql.tup_inserted:
+            enabled: true
+          postgresql.tup_updated:
+            enabled: true
+          postgresql.tup_deleted:
+            enabled: true
+          postgresql.deadlocks:
+            enabled: true
+        tls:
+          insecure: true
+
 components:
   ## Demo Components are named objects (services) with several properties
   # demoService:
@@ -216,11 +278,14 @@ components:
     kafka:
       topic: orders
       existingSecretName: accounting-kafka-access
+    # DB_CONNECTION_STRING is generated from this block - see .Values.postgresAccess
+    # and otel-demo.pod.postgresEnv.
+    postgres:
+      format: dotnet
+      legacy: "Host=postgresql;Username=otelu;Password=otelp;Database=otel"
     env:
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: http://$(OTEL_COLLECTOR_NAME):4318
-      - name: DB_CONNECTION_STRING
-        value: Host=postgresql;Username=otelu;Password=otelp;Database=otel
       - name: OTEL_DOTNET_AUTO_TRACES_ENTITYFRAMEWORKCORE_INSTRUMENTATION_ENABLED
         value: "false"
     resources:
@@ -541,6 +606,11 @@ components:
       port: 8080
     podAnnotations:
       resource.opentelemetry.io/service.namespace: otel-demo
+    # DB_CONNECTION_STRING is generated from this block - see .Values.postgresAccess
+    # and otel-demo.pod.postgresEnv.
+    postgres:
+      format: uri
+      legacy: "postgres://otelu:otelp@postgresql/otel?sslmode=disable"
     env:
       - name: PRODUCT_CATALOG_PORT
         value: "8080"
@@ -550,8 +620,6 @@ components:
         value: "8013"
       - name: GOMEMLIMIT
         value: 16MiB
-      - name: DB_CONNECTION_STRING
-        value: postgres://otelu:otelp@postgresql/otel?sslmode=disable
       - name: OTEL_SEMCONV_STABILITY_OPT_IN
         value: database
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
@@ -568,6 +636,11 @@ components:
       port: 3551
     podAnnotations:
       resource.opentelemetry.io/service.namespace: otel-demo
+    # DB_CONNECTION_STRING is generated from this block - see .Values.postgresAccess
+    # and otel-demo.pod.postgresEnv.
+    postgres:
+      format: libpq
+      legacy: "host=postgresql user=otelu password=otelp dbname=otel"
     env:
       - name: OPENAI_API_KEY
         value: dummy
@@ -587,8 +660,6 @@ components:
         value: flagd
       - name: FLAGD_PORT
         value: "8013"
-      - name: DB_CONNECTION_STRING
-        value: host=postgresql user=otelu password=otelp dbname=otel
       - name: PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION
         value: python
       - name: OTEL_PYTHON_LOG_CORRELATION

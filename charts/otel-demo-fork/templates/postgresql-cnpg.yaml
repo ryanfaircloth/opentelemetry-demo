@@ -1,0 +1,46 @@
+{{/* Default Postgres backend - a single-instance CloudNativePG
+(https://cloudnative-pg.io/) Cluster. Assumes the CNPG operator is already
+installed in the target cluster (same assumption kafkaAccess makes about the
+Strimzi operator - see .Values.kafkaAccess). Set postgresAccess.mode: legacy
+to fall back to the bundled plain Deployment instead - see
+templates/posgresql-init-config.yaml / component.yaml. */}}
+{{- if eq ((.Values.postgresAccess).mode | default "cnpg") "cnpg" -}}
+{{- $cnpg := (.Values.postgresAccess).cnpg | default dict }}
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: {{ $cnpg.clusterName | default "postgresql" }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "otel-demo.labels" . | nindent 4 }}
+spec:
+  instances: {{ $cnpg.instances | default 1 }}
+  {{- if $cnpg.imageName }}
+  imageName: {{ $cnpg.imageName }}
+  {{- end }}
+  enableSuperuserAccess: true
+  superuserSecret:
+    name: {{ printf "%s-superuser" ($cnpg.clusterName | default "postgresql") }}
+  storage:
+    size: {{ ($cnpg.storage).size | default "1Gi" }}
+    {{- if ($cnpg.storage).storageClass }}
+    storageClass: {{ $cnpg.storage.storageClass }}
+    {{- end }}
+  {{- if $cnpg.resources }}
+  resources:
+    {{- $cnpg.resources | toYaml | nindent 4 }}
+  {{- end }}
+  bootstrap:
+    initdb:
+      database: otel
+      owner: otelu
+      postInitApplicationSQLRefs:
+        configMapRefs:
+          - name: postgresql-cnpg-init
+            key: init.sql
+  {{- if $cnpg.podAnnotations }}
+  inheritedMetadata:
+    annotations:
+      {{- $cnpg.podAnnotations | toYaml | nindent 6 }}
+  {{- end }}
+{{- end }}

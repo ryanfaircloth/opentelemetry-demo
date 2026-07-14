@@ -1,4 +1,6 @@
-{{- if .Values.components.postgresql.enabled -}}
+{{/* Legacy bundled Postgres only - see templates/postgresql-cnpg-init-config.yaml
+for the cnpg-mode equivalent. */}}
+{{- if and .Values.components.postgresql.enabled (eq ((.Values.postgresAccess).mode | default "cnpg") "legacy") -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -7,5 +9,5 @@ metadata:
   labels:
     {{- include "otel-demo.labels" . | nindent 4 }}
 data:
-  {{ (.Files.Glob "postgresql/*.sql").AsConfig | nindent 2 }}
+  {{ (.Files.Glob "postgresql/legacy/*.sql").AsConfig | nindent 2 }}
 {{- end }}

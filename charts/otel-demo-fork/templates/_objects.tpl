@@ -65,6 +65,7 @@ spec:
           env:
             {{- include "otel-demo.pod.env" . | nindent 12 }}
             {{- include "otel-demo.pod.kafkaEnv" . | nindent 12 }}
+            {{- include "otel-demo.pod.postgresEnv" . | nindent 12 }}
           resources:
             {{- .resources | toYaml | nindent 12 }}
           {{- if or .defaultValues.securityContext .securityContext }}

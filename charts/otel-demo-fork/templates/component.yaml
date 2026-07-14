@@ -1,5 +1,7 @@
 {{- $kafkaAccess := $.Values.kafkaAccess | default dict }}
 {{- $kafkaAccessMode := $kafkaAccess.mode | default "kafkaAccess" }}
+{{- $postgresAccess := $.Values.postgresAccess | default dict }}
+{{- $postgresAccessMode := $postgresAccess.mode | default "cnpg" }}
 {{- range $name, $config := .Values.components }}
     {{- $config := set . "Capabilities" $.Capabilities }}
     {{- $config := set . "Template" $.Template }}
@@ -10,6 +12,7 @@
     {{- $config := set . "observability" $.Values.observability }}
     {{- $config := set . "defaultValues" $.Values.default }}
     {{- $config := set . "kafkaAccess" $kafkaAccess }}
+    {{- $config := set . "postgresAccess" $postgresAccess }}
 
     {{/* The bundled single-broker Kafka is deprecated legacy-mode-only: it is
     force-disabled whenever kafkaAccess.mode is not "legacy", regardless of
@@ -17,6 +20,14 @@
     to "legacy" is enough to bring it back without touching this flag. */}}
     {{- $enabled := $config.enabled }}
     {{- if and (eq $config.name "kafka") (ne $kafkaAccessMode "legacy") }}
+      {{- $enabled = false }}
+    {{- end }}
+
+    {{/* The bundled single-instance Postgres Deployment is legacy-mode-only:
+    it is force-disabled whenever postgresAccess.mode is not "legacy",
+    regardless of its own `enabled` value - see templates/postgresql-cnpg.yaml
+    for the default cnpg-mode replacement. */}}
+    {{- if and (eq $config.name "postgresql") (ne $postgresAccessMode "legacy") }}
       {{- $enabled = false }}
     {{- end }}
 

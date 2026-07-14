@@ -128,6 +128,68 @@ on connect failure, so kafkaAccess mode relies on that instead.
 {{- end }}
 
 {{/*
+Get Postgres client env vars for a component that declares a `.postgres` block.
+- legacy mode: literal DB_CONNECTION_STRING from `.postgres.legacy` (today's
+  behavior, unchanged).
+- cnpg mode (default): DB_HOST/DB_PORT/DB_USER/DB_PASSWORD/DB_NAME sourced via
+  secretKeyRef from the Secret CNPG generates for its Cluster's app user
+  (`.postgres.existingSecretName`, defaulting to "<postgresAccess.cnpg.clusterName>-app"),
+  then DB_CONNECTION_STRING is built from those via Kubernetes $(VAR) env
+  expansion, shaped by `.postgres.format` ("dotnet" | "uri" | "libpq").
+*/}}
+{{- define "otel-demo.pod.postgresEnv" -}}
+{{- if .postgres }}
+{{- $mode := (.postgresAccess).mode | default "cnpg" }}
+{{- if eq $mode "legacy" }}
+- name: DB_CONNECTION_STRING
+  value: {{ required (printf "components.%s.postgres.legacy is required when postgresAccess.mode is \"legacy\"" .name) .postgres.legacy | quote }}
+{{- else }}
+{{- $secret := .postgres.existingSecretName | default (printf "%s-app" ((.postgresAccess.cnpg).clusterName | default "postgresql")) }}
+- name: DB_HOST
+  valueFrom:
+    secretKeyRef:
+      name: {{ $secret }}
+      key: host
+- name: DB_PORT
+  valueFrom:
+    secretKeyRef:
+      name: {{ $secret }}
+      key: port
+- name: DB_USER
+  valueFrom:
+    secretKeyRef:
+      name: {{ $secret }}
+      key: username
+- name: DB_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: {{ $secret }}
+      key: password
+- name: DB_NAME
+  valueFrom:
+    secretKeyRef:
+      name: {{ $secret }}
+      key: dbname
+- name: DB_CONNECTION_STRING
+  value: {{ include "otel-demo.pod.postgresConnectionString" . | quote }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{- define "otel-demo.pod.postgresConnectionString" -}}
+{{- $format := required (printf "components.%s.postgres.format is required when postgresAccess.mode is \"cnpg\"" .name) .postgres.format }}
+{{- if eq $format "uri" -}}
+postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=prefer
+{{- else if eq $format "libpq" -}}
+host=$(DB_HOST) port=$(DB_PORT) user=$(DB_USER) password=$(DB_PASSWORD) dbname=$(DB_NAME) sslmode=prefer
+{{- else if eq $format "dotnet" -}}
+Host=$(DB_HOST);Username=$(DB_USER);Password=$(DB_PASSWORD);Database=$(DB_NAME)
+{{- else -}}
+{{ fail (printf "components.%s.postgres.format %q is not one of dotnet|uri|libpq" .name $format) }}
+{{- end -}}
+{{- end }}
+
+{{/*
 Get Pod ports
 */}}
 {{- define "otel-demo.pod.ports" -}}
