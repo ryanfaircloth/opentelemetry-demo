@@ -1,0 +1,56 @@
+---
+# Source: otel-demo-fork/templates/postgresql-cnpg.yaml
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: postgresql
+  namespace: default
+  labels:
+    helm.sh/chart: otel-demo-fork-0.9.5
+    
+    
+    app.kubernetes.io/version: "2.2.0"
+    app.kubernetes.io/part-of: opentelemetry-demo
+    app.kubernetes.io/managed-by: Helm
+spec:
+  instances: 1
+  enableSuperuserAccess: true
+  superuserSecret:
+    name: postgresql-superuser
+  storage:
+    size: 1Gi
+  bootstrap:
+    initdb:
+      database: otel
+      owner: otelu
+      postInitApplicationSQLRefs:
+        configMapRefs:
+          - name: postgresql-cnpg-init
+            key: init.sql
+  inheritedMetadata:
+    annotations:
+      io.opentelemetry.discovery.metrics/config: |
+        username: postgres
+        password: otel
+        metrics:
+          postgresql.blks_hit:
+            enabled: true
+          postgresql.blks_read:
+            enabled: true
+          postgresql.tup_fetched:
+            enabled: true
+          postgresql.tup_returned:
+            enabled: true
+          postgresql.tup_inserted:
+            enabled: true
+          postgresql.tup_updated:
+            enabled: true
+          postgresql.tup_deleted:
+            enabled: true
+          postgresql.deadlocks:
+            enabled: true
+        tls:
+          insecure: true
+      io.opentelemetry.discovery.metrics/enabled: "true"
+      io.opentelemetry.discovery.metrics/scraper: postgresql
+      resource.opentelemetry.io/service.namespace: otel-demo

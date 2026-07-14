@@ -1,0 +1,93 @@
+{{/* Chart-managed Strimzi resources for the default kafkaAccess mode - a
+KafkaTopic, one KafkaUser per Kafka-using component (see
+.Values.components.<name>.kafka), and one KafkaAccess per component that
+produces the Secret otel-demo.pod.kafkaEnv reads from
+(templates/_pod.tpl). Assumes the Strimzi operator and the Kafka cluster
+itself (.Values.kafkaAccess.cluster) already exist - same assumption the CNPG
+operator gets in templates/postgresql-cnpg.yaml, just for Strimzi/Kafka
+instead. Set kafkaAccess.manageResources: false to bring your own
+KafkaUser/KafkaAccess per component instead (see examples/kafka-access). */}}
+{{- $ka := .Values.kafkaAccess | default dict }}
+{{- /* Plain `| default true` would coerce an explicit `false` back to true,
+since sprig's default treats any falsy value as unset. */}}
+{{- $manageResources := true }}
+{{- if hasKey $ka "manageResources" }}
+{{- $manageResources = $ka.manageResources }}
+{{- end }}
+{{- if and (eq ($ka.mode | default "kafkaAccess") "kafkaAccess") $manageResources -}}
+{{- $cluster := required "kafkaAccess.cluster is required when kafkaAccess.manageResources is true" $ka.cluster }}
+{{- $clusterName := required "kafkaAccess.cluster.name is required when kafkaAccess.manageResources is true" $cluster.name }}
+{{- $clusterNamespace := required "kafkaAccess.cluster.namespace is required when kafkaAccess.manageResources is true" $cluster.namespace }}
+{{- $topic := $ka.topic | default "orders" }}
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: {{ $topic }}
+  namespace: {{ $clusterNamespace }}
+  labels:
+    strimzi.io/cluster: {{ $clusterName }}
+    {{- include "otel-demo.labels" . | nindent 4 }}
+spec:
+  partitions: {{ ($cluster.topic).partitions | default 1 }}
+  replicas: {{ ($cluster.topic).replicationFactor | default 1 }}
+{{- range $name, $component := .Values.components }}
+{{- if and $component.enabled $component.kafka }}
+{{- $role := required (printf "components.%s.kafka.role is required when kafkaAccess.manageResources is true" $name) $component.kafka.role }}
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaUser
+metadata:
+  name: {{ $name }}
+  namespace: {{ $clusterNamespace }}
+  labels:
+    strimzi.io/cluster: {{ $clusterName }}
+    {{- include "otel-demo.labels" $ | nindent 4 }}
+spec:
+  authentication:
+    type: scram-sha-512
+  authorization:
+    type: simple
+    acls:
+    {{- if eq $role "producer" }}
+      - resource:
+          type: topic
+          name: {{ $topic }}
+        operations:
+          - Write
+          - Describe
+    {{- else if eq $role "consumer" }}
+      - resource:
+          type: topic
+          name: {{ $topic }}
+        operations:
+          - Read
+          - Describe
+      - resource:
+          type: group
+          name: {{ $component.kafka.consumerGroup | default $name }}
+        operations:
+          - Read
+    {{- else }}
+      {{- fail (printf "components.%s.kafka.role %q is not one of producer|consumer" $name $role) }}
+    {{- end }}
+---
+apiVersion: access.strimzi.io/v1alpha1
+kind: KafkaAccess
+metadata:
+  name: {{ $name }}-kafka-access
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "otel-demo.labels" $ | nindent 4 }}
+spec:
+  kafka:
+    name: {{ $clusterName }}
+    namespace: {{ $clusterNamespace }}
+  user:
+    kind: KafkaUser
+    apiGroup: kafka.strimzi.io
+    name: {{ $name }}
+    namespace: {{ $clusterNamespace }}
+  secretName: {{ $name }}-kafka-access
+{{- end }}
+{{- end }}
+{{- end }}

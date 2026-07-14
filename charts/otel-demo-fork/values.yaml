@@ -55,6 +55,34 @@ kafkaAccess:
   #   plaintext, no-auth Kafka and hardcoded KAFKA_ADDR/KAFKA_TOPIC env vars.
   #   Also re-enables the bundled `components.kafka` broker.
   mode: kafkaAccess
+  # Single topic shared by every Kafka-using component (producers and
+  # consumers alike). Kept as one strict, chart-wide setting rather than a
+  # per-component override so the KafkaUser ACLs rendered below can never
+  # drift from what KAFKA_TOPIC actually points at.
+  topic: orders
+  # Only applies when mode is "kafkaAccess". When true (default), the chart
+  # itself renders the Strimzi KafkaTopic/KafkaUser/KafkaAccess custom
+  # resources (see templates/kafka-strimzi.yaml) against the pre-existing
+  # Kafka cluster named/namespaced in `cluster` below - this still assumes an
+  # admin already runs Strimzi and the Kafka cluster itself (no dedicated
+  # cluster is deployed by this chart), it just saves them from hand-authoring
+  # a KafkaUser/KafkaAccess pair per app. Set to false to fall back to
+  # bringing your own KafkaUser/KafkaAccess resources per component (see
+  # examples/kafka-access for that older, unmanaged approach) - in that case
+  # components.<name>.kafka.existingSecretName must be set explicitly.
+  manageResources: true
+  cluster:
+    # Name of the existing Strimzi Kafka cluster (its `strimzi.io/cluster`
+    # label value).
+    name: my-kafka-cluster
+    # Namespace the Strimzi Kafka cluster - and the KafkaTopic/KafkaUser this
+    # chart renders for it - lives in. Not necessarily this release's
+    # namespace: the generated KafkaAccess Secrets always land in this
+    # release's namespace regardless, since that's where the consuming Pods run.
+    namespace: kafka
+    topic:
+      partitions: 1
+      replicationFactor: 1
   legacy:
     bootstrapServers: kafka:9092
     topic: orders
@@ -270,16 +298,20 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.9.5-accounting"
+      tag: "0.10.0-accounting"
     useDefault:
       env: true
     podAnnotations:
       resource.opentelemetry.io/service.namespace: otel-demo
     # KAFKA_ADDR/KAFKA_TOPIC and (in kafkaAccess mode) the SASL/TLS env vars
     # are generated from this block - see .Values.kafkaAccess and
-    # otel-demo.pod.kafkaEnv.
+    # otel-demo.pod.kafkaEnv. role/consumerGroup drive the KafkaUser ACLs
+    # rendered when kafkaAccess.manageResources is true (see
+    # templates/kafka-strimzi.yaml); existingSecretName only applies with
+    # manageResources: false.
     kafka:
-      topic: orders
+      role: consumer
+      consumerGroup: accounting
       existingSecretName: accounting-kafka-access
     # DB_CONNECTION_STRING is generated from this block - see .Values.postgresAccess
     # and otel-demo.pod.postgresEnv.
@@ -322,7 +354,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.9.5-cart"
+      tag: "0.10.0-cart"
     useDefault:
       env: true
     service:
@@ -354,7 +386,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.9.5-checkout"
+      tag: "0.10.0-checkout"
     useDefault:
       env: true
     service:
@@ -362,7 +394,7 @@ components:
     podAnnotations:
       resource.opentelemetry.io/service.namespace: otel-demo
     kafka:
-      topic: orders
+      role: producer
       existingSecretName: checkout-kafka-access
     env:
       - name: CHECKOUT_PORT
@@ -395,7 +427,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.9.5-currency"
+      tag: "0.10.0-currency"
     useDefault:
       env: true
     service:
@@ -419,7 +451,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.9.5-email"
+      tag: "0.10.0-email"
     useDefault:
       env: true
     service:
@@ -445,13 +477,14 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.9.5-fraud-detection"
+      tag: "0.10.0-fraud-detection"
     useDefault:
       env: true
     podAnnotations:
       resource.opentelemetry.io/service.namespace: otel-demo
     kafka:
-      topic: orders
+      role: consumer
+      consumerGroup: fraud-detection
       existingSecretName: fraud-detection-kafka-access
     env:
       - name: FLAGD_HOST
@@ -472,7 +505,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.9.5-frontend"
+      tag: "0.10.0-frontend"
     useDefault:
       env: true
     service:
@@ -557,7 +590,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.9.5-load-generator"
+      tag: "0.10.0-load-generator"
     useDefault:
       env: true
     service:
@@ -599,7 +632,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.9.5-payment"
+      tag: "0.10.0-payment"
     useDefault:
       env: true
     service:
@@ -629,7 +662,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.9.5-product-catalog"
+      tag: "0.10.0-product-catalog"
     useDefault:
       env: true
     service:
@@ -706,7 +739,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.9.5-quote"
+      tag: "0.10.0-quote"
     useDefault:
       env: true
     service:
@@ -736,7 +769,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.9.5-recommendation"
+      tag: "0.10.0-recommendation"
     useDefault:
       env: true
     service:
@@ -766,7 +799,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.9.5-shipping"
+      tag: "0.10.0-shipping"
     useDefault:
       env: true
     service:

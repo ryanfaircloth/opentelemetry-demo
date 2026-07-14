@@ -5,6 +5,31 @@
 > another. If you need to upgrade the chart, you must first delete the existing
 > release and then install the new version.
 
+## To 0.10.0
+
+Adds `kafkaAccess.manageResources` (default `true`) and
+`kafkaAccess.cluster.{name,namespace}`. When `manageResources` is true, the
+chart itself renders the Strimzi `KafkaTopic`, one `KafkaUser` per
+Kafka-using component, and one `KafkaAccess` per component (see
+[templates/kafka-strimzi.yaml](templates/kafka-strimzi.yaml)) against the
+pre-existing Kafka cluster named/namespaced in `kafkaAccess.cluster` - this
+still assumes an admin already runs Strimzi and the Kafka cluster itself (no
+dedicated cluster is deployed by this chart), it just removes the need to
+hand-author a `KafkaUser`/`KafkaAccess` pair per app as previous versions
+required (see [examples/kafka-access](examples/kafka-access)).
+
+The topic is now a single chart-wide `kafkaAccess.topic` (default `orders`)
+rather than a per-component `components.<name>.kafka.topic` override, so the
+`KafkaUser` ACLs this renders can never grant access to a different topic
+than what `KAFKA_TOPIC` actually points at. Each Kafka-using component's
+`.kafka` block now takes `role: producer|consumer` (and `consumerGroup` for
+consumers) instead of `topic`, driving those ACLs.
+
+Set `kafkaAccess.manageResources: false` to restore the previous
+bring-your-own-resources behavior - `components.<name>.kafka.existingSecretName`
+is then required again per component (see
+[examples/kafka-access-unmanaged](examples/kafka-access-unmanaged)).
+
 ## To 0.6.0
 
 Adds a `kafkaAccess` global switch (default `kafkaAccess`) controlling how

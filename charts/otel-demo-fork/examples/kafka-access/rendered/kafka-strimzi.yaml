@@ -1,0 +1,181 @@
+---
+# Source: otel-demo-fork/templates/kafka-strimzi.yaml
+apiVersion: access.strimzi.io/v1alpha1
+kind: KafkaAccess
+metadata:
+  name: accounting-kafka-access
+  namespace: default
+  labels:
+    helm.sh/chart: otel-demo-fork-0.9.5
+    
+    
+    app.kubernetes.io/version: "2.2.0"
+    app.kubernetes.io/part-of: opentelemetry-demo
+    app.kubernetes.io/managed-by: Helm
+spec:
+  kafka:
+    name: my-kafka-cluster
+    namespace: kafka
+  user:
+    kind: KafkaUser
+    apiGroup: kafka.strimzi.io
+    name: accounting
+    namespace: kafka
+  secretName: accounting-kafka-access
+---
+# Source: otel-demo-fork/templates/kafka-strimzi.yaml
+apiVersion: access.strimzi.io/v1alpha1
+kind: KafkaAccess
+metadata:
+  name: checkout-kafka-access
+  namespace: default
+  labels:
+    helm.sh/chart: otel-demo-fork-0.9.5
+    
+    
+    app.kubernetes.io/version: "2.2.0"
+    app.kubernetes.io/part-of: opentelemetry-demo
+    app.kubernetes.io/managed-by: Helm
+spec:
+  kafka:
+    name: my-kafka-cluster
+    namespace: kafka
+  user:
+    kind: KafkaUser
+    apiGroup: kafka.strimzi.io
+    name: checkout
+    namespace: kafka
+  secretName: checkout-kafka-access
+---
+# Source: otel-demo-fork/templates/kafka-strimzi.yaml
+apiVersion: access.strimzi.io/v1alpha1
+kind: KafkaAccess
+metadata:
+  name: fraud-detection-kafka-access
+  namespace: default
+  labels:
+    helm.sh/chart: otel-demo-fork-0.9.5
+    
+    
+    app.kubernetes.io/version: "2.2.0"
+    app.kubernetes.io/part-of: opentelemetry-demo
+    app.kubernetes.io/managed-by: Helm
+spec:
+  kafka:
+    name: my-kafka-cluster
+    namespace: kafka
+  user:
+    kind: KafkaUser
+    apiGroup: kafka.strimzi.io
+    name: fraud-detection
+    namespace: kafka
+  secretName: fraud-detection-kafka-access
+---
+# Source: otel-demo-fork/templates/kafka-strimzi.yaml
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: orders
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: my-kafka-cluster
+    helm.sh/chart: otel-demo-fork-0.9.5
+    
+    
+    app.kubernetes.io/version: "2.2.0"
+    app.kubernetes.io/part-of: opentelemetry-demo
+    app.kubernetes.io/managed-by: Helm
+spec:
+  partitions: 1
+  replicas: 1
+---
+# Source: otel-demo-fork/templates/kafka-strimzi.yaml
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaUser
+metadata:
+  name: accounting
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: my-kafka-cluster
+    helm.sh/chart: otel-demo-fork-0.9.5
+    
+    
+    app.kubernetes.io/version: "2.2.0"
+    app.kubernetes.io/part-of: opentelemetry-demo
+    app.kubernetes.io/managed-by: Helm
+spec:
+  authentication:
+    type: scram-sha-512
+  authorization:
+    type: simple
+    acls:
+      - resource:
+          type: topic
+          name: orders
+        operations:
+          - Read
+          - Describe
+      - resource:
+          type: group
+          name: accounting
+        operations:
+          - Read
+---
+# Source: otel-demo-fork/templates/kafka-strimzi.yaml
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaUser
+metadata:
+  name: checkout
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: my-kafka-cluster
+    helm.sh/chart: otel-demo-fork-0.9.5
+    
+    
+    app.kubernetes.io/version: "2.2.0"
+    app.kubernetes.io/part-of: opentelemetry-demo
+    app.kubernetes.io/managed-by: Helm
+spec:
+  authentication:
+    type: scram-sha-512
+  authorization:
+    type: simple
+    acls:
+      - resource:
+          type: topic
+          name: orders
+        operations:
+          - Write
+          - Describe
+---
+# Source: otel-demo-fork/templates/kafka-strimzi.yaml
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaUser
+metadata:
+  name: fraud-detection
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: my-kafka-cluster
+    helm.sh/chart: otel-demo-fork-0.9.5
+    
+    
+    app.kubernetes.io/version: "2.2.0"
+    app.kubernetes.io/part-of: opentelemetry-demo
+    app.kubernetes.io/managed-by: Helm
+spec:
+  authentication:
+    type: scram-sha-512
+  authorization:
+    type: simple
+    acls:
+      - resource:
+          type: topic
+          name: orders
+        operations:
+          - Read
+          - Describe
+      - resource:
+          type: group
+          name: fraud-detection
+        operations:
+          - Read

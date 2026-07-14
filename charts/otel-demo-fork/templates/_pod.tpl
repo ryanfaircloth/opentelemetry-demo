@@ -48,9 +48,13 @@ should be last.
 Get Kafka client env vars for a component that declares a `.kafka` block.
 - legacy mode: literal KAFKA_ADDR/KAFKA_TOPIC (today's behavior).
 - kafkaAccess mode (default): KAFKA_ADDR/KAFKA_TOPIC plus SASL/TLS env vars
-  sourced from the Secret named in `.kafka.existingSecretName`, as produced
-  by a Strimzi KafkaAccess custom resource. Every key besides
-  bootstrap.servers is optional, since not every auth mode uses SASL or TLS.
+  sourced from the Secret produced by a Strimzi KafkaAccess custom resource.
+  When kafkaAccess.manageResources is true (default), that KafkaAccess is
+  rendered by this chart (see templates/kafka-strimzi.yaml) and its Secret is
+  always named "<component>-kafka-access"; with manageResources: false the
+  Secret is bring-your-own, named via `.kafka.existingSecretName`. Every key
+  besides bootstrap.servers is optional, since not every auth mode uses SASL
+  or TLS.
 */}}
 {{- define "otel-demo.pod.kafkaEnv" -}}
 {{- if .kafka }}
@@ -59,11 +63,21 @@ Get Kafka client env vars for a component that declares a `.kafka` block.
 - name: KAFKA_ADDR
   value: {{ (.kafkaAccess.legacy).bootstrapServers | default "kafka:9092" | quote }}
 - name: KAFKA_TOPIC
-  value: {{ .kafka.topic | default (.kafkaAccess.legacy).topic | default "orders" | quote }}
+  value: {{ (.kafkaAccess.legacy).topic | default "orders" | quote }}
 {{- else }}
-{{- $secret := required (printf "components.%s.kafka.existingSecretName is required when kafkaAccess.mode is \"kafkaAccess\"" .name) .kafka.existingSecretName }}
+{{- /* Plain `| default true` would coerce an explicit `false` back to true,
+since sprig's default treats any falsy value as unset. */}}
+{{- $manageResources := true }}
+{{- if hasKey (.kafkaAccess | default dict) "manageResources" }}
+{{- $manageResources = .kafkaAccess.manageResources }}
+{{- end }}
+{{- $secret := .kafka.existingSecretName }}
+{{- if $manageResources }}
+{{- $secret = printf "%s-kafka-access" .name }}
+{{- end }}
+{{- $secret = required (printf "components.%s.kafka.existingSecretName is required when kafkaAccess.mode is \"kafkaAccess\" and kafkaAccess.manageResources is false" .name) $secret }}
 - name: KAFKA_TOPIC
-  value: {{ .kafka.topic | default "orders" | quote }}
+  value: {{ .kafkaAccess.topic | default "orders" | quote }}
 - name: KAFKA_ADDR
   valueFrom:
     secretKeyRef:

@@ -1,9 +1,12 @@
-# Sample resources for a Kafka admin to apply in the Strimzi Kafka cluster's
-# own namespace (not this chart's release namespace) - one KafkaUser and one
-# KafkaAccess per app, each producing the Secret referenced by
-# components.<name>.kafka.existingSecretName in values.yaml. The topic itself
-# ("orders") is expected to already exist or be created by the Kafka admin;
-# this chart does not manage KafkaTopic resources.
+# Sample resources for a Kafka admin to apply by hand when
+# kafkaAccess.manageResources is set to false (see values.yaml in this
+# folder) - one KafkaUser and one KafkaAccess per app, each producing the
+# Secret referenced by components.<name>.kafka.existingSecretName in
+# values.yaml. The topic itself ("orders") is expected to already exist or be
+# created by the Kafka admin; with manageResources: false this chart does not
+# manage KafkaTopic/KafkaUser/KafkaAccess resources at all - see
+# ../kafka-access for the default, chart-managed equivalent of these same
+# resources.
 #
 # See https://github.com/strimzi/kafka-access-operator for the KafkaAccess
 # operator this depends on.

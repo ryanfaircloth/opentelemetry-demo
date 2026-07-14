@@ -251,7 +251,14 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "topic": {
+        "role": {
+          "type": "string",
+          "enum": [
+            "producer",
+            "consumer"
+          ]
+        },
+        "consumerGroup": {
           "type": "string"
         },
         "existingSecretName": {
@@ -291,6 +298,36 @@
             "kafkaAccess",
             "legacy"
           ]
+        },
+        "topic": {
+          "type": "string"
+        },
+        "manageResources": {
+          "type": "boolean"
+        },
+        "cluster": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "namespace": {
+              "type": "string"
+            },
+            "topic": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "partitions": {
+                  "type": "integer"
+                },
+                "replicationFactor": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
         },
         "legacy": {
           "type": "object",

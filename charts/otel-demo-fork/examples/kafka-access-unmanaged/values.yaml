@@ -1,0 +1,20 @@
+# kafkaAccess mode with manageResources: false - the non-default alternative
+# to ../kafka-access. It requires a Kafka admin to have already created, per
+# app, a KafkaUser and a KafkaAccess custom resource (see
+# strimzi-resources.yaml in this folder) targeting the Strimzi Kafka cluster
+# and its topic(s) in their own namespace. Each KafkaAccess produces a Secret
+# with the name referenced below.
+kafkaAccess:
+  mode: kafkaAccess
+  manageResources: false
+
+components:
+  accounting:
+    kafka:
+      existingSecretName: accounting-kafka-access
+  checkout:
+    kafka:
+      existingSecretName: checkout-kafka-access
+  fraud-detection:
+    kafka:
+      existingSecretName: fraud-detection-kafka-access
