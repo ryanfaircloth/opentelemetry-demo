@@ -19,6 +19,9 @@ COPY ./src/frontend/services/ services/
 COPY ./src/frontend/styles/ styles/
 COPY ./src/frontend/types/ types/
 
+# utils/ is copied file-by-file rather than as a whole directory - any new
+# file added under utils/ needs its own COPY line here or it silently won't
+# make it into the build context.
 COPY ./src/frontend/utils/enums/ utils/enums/
 COPY ./src/frontend/utils/telemetry/ utils/telemetry/
 COPY ./src/frontend/utils/imageLoader.js utils/imageLoader.js
