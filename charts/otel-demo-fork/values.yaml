@@ -346,6 +346,9 @@ components:
 
   checkout:
     enabled: true
+    imageOverride:
+      repository: "ghcr.io/ryanfaircloth/demo"
+      tag: "0.8.0-checkout"
     useDefault:
       env: true
     service:
@@ -428,6 +431,9 @@ components:
 
   fraud-detection:
     enabled: true
+    imageOverride:
+      repository: "ghcr.io/ryanfaircloth/demo"
+      tag: "0.8.0-fraud-detection"
     useDefault:
       env: true
     podAnnotations:

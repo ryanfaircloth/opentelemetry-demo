@@ -91,7 +91,10 @@ fun buildConsumerProps(): Properties {
         props[CommonClientConfigs.SECURITY_PROTOCOL_CONFIG] = securityProtocol
         System.getenv("KAFKA_SASL_MECHANISM")?.let { props[SaslConfigs.SASL_MECHANISM] = it }
         System.getenv("KAFKA_SASL_JAAS_CONFIG")?.let { props[SaslConfigs.SASL_JAAS_CONFIG] = it }
-        System.getenv("KAFKA_SSL_TRUSTSTORE_CRT")?.let { props[SslConfigs.SSL_TRUSTSTORE_CERTIFICATES_CONFIG] = it }
+        System.getenv("KAFKA_SSL_TRUSTSTORE_CRT")?.let {
+            props[SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG] = "PEM"
+            props[SslConfigs.SSL_TRUSTSTORE_CERTIFICATES_CONFIG] = it
+        }
     }
 
     return props

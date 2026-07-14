@@ -1,0 +1,45 @@
+# fork: publish versioned component images (tagged with the otel-demo-fork
+# chart version) to GHCR, so the chart can pin to a reproducible tag instead
+# of the floating `dev` tag published by build-images.yml.
+name: Component release
+
+on:
+  push:
+    branches:
+      - fork/stable
+    paths:
+      - 'src/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    name: Read chart version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.chart_version.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        with:
+          persist-credentials: false
+      - name: Read version from Chart.yaml
+        id: chart_version
+        run: |
+          version=$(awk -F': *' '/^version:/ {print $2}' charts/otel-demo-fork/Chart.yaml)
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
+  build_images:
+    name: Build images
+    needs: version
+    permissions:
+      contents: read  # required by the component-build-images reusable workflow
+      packages: write  # required to push built images to GHCR
+    uses: ./.github/workflows/component-build-images.yml
+    with:
+      push: true
+      version: ${{ needs.version.outputs.version }}
+      ghcr_repo: ghcr.io/ryanfaircloth/demo
+      dockerhub_repo: ryanfaircloth/demo
