@@ -24,9 +24,17 @@ async fn init_flagd_provider_with_retry() -> FlagdProvider {
     let start = std::time::Instant::now();
     let mut attempt: u32 = 0;
 
+    let host = env::var("FLAGD_HOST").unwrap_or_else(|_| "localhost".to_string());
+    let port: u16 = env::var("FLAGD_PORT")
+        .ok()
+        .and_then(|p| p.parse().ok())
+        .unwrap_or(8013);
+
     loop {
         attempt += 1;
         match FlagdProvider::new(FlagdOptions {
+            host: host.clone(),
+            port,
             cache_settings: None,
             ..Default::default()
         })
