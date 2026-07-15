@@ -7,6 +7,15 @@ the release.
 
 ## Unreleased
 
+* [checkout] Point the Helm chart's `OTEL_EXPORTER_OTLP_ENDPOINT` at the
+  collector's HTTP port (4318) instead of its gRPC port (4317); `checkout`'s
+  Go SDK exporters speak `http/protobuf` only, and posting HTTP requests at
+  the gRPC listener produced malformed-response errors on every trace,
+  metric, and log export.
+* [kafka] `accounting` and `fraud-detection` now read their consumer
+  `group.id` from `KAFKA_CONSUMER_GROUP` instead of a hardcoded value, so
+  environments sharing a cluster but subscribed to different per-env topics
+  no longer collide on the same group id.
 * [load-generator] Drop the unused `g++` build dependency; every package in
   `requirements.txt` installs from a prebuilt wheel, so no source
   compilation ever happens.
