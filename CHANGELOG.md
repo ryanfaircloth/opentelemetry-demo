@@ -10,6 +10,9 @@ the release.
 * [load-generator] Drop the unused `g++` build dependency; every package in
   `requirements.txt` installs from a prebuilt wheel, so no source
   compilation ever happens.
+* [grafana] Remove the bundled Grafana service, dashboards, and datasource
+  provisioning from the fork. Jaeger and OpenSearch stay, since CI's
+  `test/telemetry` suite queries them directly to verify traces and logs.
 * [checkout] Remove a dead gRPC client dial for `shipping` left over from its
   migration to a REST call (`quoteShipping`/`shipOrder` already POST to
   `shipping` over HTTP). The unused dial blocked startup waiting for a gRPC

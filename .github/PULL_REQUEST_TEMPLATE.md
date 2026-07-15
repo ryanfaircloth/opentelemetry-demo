@@ -16,10 +16,10 @@ A Pull Request that modifies instrumentation code will likely require an
 update in docs. Please make sure to update the opentelemetry.io repo with any
 docs changes.
 
-A Pull Request that modifies compose*.yaml, otelcol-config*.yml, or
-Grafana dashboards will likely require an update to the Demo Helm chart.
-Other changes affecting how a service is deployed will also likely require an
-update to the Demo Helm chart.
+A Pull Request that modifies compose*.yaml or otelcol-config*.yml will likely
+require an update to the Demo Helm chart. Other changes affecting how a
+service is deployed will also likely require an update to the Demo Helm
+chart.
 -->
 
 Maintainers will not merge until the above have been completed. If you're unsure
