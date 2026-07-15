@@ -18,6 +18,14 @@ the release.
   `-javaagent` `JAVA_TOOL_OPTIONS` flag from the image; tracing now depends
   on an externally injected Java auto-instrumentation agent instead of a
   jar version pinned in the Dockerfile.
+* [helm] For `frontend` and `fraud-detection`, replace the
+  `resource.opentelemetry.io/service.namespace` pod annotation with
+  `resource.opentelemetry.io/service.name`, matching the pattern an
+  injected auto-instrumentation agent reads for resource attributes.
+  Service version is left to the standard `app.kubernetes.io/version` pod
+  label instead of a duplicate annotation, and `deployment.environment.name`
+  is intentionally left unset here since it's environment-specific and
+  belongs in each deployer's own values override, not a chart default.
 * [checkout] Point the Helm chart's `OTEL_EXPORTER_OTLP_ENDPOINT` at the
   collector's HTTP port (4318) instead of its gRPC port (4317); `checkout`'s
   Go SDK exporters speak `http/protobuf` only, and posting HTTP requests at

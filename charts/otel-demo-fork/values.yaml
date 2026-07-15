@@ -298,7 +298,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.0-accounting"
+      tag: "0.11.1-accounting"
     useDefault:
       env: true
     podAnnotations:
@@ -354,7 +354,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.0-cart"
+      tag: "0.11.1-cart"
     useDefault:
       env: true
     service:
@@ -386,7 +386,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.0-checkout"
+      tag: "0.11.1-checkout"
     useDefault:
       env: true
     service:
@@ -429,7 +429,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.0-currency"
+      tag: "0.11.1-currency"
     useDefault:
       env: true
     service:
@@ -453,7 +453,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.0-email"
+      tag: "0.11.1-email"
     useDefault:
       env: true
     service:
@@ -479,11 +479,11 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.0-fraud-detection"
+      tag: "0.11.1-fraud-detection"
     useDefault:
       env: true
     podAnnotations:
-      resource.opentelemetry.io/service.namespace: otel-demo
+      resource.opentelemetry.io/service.name: fraud-detection
     kafka:
       role: consumer
       consumerGroup: fraud-detection
@@ -507,13 +507,13 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.0-frontend"
+      tag: "0.11.1-frontend"
     useDefault:
       env: true
     service:
       port: 8080
     podAnnotations:
-      resource.opentelemetry.io/service.namespace: otel-demo
+      resource.opentelemetry.io/service.name: frontend
     env:
       - name: FRONTEND_PORT
         value: "8080"
@@ -592,7 +592,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.0-load-generator"
+      tag: "0.11.1-load-generator"
     useDefault:
       env: true
     service:
@@ -634,7 +634,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.0-payment"
+      tag: "0.11.1-payment"
     useDefault:
       env: true
     service:
@@ -664,7 +664,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.0-product-catalog"
+      tag: "0.11.1-product-catalog"
     useDefault:
       env: true
     service:
@@ -741,7 +741,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.0-quote"
+      tag: "0.11.1-quote"
     useDefault:
       env: true
     service:
@@ -771,7 +771,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.0-recommendation"
+      tag: "0.11.1-recommendation"
     useDefault:
       env: true
     service:
@@ -801,7 +801,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.0-shipping"
+      tag: "0.11.1-shipping"
     useDefault:
       env: true
     service:
