@@ -27,6 +27,11 @@ the release.
   `shipping` over HTTP). The unused dial blocked startup waiting for a gRPC
   handshake that `shipping`'s actix-web REST server never speaks, crash-looping
   `checkout` with `TRANSIENT_FAILURE` even while `shipping` itself was healthy.
+* [checkout] Remove the same dead gRPC client dial for `email`, which is also
+  called over REST (`sendOrderConfirmation` already POSTs to `email` over
+  HTTP). The unused dial blocked startup on a gRPC handshake `email`'s
+  Sinatra REST server never speaks, crash-looping `checkout` with
+  `TRANSIENT_FAILURE` even while `email` itself was healthy.
 * [kafka] Add `KAFKA_TOPIC` environment variable to configure the Kafka topic
   name used by `checkout`, `accounting`, and `fraud-detection`, defaulting to
   `orders` to preserve existing behavior

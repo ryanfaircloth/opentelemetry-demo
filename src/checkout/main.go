@@ -198,7 +198,6 @@ type checkout struct {
 	productCatalogSvcClient pb.ProductCatalogServiceClient
 	cartSvcClient           pb.CartServiceClient
 	currencySvcClient       pb.CurrencyServiceClient
-	emailSvcClient          pb.EmailServiceClient
 	paymentSvcClient        pb.PaymentServiceClient
 	httpClient              *http.Client
 }
@@ -282,10 +281,8 @@ func main() {
 	svc.currencySvcClient = pb.NewCurrencyServiceClient(c)
 	defer c.Close()
 
+	// email is called over REST (see sendOrderConfirmation below), not gRPC.
 	mustMapEnv(&svc.emailSvcAddr, "EMAIL_ADDR")
-	c = mustCreateClient(svc.emailSvcAddr)
-	svc.emailSvcClient = pb.NewEmailServiceClient(c)
-	defer c.Close()
 
 	mustMapEnv(&svc.paymentSvcAddr, "PAYMENT_ADDR")
 	c = mustCreateClient(svc.paymentSvcAddr)
