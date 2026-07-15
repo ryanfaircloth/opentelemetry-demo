@@ -7,25 +7,21 @@ ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["/src/accounting/", "Accounting/"]
 COPY ["/pb/demo.proto", "Accounting/src/protos/demo.proto"]
-RUN dotnet restore "./Accounting/Accounting.csproj" -r linux-musl-$TARGETARCH
+RUN dotnet restore "./Accounting/Accounting.csproj" -r linux-$TARGETARCH
 WORKDIR "/src/Accounting"
 
-RUN dotnet build "./Accounting.csproj" -r linux-musl-$TARGETARCH -c $BUILD_CONFIGURATION -o /app/build
+RUN dotnet build "./Accounting.csproj" -r linux-$TARGETARCH -c $BUILD_CONFIGURATION -o /app/build
 
 # -----------------------------------------------------------------------------
 
 FROM builder AS publish
 ARG TARGETARCH
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./Accounting.csproj" -r linux-musl-$TARGETARCH -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "./Accounting.csproj" -r linux-$TARGETARCH -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 # -----------------------------------------------------------------------------
 
-# fork: alpine (musl) runtime instead of the Debian-based image - notably
-# smaller. The publish steps above use the matching linux-musl-$TARGETARCH
-# RID so native assets (incl. the OpenTelemetry.AutoInstrumentation profiler)
-# are the musl builds, not glibc ones that would mismatch this base.
-FROM mcr.microsoft.com/dotnet/aspnet:10.0.9-alpine3.24@sha256:ab9cd53240fe765e9ea01cb3f043ee92607072440fc5b252ca4d64b48c7c17fe
+FROM mcr.microsoft.com/dotnet/aspnet:10.0.9@sha256:7644f992230d35cf230017189d4038c0ae0f7388b13f4f7ae1900a155bafb597
 USER app
 WORKDIR /app
 COPY --from=publish /app/publish .
