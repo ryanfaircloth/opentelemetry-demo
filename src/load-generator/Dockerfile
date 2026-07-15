@@ -5,10 +5,6 @@
 FROM docker.io/library/python:3.14.6-slim-bookworm@sha256:4ff4b92a68355dbdb52584ab3391dff8d371a61d4e063468bfd0130e3189c6d9 AS base
 
 FROM base AS builder
-RUN apt-get -qq update \
-    && apt-get install -y --no-install-recommends g++ \
-    && rm -rf /var/lib/apt/lists/*
-
 COPY ./src/load-generator/requirements.txt .
 RUN pip install --prefix="/reqs" --require-hashes -r requirements.txt
 

@@ -7,6 +7,9 @@ the release.
 
 ## Unreleased
 
+* [load-generator] Drop the unused `g++` build dependency; every package in
+  `requirements.txt` installs from a prebuilt wheel, so no source
+  compilation ever happens.
 * [checkout] Remove a dead gRPC client dial for `shipping` left over from its
   migration to a REST call (`quoteShipping`/`shipOrder` already POST to
   `shipping` over HTTP). The unused dial blocked startup waiting for a gRPC
