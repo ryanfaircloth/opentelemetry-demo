@@ -7,6 +7,17 @@ the release.
 
 ## Unreleased
 
+* [frontend] Drop the bundled Node.js OTel SDK bootstrap
+  (`Instrumentation.js`, `@opentelemetry/sdk-node`,
+  `auto-instrumentations-node`, OTLP exporters, and resource detectors) and
+  the `--require` hook that loaded it. Server-side tracing/metrics now
+  depend on an externally injected Node.js auto-instrumentation agent
+  instead of a version pinned in the app's own dependencies. Browser-side
+  telemetry (`FrontendTracer.ts`) is unaffected.
+* [fraud-detection] Drop the bundled OTel Java agent jar and its
+  `-javaagent` `JAVA_TOOL_OPTIONS` flag from the image; tracing now depends
+  on an externally injected Java auto-instrumentation agent instead of a
+  jar version pinned in the Dockerfile.
 * [checkout] Point the Helm chart's `OTEL_EXPORTER_OTLP_ENDPOINT` at the
   collector's HTTP port (4318) instead of its gRPC port (4317); `checkout`'s
   Go SDK exporters speak `http/protobuf` only, and posting HTTP requests at
