@@ -21,11 +21,14 @@ since sprig's default treats any falsy value as unset. */}}
 {{- $topic := $ka.topic | default "orders" }}
 {{- /* KafkaTopic/KafkaUser are rendered into the shared cluster's namespace
 ($clusterNamespace), which other otel-demo-fork releases may point their own
-kafkaAccess.cluster at - prefix their object names so two releases sharing a
-cluster never collide on the same name. spec.topicName keeps the actual
-Kafka topic string ($topic) independent of the KafkaTopic CR's object name,
-and the KafkaUser's SASL username (which Strimzi ties to metadata.name)
-independent of the component name. */}}
+kafkaAccess.cluster at - prefix their object names with namespace, release
+name AND topic so two releases sharing a cluster (and possibly the same
+namespace/release name, e.g. concurrent PR environments that only vary
+kafkaAccess.topic) never collide on the same KafkaUser/KafkaTopic name and
+clobber each other's ACLs. spec.topicName keeps the actual Kafka topic
+string ($topic) independent of the KafkaTopic CR's object name, and the
+KafkaUser's SASL username (which Strimzi ties to metadata.name) independent
+of the component name. */}}
 {{- $resourcePrefix := printf "%s-%s" .Release.Namespace .Release.Name }}
 apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaTopic
@@ -42,7 +45,7 @@ spec:
 {{- range $name, $component := .Values.components }}
 {{- if and $component.enabled $component.kafka }}
 {{- $role := required (printf "components.%s.kafka.role is required when kafkaAccess.manageResources is true" $name) $component.kafka.role }}
-{{- $userName := printf "%s-%s" $resourcePrefix $name }}
+{{- $userName := printf "%s-%s-%s" $resourcePrefix $name $topic }}
 ---
 apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaUser
