@@ -195,7 +195,6 @@ type checkout struct {
 	kafkaBrokerSvcAddr    string
 	pb.UnimplementedCheckoutServiceServer
 	KafkaProducerClient     sarama.AsyncProducer
-	shippingSvcClient       pb.ShippingServiceClient
 	productCatalogSvcClient pb.ProductCatalogServiceClient
 	cartSvcClient           pb.CartServiceClient
 	currencySvcClient       pb.CurrencyServiceClient
@@ -265,13 +264,11 @@ func main() {
 		Transport: otelhttp.NewTransport(http.DefaultTransport),
 	}
 
+	// shipping is called over REST (see quoteShipping/shipOrder below), not gRPC.
 	mustMapEnv(&svc.shippingSvcAddr, "SHIPPING_ADDR")
-	c := mustCreateClient(svc.shippingSvcAddr)
-	svc.shippingSvcClient = pb.NewShippingServiceClient(c)
-	defer c.Close()
 
 	mustMapEnv(&svc.productCatalogSvcAddr, "PRODUCT_CATALOG_ADDR")
-	c = mustCreateClient(svc.productCatalogSvcAddr)
+	c := mustCreateClient(svc.productCatalogSvcAddr)
 	svc.productCatalogSvcClient = pb.NewProductCatalogServiceClient(c)
 	defer c.Close()
 

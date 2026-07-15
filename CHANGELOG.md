@@ -7,6 +7,11 @@ the release.
 
 ## Unreleased
 
+* [checkout] Remove a dead gRPC client dial for `shipping` left over from its
+  migration to a REST call (`quoteShipping`/`shipOrder` already POST to
+  `shipping` over HTTP). The unused dial blocked startup waiting for a gRPC
+  handshake that `shipping`'s actix-web REST server never speaks, crash-looping
+  `checkout` with `TRANSIENT_FAILURE` even while `shipping` itself was healthy.
 * [kafka] Add `KAFKA_TOPIC` environment variable to configure the Kafka topic
   name used by `checkout`, `accounting`, and `fraud-detection`, defaulting to
   `orders` to preserve existing behavior
