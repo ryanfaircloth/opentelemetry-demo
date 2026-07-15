@@ -30,6 +30,7 @@ internal class DBContext : DbContext
 internal class Consumer : BackgroundService
 {
     private static readonly string TopicName = Environment.GetEnvironmentVariable("KAFKA_TOPIC") ?? "orders";
+    private static readonly string GroupId = Environment.GetEnvironmentVariable("KAFKA_CONSUMER_GROUP") ?? "accounting";
 
     // Bounds how long the constructor retries a failing Kafka connection
     // before giving up. Mirrors product-catalog's initDatabase() retry budget.
@@ -181,7 +182,7 @@ internal class Consumer : BackgroundService
     {
         var conf = new ConsumerConfig
         {
-            GroupId = "accounting",
+            GroupId = GroupId,
             BootstrapServers = servers,
             // https://github.com/confluentinc/confluent-kafka-dotnet/tree/07de95ed647af80a0db39ce6a8891a630423b952#basic-consumer-example
             AutoOffsetReset = AutoOffsetReset.Earliest,

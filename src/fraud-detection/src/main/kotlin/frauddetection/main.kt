@@ -28,7 +28,7 @@ import dev.openfeature.sdk.Value
 import dev.openfeature.sdk.OpenFeatureAPI
 
 val topic: String = System.getenv("KAFKA_TOPIC") ?: "orders"
-const val groupID = "fraud-detection"
+val groupID: String = System.getenv("KAFKA_CONSUMER_GROUP") ?: "fraud-detection"
 
 private val logger: Logger = LogManager.getLogger(groupID)
 
