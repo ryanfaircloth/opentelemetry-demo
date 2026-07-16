@@ -7,6 +7,33 @@ the release.
 
 ## Unreleased
 
+* [recommendation] Move from a self-baked zero-code setup (own venv,
+  `opentelemetry-bootstrap -a install`, `opentelemetry-instrument` as
+  entrypoint wrapper, `opentelemetry-distro`/`psutil` dependencies) to
+  fully externally injected instrumentation, matching the other migrated
+  services: the venv still installs `opentelemetry-api`/`opentelemetry-sdk`
+  explicitly (needed directly by business code and the retained manual
+  logs pipeline), but the zero-code bootstrap and its bundled-agent
+  dependencies are gone. Business spans/attributes in
+  `get_product_list`/`ListRecommendations`, the `demo.recommendation.requests`
+  counter, and the manual `LoggerProvider`/`OTLPLogExporter` logs setup are
+  all untouched - the logs bootstrap intentionally stays manual for now,
+  since correlating stdout logs with trace context across every service is
+  a separate, not-yet-started workstream.
+* [accounting] Drop the `OpenTelemetry.AutoInstrumentation` NuGet package
+  and its `instrument.sh` profiler-wrapper entrypoint; tracing now depends
+  on an externally injected .NET auto-instrumentation profiler instead of
+  a version pinned in the csproj. Uncovered and fixed a latent bug in the
+  process: `Consumer.cs`/`Program.cs` use `Microsoft.Extensions.Hosting`'s
+  `BackgroundService` but never referenced the package directly - it only
+  ever compiled because `OpenTelemetry.AutoInstrumentation` pulled it in
+  transitively. Added an explicit `Microsoft.Extensions.Hosting`
+  `PackageReference`. `Consumer.cs`'s manual `ActivitySource("Accounting.Consumer")`
+  span and the `OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES` env var that
+  tells the profiler to listen to it are untouched - that config is needed
+  regardless of whether the profiler is bundled or injected. Like payment,
+  accounting gets no traces under `docker compose up` (no injection
+  mechanism there); the Helm-chart/operator path is unaffected.
 * [payment] Drop the bundled `@opentelemetry/auto-instrumentations-node`
   and its supporting `@opentelemetry/sdk-node`/exporter/resource-detector
   dependencies; tracing now depends on an externally injected Node.js
