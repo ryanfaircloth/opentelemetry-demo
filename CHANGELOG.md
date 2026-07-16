@@ -7,6 +7,23 @@ the release.
 
 ## Unreleased
 
+* [agent] Drop the bundled `Traceloop.init()` bootstrap and the manual
+  `FastAPIInstrumentor.instrument_app()`/`HTTPXClientInstrumentor().instrument()`
+  calls, and their now-unused `opentelemetry-api`/`opentelemetry-sdk`/
+  `opentelemetry-semantic-conventions`/`opentelemetry-instrumentation-fastapi`/
+  `-requests`/`-httpx` dependencies; tracing now depends on an externally
+  injected Python auto-instrumentation agent instead of a version pinned
+  in the app's own dependencies. Unlike `mcp`, `agent` genuinely calls LLMs
+  through `langchain`/`langchain_openai`, and `agents.py`'s
+  `@workflow(name="astronomy_shop_agent_workflow")` decorator
+  (`traceloop.sdk.decorators.workflow`) is real business instrumentation -
+  both it and `opentelemetry-instrumentation-langchain` (the actual LLM
+  span instrumentor) stay as dependencies. Neither needs an explicit
+  `.instrument()`/`.init()` call: `opentelemetry-instrumentation-*`
+  packages register standard entry points that any zero-code or injected
+  Python auto-instrumentation bootstrap discovers automatically from the
+  app's own installed packages, the same way `opentelemetry-instrumentation-requests`
+  worked for `mcp`.
 * [cart] Switch from code-based OTel SDK wiring to externally injected
   .NET auto-instrumentation. Unlike the other .NET services migrated so
   far, cart never used the `OpenTelemetry.AutoInstrumentation` profiler

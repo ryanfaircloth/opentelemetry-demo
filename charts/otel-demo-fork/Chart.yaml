@@ -1,7 +1,7 @@
 apiVersion: v2
 type: application
 name: otel-demo-fork
-version: 0.11.6
+version: 0.11.7
 description: Helm chart for ryanfaircloth/opentelemetry-demo (fork of the OpenTelemetry Demo)
 home: https://opentelemetry.io/
 sources:
