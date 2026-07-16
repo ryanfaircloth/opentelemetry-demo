@@ -7,6 +7,15 @@ the release.
 
 ## Unreleased
 
+* [currency] Update RPC span attributes to current OpenTelemetry semantic
+  conventions, found while auditing the fleet against real-world
+  telemetry best practices: `rpc.system` -> `rpc.system.name`,
+  `rpc.grpc.status_code` -> `rpc.response.status_code` (now a string
+  value), and folded the deprecated `rpc.service` attribute into a
+  fully-qualified `rpc.method` (e.g. `oteldemo.CurrencyService/Convert`)
+  per the current spec. Eliminates the `OPENTELEMETRY_DEPRECATED`
+  compiler warnings this produced on every build. No behavior change;
+  verified the service still builds and starts cleanly.
 * [recommendation] Fix a live crash loop seen in a dev cluster:
   `recommendation`'s gRPC client channel to `product-catalog` was hitting
   a longstanding native `grpcio` C-core bug - a call combiner ref-count
