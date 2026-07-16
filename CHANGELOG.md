@@ -7,6 +7,23 @@ the release.
 
 ## Unreleased
 
+* [currency] Fix `IPV6_ENABLED` check in `RunServer`: it compared a
+  `const char*` from `getenv()` against a string literal by pointer
+  identity (`ipv6_enabled == "true"`) rather than comparing contents, so
+  the condition was always false and the IPv6 listen-address override
+  never actually activated. Now uses `strcmp` with a null check. Found
+  incidentally during the OTel config consistency audit; unrelated to
+  telemetry. Also hardens `RunServer`'s `VERSION` env var read, found in
+  the same review: `std::string version = std::getenv("VERSION")`
+  constructs a string directly from a possibly-null pointer, which throws
+  `std::logic_error` if `VERSION` is ever unset. Both compose and the Helm
+  chart always set it today, so this hadn't been hit, but it's a real
+  crash risk for anyone running the binary directly.
+* [recommendation] Remove `logger.py` (`CustomJsonFormatter`/`getJSONLogger`)
+  and the `python-json-logger`/`python-dotenv` dependencies it and nothing
+  else pulled in - dead code, never imported by `recommendation_server.py`,
+  which uses stdlib `logging` directly. Flagged during this session's OTel
+  migration audit and removed as a follow-up cleanup.
 * [ci] `build-images.yml` only builds/pushes images on pushes touching
   `src/**`; a chart- or doc-only release (like the 0.11.8 shipping fix)
   triggers no build at all, so bumping every pinned `imageOverride` tag in

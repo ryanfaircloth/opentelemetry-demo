@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include <math.h>
 #include <demo.grpc.pb.h>
@@ -91,7 +92,8 @@ namespace
     {"ZAR", 16.0583},
   };
 
-  std::string version = std::getenv("VERSION"); 
+  const char* version_env = std::getenv("VERSION");
+  std::string version = version_env != nullptr ? version_env : "";
   std::string name{ "currency" };
 
   nostd::unique_ptr<metrics_api::Counter<uint64_t>> currency_counter;
@@ -254,8 +256,8 @@ void RunServer(uint16_t port)
   std::string ip("0.0.0.0");
 
   const char* ipv6_enabled = std::getenv("IPV6_ENABLED");
-  
-  if (ipv6_enabled == "true") {
+
+  if (ipv6_enabled != nullptr && std::strcmp(ipv6_enabled, "true") == 0) {
     ip = "[::]";
     logger->Info(eventName("currency.server.ip_overwrite"),
                  "Overwriting Localhost IP",

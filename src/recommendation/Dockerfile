@@ -20,7 +20,6 @@ WORKDIR /app
 
 COPY ./src/recommendation/demo_pb2_grpc.py demo_pb2_grpc.py
 COPY ./src/recommendation/demo_pb2.py demo_pb2.py
-COPY ./src/recommendation/logger.py logger.py
 COPY ./src/recommendation/metrics.py metrics.py
 COPY ./src/recommendation/recommendation_server.py recommendation_server.py
 
