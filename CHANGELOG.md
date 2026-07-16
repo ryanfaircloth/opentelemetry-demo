@@ -26,6 +26,20 @@ the release.
   label instead of a duplicate annotation, and `deployment.environment.name`
   is intentionally left unset here since it's environment-specific and
   belongs in each deployer's own values override, not a chart default.
+* [chatbot] Drop the bundled OTel Python bootstrap (manual `TracerProvider`,
+  `OTLPSpanExporter`, `RequestsInstrumentor`, `HTTPXClientInstrumentor`) and
+  the now-unused `opentelemetry-*` dependencies; tracing now depends on an
+  externally injected Python auto-instrumentation agent instead of a
+  version pinned in the app's own dependencies. No business spans or custom
+  metrics existed in this service, so nothing else changes.
+* [mcp] Drop the bundled `traceloop-sdk` bootstrap (`Traceloop.init()`,
+  `HTTPXClientInstrumentor`) and its now-unused dependencies
+  (`traceloop-sdk`, `opentelemetry-*`, and the `langchain`/`langgraph`
+  dependency tree that existed solely to be instrumented and was never
+  imported by mcp's own code); tracing now depends on an externally
+  injected Python auto-instrumentation agent instead of a version pinned
+  in the app's own dependencies. `opentelemetry-api` remains as a
+  transitive dependency of `fastmcp` itself, unrelated to this change.
 * [checkout] Point the Helm chart's `OTEL_EXPORTER_OTLP_ENDPOINT` at the
   collector's HTTP port (4318) instead of its gRPC port (4317); `checkout`'s
   Go SDK exporters speak `http/protobuf` only, and posting HTTP requests at
