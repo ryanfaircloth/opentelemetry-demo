@@ -298,7 +298,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.2-accounting"
+      tag: "0.11.3-accounting"
     useDefault:
       env: true
     podAnnotations:
@@ -354,7 +354,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.2-cart"
+      tag: "0.11.3-cart"
     useDefault:
       env: true
     service:
@@ -386,7 +386,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.2-checkout"
+      tag: "0.11.3-checkout"
     useDefault:
       env: true
     service:
@@ -429,7 +429,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.2-currency"
+      tag: "0.11.3-currency"
     useDefault:
       env: true
     service:
@@ -453,7 +453,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.2-email"
+      tag: "0.11.3-email"
     useDefault:
       env: true
     service:
@@ -479,7 +479,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.2-fraud-detection"
+      tag: "0.11.3-fraud-detection"
     useDefault:
       env: true
     podAnnotations:
@@ -507,7 +507,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.2-frontend"
+      tag: "0.11.3-frontend"
     useDefault:
       env: true
     service:
@@ -592,7 +592,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.2-load-generator"
+      tag: "0.11.3-load-generator"
     useDefault:
       env: true
     service:
@@ -634,7 +634,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.2-payment"
+      tag: "0.11.3-payment"
     useDefault:
       env: true
     service:
@@ -664,7 +664,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.2-product-catalog"
+      tag: "0.11.3-product-catalog"
     useDefault:
       env: true
     service:
@@ -741,7 +741,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.2-quote"
+      tag: "0.11.3-quote"
     useDefault:
       env: true
     service:
@@ -771,7 +771,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.2-recommendation"
+      tag: "0.11.3-recommendation"
     useDefault:
       env: true
     service:
@@ -801,7 +801,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.2-shipping"
+      tag: "0.11.3-shipping"
     useDefault:
       env: true
     service:
@@ -822,7 +822,10 @@ components:
         memory: 20Mi
 
   telemetry-docs:
-    enabled: true
+    # Disabled: no versioned image (e.g. <chart-version>-telemetry-docs) has
+    # ever been published for this service, so the default image reference
+    # never resolves to a pullable tag.
+    enabled: false
     useDefault:
       env: true
     service:

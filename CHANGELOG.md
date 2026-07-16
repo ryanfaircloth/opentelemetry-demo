@@ -7,6 +7,14 @@ the release.
 
 ## Unreleased
 
+* [ad] Drop the bundled OTel Java agent jar and its `-javaagent`
+  `JAVA_TOOL_OPTIONS` flag from the image; tracing now depends on an
+  externally injected Java auto-instrumentation agent instead of a jar
+  version pinned in the Dockerfile. `ad`'s business spans/metrics
+  (`GlobalOpenTelemetry.getTracer`/`getMeter`, the `@WithSpan`-annotated
+  `getAdsByCategory`, `demo.ad.requests` counter) are untouched, and
+  `@WithSpan` continues to work as before since it's woven in by whichever
+  Java agent is attached at runtime, bundled or injected.
 * [frontend] Drop the bundled Node.js OTel SDK bootstrap
   (`Instrumentation.js`, `@opentelemetry/sdk-node`,
   `auto-instrumentations-node`, OTLP exporters, and resource detectors) and
