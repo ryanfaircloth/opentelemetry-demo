@@ -53,14 +53,12 @@
      kubectl --namespace {{ .Release.Namespace }} port-forward svc/image-provider 8081:8081
      kubectl --namespace {{ .Release.Namespace }} port-forward svc/flagd 4000:4000
      kubectl --namespace {{ .Release.Namespace }} port-forward svc/load-generator 8089:8089
-     kubectl --namespace {{ .Release.Namespace }} port-forward svc/telemetry-docs 8000:8000
      kubectl --namespace {{ .Release.Namespace }} port-forward svc/otel-collector 4318:4318
 
   Webstore             http://localhost:8080/     (product images will 404 - see note below)
   Image Provider       http://localhost:8081/
   Feature Flags UI     http://localhost:4000/
   Load Generator UI    http://localhost:8089/
-  Telemetry Docs       http://localhost:8000/
 
   The webstore's product images, logo, and banner are fetched by the browser
   from a same-origin "/images/" path, which only resolves when frontend and
