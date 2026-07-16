@@ -7,6 +7,21 @@ the release.
 
 ## Unreleased
 
+* [payment] Drop the bundled `@opentelemetry/auto-instrumentations-node`
+  and its supporting `@opentelemetry/sdk-node`/exporter/resource-detector
+  dependencies; tracing now depends on an externally injected Node.js
+  auto-instrumentation agent instead of a version pinned in the app's own
+  dependencies. `@opentelemetry/api` stays, since `charge.js`/`index.js`
+  call it directly for business spans/attributes and the
+  `demo.payment.transactions` counter. Also removes payment's
+  `NODE_OPTIONS=--require @opentelemetry/auto-instrumentations-node/register`
+  from `compose.yaml`: unlike the Helm chart (where a real operator injects
+  Node.js instrumentation), docker-compose has no equivalent mechanism, so
+  that env var would have crash-looped payment the moment it stopped
+  bundling the package itself. `payment` gets no traces under
+  `docker compose up` until compose gains an injection story of its own;
+  the Helm-chart/operator path is unaffected. pino's OTel logs transport is
+  unrelated to this change and stays as-is.
 * [ad] Drop the bundled OTel Java agent jar and its `-javaagent`
   `JAVA_TOOL_OPTIONS` flag from the image; tracing now depends on an
   externally injected Java auto-instrumentation agent instead of a jar
