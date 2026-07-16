@@ -157,7 +157,12 @@ if __name__ == "__main__":
     logger.setLevel(logging.INFO)
 
     catalog_addr = must_map_env('PRODUCT_CATALOG_ADDR')
-    pc_channel = grpc.insecure_channel(catalog_addr)
+    # grpc.enable_retries=0: works around a longstanding grpcio C-core bug
+    # (call combiner ref-count assertion, e.g. "Check failed: prev_size >= 1u"
+    # in call_combiner.cc) tied to gRPC's internal retry/cancellation
+    # machinery - see grpc/grpc#26537, grpc/grpc#38251. We don't set a retry
+    # policy ourselves; this disables gRPC's own implicit core-level retries.
+    pc_channel = grpc.insecure_channel(catalog_addr, options=(('grpc.enable_retries', 0),))
     product_catalog_stub = demo_pb2_grpc.ProductCatalogServiceStub(pc_channel)
 
     # product-catalog is a hard dependency; wait for the channel to become

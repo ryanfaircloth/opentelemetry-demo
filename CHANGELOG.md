@@ -7,6 +7,24 @@ the release.
 
 ## Unreleased
 
+* [recommendation] Fix a live crash loop seen in a dev cluster:
+  `recommendation`'s gRPC client channel to `product-catalog` was hitting
+  a longstanding native `grpcio` C-core bug - a call combiner ref-count
+  assertion (`Check failed: prev_size >= 1u` in `call_combiner.cc`,
+  `CallCombiner::Stop()` called more times than `Start()`), tied to
+  gRPC's internal retry/cancellation machinery (see grpc/grpc#26537,
+  grpc/grpc#38251). Not caused by this session's OTel migration -
+  `recommendation`'s grpc code and dependency versions hadn't changed
+  across any of those releases. Added `grpc.enable_retries=0` to the
+  channel options as the most commonly cited mitigation for this bug
+  class, and bumped `grpcio`/`grpcio-health-checking` 1.81.1 -> 1.82.1 to
+  pick up any interim fixes (not confirmed to resolve this specific
+  signature, but free to take). That bump required also bumping
+  `openfeature-provider-flagd` 0.5.0 -> 0.5.1 and
+  `opentelemetry-api`/`opentelemetry-sdk`/`opentelemetry-exporter-otlp-proto-grpc`
+  1.42.0 -> 1.44.0, since `grpcio-health-checking` 1.82.1 requires
+  `protobuf>=7.35.1` while the older pins of those three packages capped
+  `protobuf<7.0`.
 * [load-generator] Remove the manually-built `TracerProvider`/`MeterProvider`/
   `OTLPSpanExporter`/`OTLPMetricExporter`/`BatchSpanProcessor`/
   `PeriodicExportingMetricReader` bootstrap (plus the unused `Resource`
