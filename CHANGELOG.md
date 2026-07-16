@@ -7,6 +7,28 @@ the release.
 
 ## Unreleased
 
+* [load-generator] Remove the manually-built `TracerProvider`/`MeterProvider`/
+  `OTLPSpanExporter`/`OTLPMetricExporter`/`BatchSpanProcessor`/
+  `PeriodicExportingMetricReader` bootstrap (plus the unused `Resource`
+  import); traces/metrics now depend on an externally injected Python
+  auto-instrumentation agent instead of a version pinned in the app's own
+  dependencies, matching the rest of the fleet. Unlike every other Python
+  service, the four `.instrument()` calls (`Jinja2Instrumentor`,
+  `RequestsInstrumentor`, `SystemMetricsInstrumentor`, `URLLib3Instrumentor`)
+  stay explicit and in their exact current position rather than being
+  handed off to auto-discovery: Locust's own CLI monkey-patches the
+  stdlib via gevent before loading this file, and a zero-code or injected
+  bootstrap runs at interpreter startup - before that patching - so
+  instrumenting `requests`/`urllib3` there risks the same ordering
+  conflict this manual approach exists to avoid. If this pod is ever
+  deployed under real Python auto-instrumentation injection, the injector
+  needs `OTEL_PYTHON_DISABLED_INSTRUMENTATIONS=requests,urllib3` set so it
+  doesn't also try to instrument those two before gevent patches. All
+  `@task` business spans (`user_index`, `browse_product`,
+  `get_recommendations`, etc.) and the logs bootstrap are untouched - the
+  logs bootstrap already depends on `opentelemetry-sdk`/
+  `opentelemetry-exporter-otlp-proto-grpc` directly, so no dependencies
+  changed, only code.
 * [currency] Fix `IPV6_ENABLED` check in `RunServer`: it compared a
   `const char*` from `getenv()` against a string literal by pointer
   identity (`ipv6_enabled == "true"`) rather than comparing contents, so

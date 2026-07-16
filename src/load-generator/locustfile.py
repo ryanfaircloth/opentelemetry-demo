@@ -15,13 +15,6 @@ from locust_plugins.users.playwright import PlaywrightUser, pw, PageWithRetry, e
 
 from opentelemetry import context, baggage, trace
 from opentelemetry.context import Context
-from opentelemetry.metrics import set_meter_provider
-from opentelemetry.sdk.metrics import MeterProvider
-from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
-from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.instrumentation.jinja2 import Jinja2Instrumentor
 from opentelemetry.instrumentation.requests import RequestsInstrumentor
 from opentelemetry.instrumentation.system_metrics import SystemMetricsInstrumentor
@@ -31,7 +24,6 @@ from opentelemetry._logs import set_logger_provider
 from opentelemetry.exporter.otlp.proto.grpc._log_exporter import OTLPLogExporter
 from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
 from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
-from opentelemetry.sdk.resources import Resource
 
 from openfeature import api
 from openfeature.contrib.provider.ofrep import OFREPProvider
@@ -39,12 +31,15 @@ from openfeature.contrib.hook.opentelemetry import TracingHook
 
 from playwright.async_api import Route, Request
 
-# Configure tracer provider first (needed for trace context in logs)
-tracer_provider = TracerProvider()
-trace.set_tracer_provider(tracer_provider)
-tracer_provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter(insecure=True)))
+# Traces and metrics providers/exporters are configured by an externally
+# injected auto-instrumentation agent rather than built here. The four
+# .instrument() calls below stay explicit and in this exact position -
+# Locust's gevent monkey-patching (done by its own CLI entrypoint before
+# this file loads) must happen before requests/urllib3 get instrumented,
+# an ordering a zero-code or injected bootstrap can't guarantee since it
+# runs at interpreter startup, before Locust's own patching.
 
-# Configure logger provider with the same resource
+# Configure logger provider
 logger_provider = LoggerProvider()
 set_logger_provider(logger_provider)
 
@@ -62,10 +57,6 @@ root_logger = logging.getLogger()
 root_logger.addHandler(handler)
 root_logger.addHandler(logging.StreamHandler(sys.stdout))
 root_logger.setLevel(logging.INFO)
-
-# Configure metrics
-metric_exporter = OTLPMetricExporter(insecure=True)
-set_meter_provider(MeterProvider([PeriodicExportingMetricReader(metric_exporter)]))
 
 # Instrument logging to automatically inject trace context
 LoggingInstrumentor().instrument(set_logging_format=True)
