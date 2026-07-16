@@ -10,12 +10,6 @@ on:
     paths:
       - 'src/**'
   workflow_dispatch:
-    inputs:
-      force_build:
-        description: Build and push every component regardless of detected changes (use for chart/config-only releases, which touch no src/** files and would otherwise publish no versioned images)
-        default: false
-        required: false
-        type: boolean
 
 permissions:
   contents: read
@@ -46,7 +40,11 @@ jobs:
     uses: ./.github/workflows/component-build-images.yml
     with:
       push: true
-      force_build: ${{ inputs.force_build || false }}
+      # This workflow's whole purpose is publishing a complete, versioned
+      # release: always rebuild every component, never rely on per-directory
+      # change detection - a chart/config-only commit touches no src/**
+      # paths and would otherwise silently publish nothing under the new tag.
+      force_build: true
       version: ${{ needs.version.outputs.version }}
       ghcr_repo: ghcr.io/ryanfaircloth/demo
       dockerhub_repo: ryanfaircloth/demo
