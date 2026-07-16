@@ -7,6 +7,44 @@ the release.
 
 ## Unreleased
 
+* [cart] Switch from code-based OTel SDK wiring to externally injected
+  .NET auto-instrumentation. Unlike the other .NET services migrated so
+  far, cart never used the `OpenTelemetry.AutoInstrumentation` profiler
+  package - it hand-wired `OpenTelemetry.Extensions.Hosting`/
+  `OpenTelemetry.Instrumentation.*` packages directly in `Program.cs`
+  (`AddAspNetCoreInstrumentation()`, `AddGrpcClientInstrumentation()`,
+  `AddRedisInstrumentation()`, `AddOtlpExporter()`, etc.). This required
+  two changes:
+  * The base image was Alpine/musl, self-contained, single-file - the OTel
+    Operator's .NET auto-instrumentation profiler is a glibc-linked native
+    library and can't load there at all. Switched to a glibc runtime
+    (`mcr.microsoft.com/dotnet/aspnet`) with a normal framework-dependent
+    publish. This uncovered a pre-existing gap in the demo: no other
+    manually-instrumented service in this repo is in a language the OTel
+    Operator actually supports, so cart's musl build had never been
+    exercised against real injection before.
+  * Removed all `OpenTelemetry.*` packages and the `Program.cs` SDK/
+    resource-detector wiring, including the `StackExchangeRedisInstrumentation`
+    connection registration workaround that code-based Redis instrumentation
+    required (profiler-based Redis instrumentation attaches automatically,
+    no registration needed). Added `OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES`/
+    `OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES` so the profiler picks up
+    cart's own `ActivitySource`/`Meter` ("OpenTelemetry.Demo.Cart") and
+    OpenFeature's meter, and `OTEL_METRICS_EXEMPLAR_FILTER=trace_based` to
+    preserve the previous exemplar behavior. `Directory.Packages.props` no
+    longer centrally pins any `OpenTelemetry.*` package version either.
+  * Known fidelity gap: the removed `AddRedisInstrumentation(options =>
+    options.SetVerboseDatabaseStatements = true)` call captured full Redis
+    command text as a span attribute; the auto-instrumentation profiler's
+    Redis integration doesn't expose an equivalent toggle, so that specific
+    attribute is not expected to appear anymore.
+  * `CartService.cs`'s manual `Activity.Current?.SetTag(...)` calls and
+    `ValkeyCartStore.cs`'s custom `Histogram`s are untouched - both use
+    .NET's built-in `System.Diagnostics` APIs directly, which work under
+    any instrumentation mechanism.
+  * Like the other migrated .NET/Node services, cart gets no traces under
+    `docker compose up` (no bundled agent, no injection mechanism there);
+    the Helm-chart/operator path is unaffected.
 * [recommendation] Move from a self-baked zero-code setup (own venv,
   `opentelemetry-bootstrap -a install`, `opentelemetry-instrument` as
   entrypoint wrapper, `opentelemetry-distro`/`psutil` dependencies) to

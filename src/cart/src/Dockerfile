@@ -23,22 +23,26 @@ WORKDIR /usr/src/app/
 COPY ./src/cart/ ./
 COPY ./pb/ ./pb/
 
-RUN dotnet restore ./src/cart.csproj -r linux-musl-$TARGETARCH
+RUN dotnet restore ./src/cart.csproj -r linux-$TARGETARCH
 
-RUN dotnet publish ./src/cart.csproj -r linux-musl-$TARGETARCH --no-restore -o /cart
+RUN dotnet publish ./src/cart.csproj -r linux-$TARGETARCH --no-restore -o /cart /p:UseAppHost=false
 
 # -----------------------------------------------------------------------------
 
-# https://mcr.microsoft.com/v2/dotnet/runtime-deps/tags/list
 FROM ghcr.io/grpc-ecosystem/grpc-health-probe:v0.4.52@sha256:0303b506a288d544ed99fef17a55c8c5ce872f498f643c396b532b3595089ac9 AS grpc-health-probe
 
-FROM mcr.microsoft.com/dotnet/runtime-deps:10.0.8-alpine3.23@sha256:f276c0256ffca8fe816d48ba261962b54fea1b0e6f870b6a60b3b705c89e78ac
+# glibc runtime required: the OTel Operator's .NET auto-instrumentation
+# profiler is a glibc-linked native library and won't load on musl/Alpine.
+FROM mcr.microsoft.com/dotnet/aspnet:10.0.9@sha256:7644f992230d35cf230017189d4038c0ae0f7388b13f4f7ae1900a155bafb597
 
 WORKDIR /usr/src/app/
 COPY --from=builder /cart/ ./
 COPY --from=grpc-health-probe /ko-app/grpc-health-probe /bin/grpc_health_probe
 
 ENV DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE=false
+ENV OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES=OpenTelemetry.Demo.Cart
+ENV OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES=OpenTelemetry.Demo.Cart,OpenFeature
+ENV OTEL_METRICS_EXEMPLAR_FILTER=trace_based
 
 EXPOSE ${CART_PORT}
-ENTRYPOINT [ "./cart" ]
+ENTRYPOINT [ "dotnet", "cart.dll" ]
