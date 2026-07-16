@@ -298,11 +298,11 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.8-accounting"
+      tag: "0.11.9-accounting"
     useDefault:
       env: true
     podAnnotations:
-      resource.opentelemetry.io/service.namespace: otel-demo
+      resource.opentelemetry.io/service.name: accounting
     # KAFKA_ADDR/KAFKA_TOPIC and (in kafkaAccess mode) the SASL/TLS env vars
     # are generated from this block - see .Values.kafkaAccess and
     # otel-demo.pod.kafkaEnv. role/consumerGroup drive the KafkaUser ACLs
@@ -329,12 +329,15 @@ components:
 
   ad:
     enabled: true
+    imageOverride:
+      repository: "ghcr.io/ryanfaircloth/demo"
+      tag: "0.11.9-ad"
     useDefault:
       env: true
     service:
       port: 8080
     podAnnotations:
-      resource.opentelemetry.io/service.namespace: otel-demo
+      resource.opentelemetry.io/service.name: ad
     env:
       - name: AD_PORT
         value: "8080"
@@ -354,13 +357,13 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.8-cart"
+      tag: "0.11.9-cart"
     useDefault:
       env: true
     service:
       port: 8080
     podAnnotations:
-      resource.opentelemetry.io/service.namespace: otel-demo
+      resource.opentelemetry.io/service.name: cart
     env:
       - name: CART_PORT
         value: "8080"
@@ -386,7 +389,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.8-checkout"
+      tag: "0.11.9-checkout"
     useDefault:
       env: true
     service:
@@ -429,7 +432,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.8-currency"
+      tag: "0.11.9-currency"
     useDefault:
       env: true
     service:
@@ -453,7 +456,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.8-email"
+      tag: "0.11.9-email"
     useDefault:
       env: true
     service:
@@ -479,7 +482,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.8-fraud-detection"
+      tag: "0.11.9-fraud-detection"
     useDefault:
       env: true
     podAnnotations:
@@ -507,7 +510,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.8-frontend"
+      tag: "0.11.9-frontend"
     useDefault:
       env: true
     service:
@@ -565,6 +568,9 @@ components:
 
   image-provider:
     enabled: true
+    imageOverride:
+      repository: "ghcr.io/ryanfaircloth/demo"
+      tag: "0.11.9-image-provider"
     useDefault:
       env: true
     service:
@@ -592,7 +598,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.8-load-generator"
+      tag: "0.11.9-load-generator"
     useDefault:
       env: true
     service:
@@ -634,13 +640,13 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.8-payment"
+      tag: "0.11.9-payment"
     useDefault:
       env: true
     service:
       port: 8080
     podAnnotations:
-      resource.opentelemetry.io/service.namespace: otel-demo
+      resource.opentelemetry.io/service.name: payment
     env:
       - name: PAYMENT_PORT
         value: "8080"
@@ -664,7 +670,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.8-product-catalog"
+      tag: "0.11.9-product-catalog"
     useDefault:
       env: true
     service:
@@ -741,7 +747,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.8-quote"
+      tag: "0.11.9-quote"
     useDefault:
       env: true
     service:
@@ -771,13 +777,13 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.8-recommendation"
+      tag: "0.11.9-recommendation"
     useDefault:
       env: true
     service:
       port: 8080
     podAnnotations:
-      resource.opentelemetry.io/service.namespace: otel-demo
+      resource.opentelemetry.io/service.name: recommendation
     env:
       - name: RECOMMENDATION_PORT
         value: "8080"
@@ -801,7 +807,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.8-shipping"
+      tag: "0.11.9-shipping"
     useDefault:
       env: true
     service:
@@ -920,6 +926,9 @@ components:
 
   kafka:
     enabled: true
+    imageOverride:
+      repository: "ghcr.io/ryanfaircloth/demo"
+      tag: "0.11.9-kafka"
     useDefault:
       env: true
     replicas: 1

@@ -8,6 +8,12 @@ on:
       - 'src/**'
       - 'test/**'
   workflow_dispatch:
+    inputs:
+      force_build:
+        description: Build and push every component regardless of detected changes (use for chart/config-only releases, which touch no src/** files and would otherwise publish no images)
+        default: false
+        required: false
+        type: boolean
 
 permissions:
   contents: read
@@ -21,5 +27,6 @@ jobs:
     uses: ./.github/workflows/component-build-images.yml
     with:
       push: true
+      force_build: ${{ inputs.force_build || false }}
       ghcr_repo: ghcr.io/ryanfaircloth/demo
       dockerhub_repo: ryanfaircloth/demo

@@ -7,6 +7,35 @@ the release.
 
 ## Unreleased
 
+* [ci] `build-images.yml` only builds/pushes images on pushes touching
+  `src/**`; a chart- or doc-only release (like the 0.11.8 shipping fix)
+  triggers no build at all, so bumping every pinned `imageOverride` tag in
+  that situation points the chart at images that were never published.
+  Added a `force_build` `workflow_dispatch` input, threaded through to the
+  existing `component-build-images.yml` `force_build` support, so a
+  release that doesn't naturally touch `src/**` can still force a full
+  rebuild of every component.
+* [helm] `ad`, `image-provider`, and `kafka` never had an `imageOverride`,
+  so the chart silently deployed the upstream `ghcr.io/open-telemetry/demo`
+  image for them instead of this fork's own build - meaning fork-specific
+  fixes to these three (including this session's `ad` Java-agent removal)
+  had never actually been deployable via this chart. Added `imageOverride`
+  for all three. `kafka`'s bundled component is force-disabled by default
+  (`kafkaAccess.mode: kafkaAccess`), so this was latent until someone
+  opts into `mode: legacy`; `ad` and `image-provider` are enabled by
+  default, so this was live-broken for anyone deploying today.
+  `telemetry-docs` has the same shape of problem but was already caught
+  and disabled with an explanatory comment; `flagd-ui`/`opensearch`/
+  `opamp-server`/`frontend-proxy` aren't chart components at all (no
+  dedicated templates), a deliberate k8s-vs-compose architecture
+  difference, not a gap. `product-reviews`/`llm` have no source in this
+  repo at all, so there's nothing to build or override for them.
+* [helm] Extend the `resource.opentelemetry.io/service.name` annotation
+  (introduced for frontend/fraud-detection in 0.11.1) to the rest of the
+  operator-injectable services migrated since: `ad`, `payment`,
+  `recommendation`, `accounting`, `cart`. They'd been left on the older
+  `service.namespace: otel-demo` annotation, an inconsistency caught in a
+  final pass over the whole migration.
 * [shipping] Point the Helm chart's `OTEL_EXPORTER_OTLP_ENDPOINT` at the
   collector's HTTP port (4318) instead of its gRPC port (4317); found
   during an audit of OTel config consistency across the services that
