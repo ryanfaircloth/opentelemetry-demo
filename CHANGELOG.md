@@ -7,6 +7,19 @@ the release.
 
 ## Unreleased
 
+* [shipping] Point the Helm chart's `OTEL_EXPORTER_OTLP_ENDPOINT` at the
+  collector's HTTP port (4318) instead of its gRPC port (4317); found
+  during an audit of OTel config consistency across the services that
+  can't use auto-instrumentation. shipping's Rust exporters
+  (`telemetry_conf.rs`) are hardcoded to `Protocol::HttpBinary` for
+  traces, metrics, and logs, and never read `OTEL_EXPORTER_OTLP_PROTOCOL`,
+  so posting to the gRPC-only port produced the same class of failure
+  already fixed for checkout in 0.10.7. compose.yaml already had this
+  right (`OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf` at port 4318); only
+  the chart value was wrong. Audited currency, email, and quote too, and
+  all three were already consistent (currency's C++ exporters are
+  genuinely gRPC-only via `OtlpGrpc*ExporterFactory`, so its 4317 chart
+  value is correct as-is).
 * [agent] Drop the bundled `Traceloop.init()` bootstrap and the manual
   `FastAPIInstrumentor.instrument_app()`/`HTTPXClientInstrumentor().instrument()`
   calls, and their now-unused `opentelemetry-api`/`opentelemetry-sdk`/
