@@ -5,6 +5,17 @@
 > another. If you need to upgrade the chart, you must first delete the existing
 > release and then install the new version.
 
+## To 0.11.20
+
+Updates the chart-managed and example `KafkaTopic`/`KafkaUser` resources
+(`kafka.strimzi.io`) from `apiVersion: v1beta2` to `v1`. `v1beta2` was removed
+by the Strimzi operator (only `v1` is served/stored now), so `v1beta2`
+manifests are rejected by current clusters. `access.strimzi.io/v1alpha1`
+(`KafkaAccess`) is unaffected. No `spec` fields changed - this is purely an
+`apiVersion` bump. If you bring your own `KafkaUser`/`KafkaTopic` (see
+[examples/kafka-access-unmanaged](examples/kafka-access-unmanaged)), update
+their `apiVersion` to match.
+
 ## To 0.10.1
 
 Fixes a resource-name collision in `kafkaAccess.manageResources: true` mode

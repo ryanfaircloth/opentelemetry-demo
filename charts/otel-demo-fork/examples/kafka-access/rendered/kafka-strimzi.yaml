@@ -72,7 +72,7 @@ spec:
   secretName: fraud-detection-kafka-access
 ---
 # Source: otel-demo-fork/templates/kafka-strimzi.yaml
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: KafkaTopic
 metadata:
   name: default-release-name-orders
@@ -91,7 +91,7 @@ spec:
   replicas: 1
 ---
 # Source: otel-demo-fork/templates/kafka-strimzi.yaml
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: KafkaUser
 metadata:
   name: default-release-name-accounting
@@ -123,7 +123,7 @@ spec:
           - Read
 ---
 # Source: otel-demo-fork/templates/kafka-strimzi.yaml
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: KafkaUser
 metadata:
   name: default-release-name-checkout
@@ -150,7 +150,7 @@ spec:
           - Describe
 ---
 # Source: otel-demo-fork/templates/kafka-strimzi.yaml
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: KafkaUser
 metadata:
   name: default-release-name-fraud-detection
