@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 const grpc = require('@grpc/grpc-js')
 const protoLoader = require('@grpc/proto-loader')
-const health = require('grpc-js-health-check')
+const http = require('http')
 const opentelemetry = require('@opentelemetry/api')
 
 const charge = require('./charge')
@@ -37,10 +37,6 @@ async function closeGracefully(signal) {
 const otelDemoPackage = grpc.loadPackageDefinition(protoLoader.loadSync('demo.proto'))
 const server = new grpc.Server()
 
-server.addService(health.service, new health.Implementation({
-  '': health.servingStatus.SERVING
-}))
-
 server.addService(otelDemoPackage.oteldemo.PaymentService.service, { charge: chargeServiceHandler })
 
 
@@ -62,6 +58,26 @@ server.bindAsync(address, grpc.ServerCredentials.createInsecure(), (err, port) =
   }
 
   logger.info(`payment gRPC server started on ${address}`)
+})
+
+// A plain HTTP health endpoint: kubelet's httpGet probe needs no gRPC
+// client tooling and avoids the fragile-precompiled-gencode class of
+// problem gRPC health checking libraries can hit under
+// auto-instrumentation injection (see the recommendation service's
+// RECOMMENDATION_HEALTH_PORT for precedent). Replaces the gRPC health
+// service this service used to register.
+const healthPort = process.env.PAYMENT_HEALTH_PORT || 8081
+const healthServer = http.createServer((req, res) => {
+  if (req.url === '/healthz') {
+    res.writeHead(200)
+    res.end()
+    return
+  }
+  res.writeHead(404)
+  res.end()
+})
+healthServer.listen(healthPort, () => {
+  logger.info(`payment health check HTTP server started on port ${healthPort}`)
 })
 
 process.once('SIGINT', closeGracefully)

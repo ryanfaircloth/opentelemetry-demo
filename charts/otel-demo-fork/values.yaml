@@ -336,11 +336,16 @@ components:
       env: true
     service:
       port: 8080
+    ports:
+      - name: health
+        value: 8081
     podAnnotations:
       resource.opentelemetry.io/service.name: ad
     env:
       - name: AD_PORT
         value: "8080"
+      - name: AD_HEALTH_PORT
+        value: "8081"
       - name: FLAGD_HOST
         value: flagd
       - name: FLAGD_PORT
@@ -352,6 +357,18 @@ components:
     resources:
       limits:
         memory: 300Mi
+    livenessProbe:
+      httpGet:
+        path: /healthz
+        port: 8081
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    readinessProbe:
+      httpGet:
+        path: /healthz
+        port: 8081
+      initialDelaySeconds: 5
+      periodSeconds: 10
 
   cart:
     enabled: true
@@ -384,6 +401,18 @@ components:
       - name: wait-for-valkey-cart
         image: busybox:latest
         command: ["sh", "-c", "until nc -z -v -w30 valkey-cart 6379; do echo waiting for valkey-cart; sleep 2; done;"]
+    livenessProbe:
+      httpGet:
+        path: /healthz
+        port: 8080
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    readinessProbe:
+      httpGet:
+        path: /healthz
+        port: 8080
+      initialDelaySeconds: 5
+      periodSeconds: 10
 
   checkout:
     enabled: true
@@ -394,6 +423,9 @@ components:
       env: true
     service:
       port: 8080
+    ports:
+      - name: health
+        value: 8081
     podAnnotations:
       resource.opentelemetry.io/service.namespace: otel-demo
     kafka:
@@ -402,6 +434,8 @@ components:
     env:
       - name: CHECKOUT_PORT
         value: "8080"
+      - name: CHECKOUT_HEALTH_PORT
+        value: "8081"
       - name: CART_ADDR
         value: cart:8080
       - name: CURRENCY_ADDR
@@ -427,6 +461,18 @@ components:
     resources:
       limits:
         memory: 20Mi
+    livenessProbe:
+      httpGet:
+        path: /healthz
+        port: 8081
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    readinessProbe:
+      httpGet:
+        path: /healthz
+        port: 8081
+      initialDelaySeconds: 5
+      periodSeconds: 10
 
   currency:
     enabled: true
@@ -437,11 +483,16 @@ components:
       env: true
     service:
       port: 8080
+    ports:
+      - name: health
+        value: 8081
     podAnnotations:
       resource.opentelemetry.io/service.namespace: otel-demo
     env:
       - name: CURRENCY_PORT
         value: "8080"
+      - name: CURRENCY_HEALTH_PORT
+        value: "8081"
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: http://$(OTEL_COLLECTOR_NAME):4317
       - name: VERSION
@@ -451,6 +502,18 @@ components:
     resources:
       limits:
         memory: 20Mi
+    livenessProbe:
+      httpGet:
+        path: /healthz
+        port: 8081
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    readinessProbe:
+      httpGet:
+        path: /healthz
+        port: 8081
+      initialDelaySeconds: 5
+      periodSeconds: 10
 
   email:
     enabled: true
@@ -477,6 +540,18 @@ components:
     resources:
       limits:
         memory: 100Mi
+    livenessProbe:
+      httpGet:
+        path: /healthz
+        port: 8080
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    readinessProbe:
+      httpGet:
+        path: /healthz
+        port: 8080
+      initialDelaySeconds: 5
+      periodSeconds: 10
 
   fraud-detection:
     enabled: true
@@ -565,6 +640,18 @@ components:
       runAsUser: 1001  # nextjs
       runAsGroup: 1001
       runAsNonRoot: true
+    livenessProbe:
+      httpGet:
+        path: /api/healthz
+        port: 8080
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    readinessProbe:
+      httpGet:
+        path: /api/healthz
+        port: 8080
+      initialDelaySeconds: 5
+      periodSeconds: 10
 
   image-provider:
     enabled: true
@@ -593,6 +680,18 @@ components:
     resources:
       limits:
         memory: 50Mi
+    livenessProbe:
+      httpGet:
+        path: /status
+        port: 8081
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    readinessProbe:
+      httpGet:
+        path: /status
+        port: 8081
+      initialDelaySeconds: 5
+      periodSeconds: 10
 
   load-generator:
     enabled: true
@@ -645,11 +744,16 @@ components:
       env: true
     service:
       port: 8080
+    ports:
+      - name: health
+        value: 8081
     podAnnotations:
       resource.opentelemetry.io/service.name: payment
     env:
       - name: PAYMENT_PORT
         value: "8080"
+      - name: PAYMENT_HEALTH_PORT
+        value: "8081"
       - name: FLAGD_HOST
         value: flagd
       - name: FLAGD_PORT
@@ -665,6 +769,18 @@ components:
       runAsUser: 1000  # node
       runAsGroup: 1000
       runAsNonRoot: true
+    livenessProbe:
+      httpGet:
+        path: /healthz
+        port: 8081
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    readinessProbe:
+      httpGet:
+        path: /healthz
+        port: 8081
+      initialDelaySeconds: 5
+      periodSeconds: 10
 
   product-catalog:
     enabled: true
@@ -675,6 +791,9 @@ components:
       env: true
     service:
       port: 8080
+    ports:
+      - name: health
+        value: 8081
     podAnnotations:
       resource.opentelemetry.io/service.namespace: otel-demo
     # DB_CONNECTION_STRING is generated from this block - see .Values.postgresAccess
@@ -685,6 +804,8 @@ components:
     env:
       - name: PRODUCT_CATALOG_PORT
         value: "8080"
+      - name: PRODUCT_CATALOG_HEALTH_PORT
+        value: "8081"
       - name: FLAGD_HOST
         value: flagd
       - name: FLAGD_PORT
@@ -698,6 +819,18 @@ components:
     resources:
       limits:
         memory: 20Mi
+    livenessProbe:
+      httpGet:
+        path: /healthz
+        port: 8081
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    readinessProbe:
+      httpGet:
+        path: /healthz
+        port: 8081
+      initialDelaySeconds: 5
+      periodSeconds: 10
 
   product-reviews:
     enabled: true
@@ -772,6 +905,18 @@ components:
       runAsUser: 33  # www-data
       runAsGroup: 33
       runAsNonRoot: true
+    livenessProbe:
+      httpGet:
+        path: /health
+        port: 8080
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    readinessProbe:
+      httpGet:
+        path: /health
+        port: 8080
+      initialDelaySeconds: 5
+      periodSeconds: 10
 
   recommendation:
     enabled: true
@@ -782,11 +927,16 @@ components:
       env: true
     service:
       port: 8080
+    ports:
+      - name: health
+        value: 8081
     podAnnotations:
       resource.opentelemetry.io/service.name: recommendation
     env:
       - name: RECOMMENDATION_PORT
         value: "8080"
+      - name: RECOMMENDATION_HEALTH_PORT
+        value: "8081"
       - name: PRODUCT_CATALOG_ADDR
         value: product-catalog:8080
       - name: OTEL_PYTHON_LOG_CORRELATION
@@ -802,6 +952,18 @@ components:
     resources:
       limits:
         memory: 500Mi            # This is high to enable supporting the recommendationCache feature flag use case
+    livenessProbe:
+      httpGet:
+        path: /healthz
+        port: 8081
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    readinessProbe:
+      httpGet:
+        path: /healthz
+        port: 8081
+      initialDelaySeconds: 5
+      periodSeconds: 10
 
   shipping:
     enabled: true
@@ -826,6 +988,18 @@ components:
     resources:
       limits:
         memory: 20Mi
+    livenessProbe:
+      httpGet:
+        path: /health
+        port: 8080
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    readinessProbe:
+      httpGet:
+        path: /health
+        port: 8080
+      initialDelaySeconds: 5
+      periodSeconds: 10
 
   telemetry-docs:
     # Disabled: no versioned image (e.g. <chart-version>-telemetry-docs) has

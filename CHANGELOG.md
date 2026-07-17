@@ -7,6 +7,47 @@ the release.
 
 ## Unreleased
 
+* [chart] Wire `livenessProbe`/`readinessProbe` (httpGet) for `flagd` against
+  its built-in management port (8014, default and unchanged here):
+  `/healthz` for liveness (200 as soon as the process is up) and `/readyz`
+  for readiness (412 until every configured sync provider - here, the
+  file-backed one - completes its first successful sync, then 200
+  thereafter). See <https://flagd.dev/reference/monitoring/#definition-of-readiness>.
+* [chart] Wire `livenessProbe`/`readinessProbe` (httpGet) for `image-provider`
+  against its existing `/status` Nginx `stub_status` endpoint. This component
+  is a pure static-file server with no app logic beyond Nginx itself, so
+  Nginx responding at all is the complete health signal available - no code
+  change needed.
+* [email, frontend, quote] Add a health endpoint to the three remaining HTTP
+  services that had no health route at all, and wire `livenessProbe`/
+  `readinessProbe` (httpGet) against it in the chart. `email` (Ruby/Sinatra)
+  gets a `GET /healthz`, `quote` (PHP/Slim) gets a `GET /health`, and
+  `frontend` (Next.js) gets a `GET /api/healthz` API route - all three reuse
+  the service's existing app port, no new port needed.
+* [ad, cart, checkout, currency, payment, product-catalog] Replace each
+  service's gRPC health check with a plain HTTP one, and wire
+  `livenessProbe`/`readinessProbe` (httpGet) against it in the chart. gRPC
+  health checking libraries are the same class of fragile, version-sensitive
+  dependency that broke `recommendation` under auto-instrumentation
+  injection (0.11.14) - an HTTP probe needs no gRPC client tooling and
+  avoids that risk for the *checking* path specifically, regardless of
+  whether that particular language's health-check library shares the exact
+  fragility. `ad` (Java, JDK `com.sun.net.httpserver.HttpServer` - also drops
+  the now-unused `grpc-services` dependency), `checkout`/`product-catalog`
+  (Go, stdlib `net/http`), `payment` (Node.js, stdlib `http` - also drops the
+  now-unused `grpc-js-health-check` dependency), and `currency` (C++, a
+  minimal raw-socket responder - the language has no stdlib HTTP server)
+  each now listen on a new `<SERVICE>_HEALTH_PORT` (default 8081) for
+  `GET /healthz`, and no longer register a gRPC health service at all.
+  `cart` (.NET) instead muxes a `GET /healthz` onto its existing port by
+  switching Kestrel to `Http1AndHttp2`, reusing the `readinessCheck`
+  registration that used to back its gRPC health service via a plain
+  `AddHealthChecks()` + `app.MapHealthChecks()` instead - the hand-rolled
+  gRPC `HealthServiceImpl` and the `Grpc.AspNetCore.HealthChecks` package
+  reference are both gone.
+* [chart] Wire `livenessProbe`/`readinessProbe` (httpGet) for `recommendation`
+  (`GET /healthz` on the newly-exposed `RECOMMENDATION_HEALTH_PORT`, 8081)
+  and `shipping` (`GET /health` on its existing app port, 8080).
 * [recommendation] Replace the gRPC health check (`grpc_health.v1`,
   registered via `add_HealthServicer_to_server`) with a plain stdlib HTTP
   endpoint (`GET /healthz` on `RECOMMENDATION_HEALTH_PORT`, default

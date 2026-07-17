@@ -4,9 +4,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Keeping Grpc.AspNetCore* to 2.67 due to https://github.com/grpc/grpc/issues/38538 -->
+    <!-- Keeping Grpc.AspNetCore to 2.67 due to https://github.com/grpc/grpc/issues/38538 -->
     <PackageVersion Include="Grpc.AspNetCore" Version="2.67.0" />
-    <PackageVersion Include="Grpc.AspNetCore.HealthChecks" Version="2.67.0" />
     <PackageVersion Include="Grpc.Net.Client" Version="2.80.0" />
     <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="10.0.8" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.6.0" />

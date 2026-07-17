@@ -13,7 +13,6 @@
 
   <ItemGroup>
     <PackageReference Include="Grpc.AspNetCore" />
-    <PackageReference Include="Grpc.AspNetCore.HealthChecks" />
     <PackageReference Include="Grpc.Net.Client" />
     <PackageReference Include="StackExchange.Redis" />
     <PackageReference Include="OpenFeature.Providers.Flagd" />

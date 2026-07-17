@@ -5,8 +5,11 @@
 #include <cstring>
 #include <iostream>
 #include <math.h>
+#include <thread>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <unistd.h>
 #include <demo.grpc.pb.h>
-#include <grpc/health/v1/health.grpc.pb.h>
 
 #include "opentelemetry/trace/context.h"
 #include "opentelemetry/semconv/incubating/rpc_attributes.h"
@@ -98,18 +101,6 @@ namespace
 
   nostd::unique_ptr<metrics_api::Counter<uint64_t>> currency_counter;
   nostd::shared_ptr<opentelemetry::logs::Logger> logger;
-
-class HealthServer final : public grpc::health::v1::Health::Service
-{
-  Status Check(
-    ServerContext* context,
-    const grpc::health::v1::HealthCheckRequest* request,
-    grpc::health::v1::HealthCheckResponse* response) override
-  {
-    response->set_status(grpc::health::v1::HealthCheckResponse::SERVING);
-    return Status::OK;
-  }
-};
 
 class CurrencyService final : public oteldemo::CurrencyService::Service
 {
@@ -249,6 +240,53 @@ class CurrencyService final : public oteldemo::CurrencyService::Service
   }
 };
 
+// RunHealthHttpServer serves a plain HTTP health endpoint on its own port,
+// replacing the gRPC health service this service used to register: kubelet's
+// httpGet probe needs no gRPC client tooling, and this avoids the
+// fragile-precompiled-gencode class of problem gRPC health checking
+// libraries can hit under auto-instrumentation injection (see the
+// recommendation service's RECOMMENDATION_HEALTH_PORT for precedent). C++
+// has no stdlib HTTP server, so this responds to any connection with a fixed
+// 200 OK without parsing the request - sufficient for a liveness/readiness
+// probe that just needs a 2xx status line.
+void RunHealthHttpServer(uint16_t port)
+{
+  int server_fd = socket(AF_INET, SOCK_STREAM, 0);
+  if (server_fd < 0) {
+    logger->Error(eventName("currency.health.socket_failed"), "failed to create health check socket");
+    return;
+  }
+
+  int opt = 1;
+  setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+
+  sockaddr_in addr{};
+  addr.sin_family = AF_INET;
+  addr.sin_addr.s_addr = INADDR_ANY;
+  addr.sin_port = htons(port);
+
+  if (bind(server_fd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) < 0 ||
+      listen(server_fd, 16) < 0) {
+    logger->Error(eventName("currency.health.listen_failed"), "failed to bind/listen health check socket");
+    close(server_fd);
+    return;
+  }
+
+  logger->Info(eventName("currency.health.started"), "Currency HTTP health endpoint started");
+
+  static const char response[] =
+      "HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+
+  while (true) {
+    int client_fd = accept(server_fd, nullptr, nullptr);
+    if (client_fd < 0) {
+      continue;
+    }
+    write(client_fd, response, sizeof(response) - 1);
+    close(client_fd);
+  }
+}
+
 void RunServer(uint16_t port)
 {
   std::string ip("0.0.0.0");
@@ -265,17 +303,21 @@ void RunServer(uint16_t port)
   std::string address(ip + ":" +  std::to_string(port));
 
   CurrencyService currencyService;
-  HealthServer healthService;
   ServerBuilder builder;
 
   builder.RegisterService(&currencyService);
-  builder.RegisterService(&healthService);
   builder.AddListeningPort(address, grpc::InsecureServerCredentials());
 
   std::unique_ptr<Server> server(builder.BuildAndStart());
   logger->Info(eventName("currency.server.started"),
                "Currency Server started",
                opentelemetry::common::MakeAttributes({{"server.address", address.c_str()}}));
+
+  const char* health_port_env = std::getenv("CURRENCY_HEALTH_PORT");
+  uint16_t health_port = health_port_env != nullptr ? static_cast<uint16_t>(atoi(health_port_env)) : 8081;
+  std::thread health_thread(RunHealthHttpServer, health_port);
+  health_thread.detach();
+
   server->Wait();
   server->Shutdown();
 }

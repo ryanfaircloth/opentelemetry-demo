@@ -52,8 +52,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/health"
-	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
@@ -301,6 +299,26 @@ func main() {
 
 	logger.Info(fmt.Sprintf("service config: %+v", svc))
 
+	// A plain HTTP health endpoint: kubelet's httpGet probe needs no gRPC
+	// client tooling and avoids the fragile-precompiled-gencode class of
+	// problem gRPC health checking libraries can hit under
+	// auto-instrumentation injection (see the recommendation service's
+	// RECOMMENDATION_HEALTH_PORT for precedent). Replaces the gRPC health
+	// service this service used to register.
+	healthPort := os.Getenv("CHECKOUT_HEALTH_PORT")
+	if healthPort == "" {
+		healthPort = "8081"
+	}
+	go func() {
+		mux := http.NewServeMux()
+		mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+		})
+		if err := http.ListenAndServe(fmt.Sprintf(":%s", healthPort), mux); err != nil {
+			logger.Error(fmt.Sprintf("health check HTTP server failed: %v", err))
+		}
+	}()
+
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
 	if err != nil {
 		logger.Error(err.Error())
@@ -313,8 +331,6 @@ func main() {
 	)
 	pb.RegisterCheckoutServiceServer(srv, svc)
 
-	healthcheck := health.NewServer()
-	healthpb.RegisterHealthServer(srv, healthcheck)
 	logger.Info(fmt.Sprintf("starting to listen on tcp: %q", lis.Addr().String()))
 	err = srv.Serve(lis)
 	logger.Error(err.Error())
@@ -373,14 +389,6 @@ func createKafkaProducerWithRetry(brokerAddr string) (sarama.AsyncProducer, erro
 			backoff *= 2
 		}
 	}
-}
-
-func (cs *checkout) Check(ctx context.Context, req *healthpb.HealthCheckRequest) (*healthpb.HealthCheckResponse, error) {
-	return &healthpb.HealthCheckResponse{Status: healthpb.HealthCheckResponse_SERVING}, nil
-}
-
-func (cs *checkout) Watch(req *healthpb.HealthCheckRequest, ws healthpb.Health_WatchServer) error {
-	return status.Errorf(codes.Unimplemented, "health check via Watch not implemented")
 }
 
 func (cs *checkout) PlaceOrder(ctx context.Context, req *pb.PlaceOrderRequest) (*pb.PlaceOrderResponse, error) {

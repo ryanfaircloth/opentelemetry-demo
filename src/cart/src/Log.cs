@@ -41,12 +41,6 @@ internal static partial class Log
     [LoggerMessage(Level = LogLevel.Information, EventName = "cart.get", Message = "GetCartAsync called with userId={userId}")]
     public static partial void GetCartAsync(ILogger logger, string userId);
 
-    [LoggerMessage(Level = LogLevel.Information, EventName = "cart.health_check.request", Message = "Received health check request for service: {service}")]
-    public static partial void HealthCheckRequest(ILogger logger, string service);
-
-    [LoggerMessage(Level = LogLevel.Information, EventName = "cart.health_watch.request", Message = "Received health watch request for service: {service}")]
-    public static partial void HealthWatchRequest(ILogger logger, string service);
-
     [LoggerMessage(Level = LogLevel.Critical, EventName = "cart.startup.missing_valkey_addr", Message = "VALKEY_ADDR environment variable is required.")]
     public static partial void MissingValkeyAddr(ILogger logger);
 

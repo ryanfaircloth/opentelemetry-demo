@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"strings"
@@ -40,8 +41,6 @@ import (
 	pb "github.com/opentelemetry/opentelemetry-demo/src/product-catalog/genproto/oteldemo"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/health"
-	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 
@@ -258,6 +257,26 @@ func main() {
 
 	logger.Info(fmt.Sprintf("Product Catalog gRPC server started on port: %s", port))
 
+	// A plain HTTP health endpoint: kubelet's httpGet probe needs no gRPC
+	// client tooling and avoids the fragile-precompiled-gencode class of
+	// problem gRPC health checking libraries can hit under
+	// auto-instrumentation injection (see the recommendation service's
+	// RECOMMENDATION_HEALTH_PORT for precedent). Replaces the gRPC health
+	// service this service used to register.
+	healthPort := os.Getenv("PRODUCT_CATALOG_HEALTH_PORT")
+	if healthPort == "" {
+		healthPort = "8081"
+	}
+	go func() {
+		mux := http.NewServeMux()
+		mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+		})
+		if err := http.ListenAndServe(fmt.Sprintf(":%s", healthPort), mux); err != nil {
+			logger.Error(fmt.Sprintf("health check HTTP server failed: %v", err))
+		}
+	}()
+
 	ln, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
 	if err != nil {
 		logger.Error(fmt.Sprintf("TCP Listen: %v", err))
@@ -272,9 +291,6 @@ func main() {
 	reflection.Register(srv)
 
 	pb.RegisterProductCatalogServiceServer(srv, svc)
-
-	healthcheck := health.NewServer()
-	healthpb.RegisterHealthServer(srv, healthcheck)
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGKILL)
 	defer cancel()
@@ -430,14 +446,6 @@ func mustMapEnv(target *string, key string) {
 		logger.Error(fmt.Sprintf("Environment Variable Not Set: %q", key))
 	}
 	*target = value
-}
-
-func (p *productCatalog) Check(ctx context.Context, req *healthpb.HealthCheckRequest) (*healthpb.HealthCheckResponse, error) {
-	return &healthpb.HealthCheckResponse{Status: healthpb.HealthCheckResponse_SERVING}, nil
-}
-
-func (p *productCatalog) Watch(req *healthpb.HealthCheckRequest, ws healthpb.Health_WatchServer) error {
-	return status.Errorf(codes.Unimplemented, "health check via Watch not implemented")
 }
 
 func (p *productCatalog) ListProducts(ctx context.Context, req *pb.Empty) (*pb.ListProductsResponse, error) {

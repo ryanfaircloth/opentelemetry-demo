@@ -8,8 +8,6 @@ package oteldemo;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.Iterables;
 import io.grpc.*;
-import io.grpc.health.v1.HealthCheckResponse.ServingStatus;
-import io.grpc.protobuf.services.*;
 import io.grpc.stub.StreamObserver;
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
@@ -27,7 +25,9 @@ import io.opentelemetry.instrumentation.annotations.SpanAttribute;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.prometheus.metrics.core.metrics.Counter;
 import io.prometheus.metrics.exporter.httpserver.HTTPServer;
+import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -58,8 +58,8 @@ public final class AdService {
   private static final int MAX_ADS_TO_SERVE = 2;
 
   private Server server;
-  private HealthStatusManager healthMgr;
   private HTTPServer prometheusServer;
+  private HttpServer healthHttpServer;
 
   // DEMO: this counter and its `/metrics` HTTP exporter use the Prometheus
   // Java client library rather than the OpenTelemetry SDK. It is here to
@@ -107,7 +107,24 @@ public final class AdService {
     prometheusServer = HTTPServer.builder().port(prometheusPort).buildAndStart();
     logger.info(
         "Prometheus metrics endpoint started, listening on " + prometheusServer.getPort() + "/metrics");
-    healthMgr = new HealthStatusManager();
+
+    // A plain HTTP health endpoint: kubelet's httpGet probe needs no gRPC
+    // client tooling and avoids the fragile-precompiled-gencode class of
+    // problem gRPC health checking libraries can hit under
+    // auto-instrumentation injection (see the recommendation service's
+    // RECOMMENDATION_HEALTH_PORT for precedent). Replaces the gRPC health
+    // service this service used to register.
+    int healthPort =
+        Integer.parseInt(Optional.ofNullable(System.getenv("AD_HEALTH_PORT")).orElse("8081"));
+    healthHttpServer = HttpServer.create(new InetSocketAddress(healthPort), 0);
+    healthHttpServer.createContext(
+        "/healthz",
+        exchange -> {
+          exchange.sendResponseHeaders(200, -1);
+          exchange.close();
+        });
+    healthHttpServer.start();
+    logger.info("Health check HTTP endpoint started, listening on " + healthPort);
 
     // Create a flagd instance with OpenTelemetry
     FlagdOptions options =
@@ -122,7 +139,6 @@ public final class AdService {
     server =
         ServerBuilder.forPort(port)
             .addService(new AdServiceImpl())
-            .addService(healthMgr.getHealthService())
             .build()
             .start();
     logger.info("Ad service started, listening on " + port);
@@ -136,16 +152,17 @@ public final class AdService {
                   AdService.this.stop();
                   System.err.println("*** server shut down");
                 }));
-    healthMgr.setStatus("", ServingStatus.SERVING);
   }
 
   private void stop() {
     if (server != null) {
-      healthMgr.clearStatus("");
       server.shutdown();
     }
     if (prometheusServer != null) {
       prometheusServer.stop();
+    }
+    if (healthHttpServer != null) {
+      healthHttpServer.stop(0);
     }
   }
 

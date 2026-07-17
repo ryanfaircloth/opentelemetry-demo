@@ -2,12 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 using System;
 
-using Grpc.Health.V1;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using System.Threading.Tasks;
 using System.Threading;
-
-using Grpc.Core;
 
 using cart.cartstore;
 using cart.services;
@@ -84,15 +81,22 @@ builder.Services.AddSingleton(x =>
 
 builder.Services.AddGrpc();
 builder.Services.AddSingleton<readinessCheck>();
-builder.Services.AddGrpcHealthChecks()
+builder.Services.AddHealthChecks()
     .AddCheck<readinessCheck>("oteldemo.CartService");
-
-builder.Services.AddSingleton<HealthServiceImpl>();
 
 var app = builder.Build();
 
 app.MapGrpcService<CartService>();
-app.MapGrpcService<HealthServiceImpl>();
+
+// A plain HTTP health endpoint, reusing the same readinessCheck registration
+// that used to back this service's gRPC health check: kubelet's httpGet
+// probe needs no gRPC client tooling and avoids the
+// fragile-precompiled-gencode class of problem gRPC health checking
+// libraries can hit under auto-instrumentation injection (see the
+// recommendation service's RECOMMENDATION_HEALTH_PORT for precedent).
+// Requires Kestrel's "Http1AndHttp2" protocol so this HTTP/1.1 route and the
+// HTTP/2 gRPC service can share the same port.
+app.MapHealthChecks("/healthz");
 
 app.MapGet("/", async context =>
 {
