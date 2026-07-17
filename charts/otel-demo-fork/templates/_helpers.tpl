@@ -17,7 +17,8 @@ Common labels
 */}}
 {{- define "otel-demo.labels" -}}
 helm.sh/chart: {{ include "otel-demo.chart" . }}
-{{ include "otel-demo.selectorLabels" . }}
+app.kubernetes.io/name: {{ .name | default .Chart.Name }}
+app.kubernetes.io/instance: {{ .Release.Name }}
 {{ include "otel-demo.workloadLabels" . }}
 app.kubernetes.io/part-of: opentelemetry-demo
 app.kubernetes.io/managed-by: {{ .Release.Service }}
