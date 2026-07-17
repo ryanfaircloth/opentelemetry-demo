@@ -87,8 +87,8 @@ kafkaAccess:
     bootstrapServers: kafka:9092
     topic: orders
 
-# Global switch controlling how accounting/product-catalog/product-reviews
-# obtain their Postgres connection details.
+# Global switch controlling how accounting/product-catalog obtain their
+# Postgres connection details.
 postgresAccess:
   # "cnpg" (default): a single-instance CloudNativePG (https://cloudnative-pg.io/)
   #   Cluster custom resource is rendered (see templates/postgresql-cnpg.yaml).
@@ -298,7 +298,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.15-accounting"
+      tag: "0.11.16-accounting"
     useDefault:
       env: true
     podAnnotations:
@@ -331,7 +331,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.15-ad"
+      tag: "0.11.16-ad"
     useDefault:
       env: true
     service:
@@ -374,7 +374,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.15-cart"
+      tag: "0.11.16-cart"
     useDefault:
       env: true
     service:
@@ -418,7 +418,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.15-checkout"
+      tag: "0.11.16-checkout"
     useDefault:
       env: true
     service:
@@ -478,7 +478,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.15-currency"
+      tag: "0.11.16-currency"
     useDefault:
       env: true
     service:
@@ -519,7 +519,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.15-email"
+      tag: "0.11.16-email"
     useDefault:
       env: true
     service:
@@ -557,7 +557,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.15-fraud-detection"
+      tag: "0.11.16-fraud-detection"
     useDefault:
       env: true
     podAnnotations:
@@ -585,7 +585,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.15-frontend"
+      tag: "0.11.16-frontend"
     useDefault:
       env: true
     service:
@@ -609,8 +609,6 @@ components:
         value: currency:8080
       - name: PRODUCT_CATALOG_ADDR
         value: product-catalog:8080
-      - name: PRODUCT_REVIEWS_ADDR
-        value: product-reviews:3551
       - name: RECOMMENDATION_ADDR
         value: recommendation:8080
       - name: SHIPPING_ADDR
@@ -657,7 +655,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.15-image-provider"
+      tag: "0.11.16-image-provider"
     useDefault:
       env: true
     service:
@@ -697,7 +695,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.15-load-generator"
+      tag: "0.11.16-load-generator"
     useDefault:
       env: true
     service:
@@ -739,7 +737,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.15-payment"
+      tag: "0.11.16-payment"
     useDefault:
       env: true
     service:
@@ -786,7 +784,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.15-product-catalog"
+      tag: "0.11.16-product-catalog"
     useDefault:
       env: true
     service:
@@ -832,55 +830,11 @@ components:
       initialDelaySeconds: 5
       periodSeconds: 10
 
-  product-reviews:
-    enabled: true
-    useDefault:
-      env: true
-    service:
-      port: 3551
-    podAnnotations:
-      resource.opentelemetry.io/service.namespace: otel-demo
-    # DB_CONNECTION_STRING is generated from this block - see .Values.postgresAccess
-    # and otel-demo.pod.postgresEnv.
-    postgres:
-      format: libpq
-      legacy: "host=postgresql user=otelu password=otelp dbname=otel"
-    env:
-      - name: OPENAI_API_KEY
-        value: dummy
-      - name: LLM_MODEL
-        value: astronomy-llm
-      - name: LLM_HOST
-        value: llm
-      - name: LLM_PORT
-        value: "8000"
-      - name: LLM_BASE_URL
-        value: http://$(LLM_HOST):$(LLM_PORT)/v1
-      - name: PRODUCT_REVIEWS_PORT
-        value: "3551"
-      - name: PRODUCT_CATALOG_ADDR
-        value: product-catalog:8080
-      - name: FLAGD_HOST
-        value: flagd
-      - name: FLAGD_PORT
-        value: "8013"
-      - name: PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION
-        value: python
-      - name: OTEL_PYTHON_LOG_CORRELATION
-        value: "true"
-      - name: OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT
-        value: "true"
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: http://$(OTEL_COLLECTOR_NAME):4317
-    resources:
-      limits:
-        memory: 100Mi
-
   quote:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.15-quote"
+      tag: "0.11.16-quote"
     useDefault:
       env: true
     service:
@@ -922,7 +876,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.15-recommendation"
+      tag: "0.11.16-recommendation"
     useDefault:
       env: true
     service:
@@ -969,7 +923,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.15-shipping"
+      tag: "0.11.16-shipping"
     useDefault:
       env: true
     service:
@@ -1102,7 +1056,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.15-kafka"
+      tag: "0.11.16-kafka"
     useDefault:
       env: true
     replicas: 1
@@ -1133,20 +1087,6 @@ components:
       runAsUser: 1000  # appuser
       runAsGroup: 1000
       runAsNonRoot: true
-
-  llm:
-    enabled: true
-    useDefault:
-      env: true
-    service:
-      port: 8000
-    podAnnotations:
-      resource.opentelemetry.io/service.namespace: otel-demo
-    env:
-      - name: FLAGD_HOST
-        value: flagd
-      - name: FLAGD_PORT
-        value: "8013"
 
   postgresql:
     enabled: true

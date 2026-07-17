@@ -7,6 +7,15 @@ the release.
 
 ## Unreleased
 
+* [chart] Remove the stale `product-reviews` and `llm` component blocks from
+  `values.yaml`. Both services were removed upstream (open-telemetry/opentelemetry-demo#3587,
+  #3599) with no source left in this repo to build or override, so these
+  blocks had silently fallen back to pulling upstream `ghcr.io/open-telemetry/demo`
+  images that likely no longer exist either - a previous release already
+  noted this fact without acting on it. Also drops `frontend`'s dead
+  `PRODUCT_REVIEWS_ADDR` env var (unreferenced in `frontend`'s own source)
+  and regenerates the example `rendered/component.yaml` fixtures under
+  `examples/*` to match.
 * [chart] Wire `livenessProbe`/`readinessProbe` (httpGet) for `flagd` against
   its built-in management port (8014, default and unchanged here):
   `/healthz` for liveness (200 as soon as the process is up) and `/readyz`
