@@ -7,6 +7,17 @@ the release.
 
 ## Unreleased
 
+* [flagd-ui] Add `GET /healthz` (plain 200, liveness) and `GET /readyz`
+  (readiness) routes. `/readyz` checks that the `Storage` GenServer -
+  which loads the shared flag config file on init and backs every route in
+  the app - is alive and responding, rather than a fake always-200. Wired
+  both into the chart's `livenessProbe`/`readinessProbe` for the flagd-ui
+  sidecar. Also fixed `flagd-ui`'s missing `imageOverride` in `values.yaml`:
+  it had no `imageOverride` at all, so it silently deployed the untouched
+  upstream `ghcr.io/open-telemetry/demo` image instead of this fork's own
+  build - the same latent bug previously fixed for `ad`/`image-provider`/
+  `kafka` - meaning this fix (and any other fork-specific flagd-ui change)
+  would never actually have been deployed via this chart otherwise.
 * [chart] Remove the stale `product-reviews` and `llm` component blocks from
   `values.yaml`. Both services were removed upstream (open-telemetry/opentelemetry-demo#3587,
   #3599) with no source left in this repo to build or override, so these

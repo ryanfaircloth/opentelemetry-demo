@@ -5,7 +5,7 @@ kind: Service
 metadata:
   name: ad
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.16
+    helm.sh/chart: otel-demo-fork-0.11.17
     
     opentelemetry.io/name: ad
     
@@ -33,7 +33,7 @@ kind: Service
 metadata:
   name: cart
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.16
+    helm.sh/chart: otel-demo-fork-0.11.17
     
     opentelemetry.io/name: cart
     
@@ -58,7 +58,7 @@ kind: Service
 metadata:
   name: checkout
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.16
+    helm.sh/chart: otel-demo-fork-0.11.17
     
     opentelemetry.io/name: checkout
     
@@ -86,7 +86,7 @@ kind: Service
 metadata:
   name: currency
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.16
+    helm.sh/chart: otel-demo-fork-0.11.17
     
     opentelemetry.io/name: currency
     
@@ -114,7 +114,7 @@ kind: Service
 metadata:
   name: email
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.16
+    helm.sh/chart: otel-demo-fork-0.11.17
     
     opentelemetry.io/name: email
     
@@ -139,7 +139,7 @@ kind: Service
 metadata:
   name: flagd
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.16
+    helm.sh/chart: otel-demo-fork-0.11.17
     
     opentelemetry.io/name: flagd
     
@@ -170,7 +170,7 @@ kind: Service
 metadata:
   name: frontend
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.16
+    helm.sh/chart: otel-demo-fork-0.11.17
     
     opentelemetry.io/name: frontend
     
@@ -195,7 +195,7 @@ kind: Service
 metadata:
   name: image-provider
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.16
+    helm.sh/chart: otel-demo-fork-0.11.17
     
     opentelemetry.io/name: image-provider
     
@@ -220,7 +220,7 @@ kind: Service
 metadata:
   name: load-generator
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.16
+    helm.sh/chart: otel-demo-fork-0.11.17
     
     opentelemetry.io/name: load-generator
     
@@ -245,7 +245,7 @@ kind: Service
 metadata:
   name: payment
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.16
+    helm.sh/chart: otel-demo-fork-0.11.17
     
     opentelemetry.io/name: payment
     
@@ -273,7 +273,7 @@ kind: Service
 metadata:
   name: product-catalog
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.16
+    helm.sh/chart: otel-demo-fork-0.11.17
     
     opentelemetry.io/name: product-catalog
     
@@ -301,7 +301,7 @@ kind: Service
 metadata:
   name: quote
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.16
+    helm.sh/chart: otel-demo-fork-0.11.17
     
     opentelemetry.io/name: quote
     
@@ -326,7 +326,7 @@ kind: Service
 metadata:
   name: recommendation
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.16
+    helm.sh/chart: otel-demo-fork-0.11.17
     
     opentelemetry.io/name: recommendation
     
@@ -354,7 +354,7 @@ kind: Service
 metadata:
   name: shipping
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.16
+    helm.sh/chart: otel-demo-fork-0.11.17
     
     opentelemetry.io/name: shipping
     
@@ -379,7 +379,7 @@ kind: Service
 metadata:
   name: valkey-cart
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.16
+    helm.sh/chart: otel-demo-fork-0.11.17
     
     opentelemetry.io/name: valkey-cart
     
@@ -404,7 +404,7 @@ kind: Deployment
 metadata:
   name: accounting
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.16
+    helm.sh/chart: otel-demo-fork-0.11.17
     
     opentelemetry.io/name: accounting
     
@@ -435,7 +435,7 @@ spec:
       serviceAccountName: release-name
       containers:
         - name: accounting
-          image: 'ghcr.io/ryanfaircloth/demo:0.11.16-accounting'
+          image: 'ghcr.io/ryanfaircloth/demo:0.11.17-accounting'
           imagePullPolicy: IfNotPresent
           env:
             - name: OTEL_SERVICE_NAME
@@ -539,7 +539,7 @@ kind: Deployment
 metadata:
   name: ad
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.16
+    helm.sh/chart: otel-demo-fork-0.11.17
     
     opentelemetry.io/name: ad
     
@@ -570,7 +570,7 @@ spec:
       serviceAccountName: release-name
       containers:
         - name: ad
-          image: 'ghcr.io/ryanfaircloth/demo:0.11.16-ad'
+          image: 'ghcr.io/ryanfaircloth/demo:0.11.17-ad'
           imagePullPolicy: IfNotPresent
           ports:
             
@@ -630,7 +630,7 @@ kind: Deployment
 metadata:
   name: cart
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.16
+    helm.sh/chart: otel-demo-fork-0.11.17
     
     opentelemetry.io/name: cart
     
@@ -661,7 +661,7 @@ spec:
       serviceAccountName: release-name
       containers:
         - name: cart
-          image: 'ghcr.io/ryanfaircloth/demo:0.11.16-cart'
+          image: 'ghcr.io/ryanfaircloth/demo:0.11.17-cart'
           imagePullPolicy: IfNotPresent
           ports:
             
@@ -727,7 +727,7 @@ kind: Deployment
 metadata:
   name: checkout
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.16
+    helm.sh/chart: otel-demo-fork-0.11.17
     
     opentelemetry.io/name: checkout
     
@@ -758,7 +758,7 @@ spec:
       serviceAccountName: release-name
       containers:
         - name: checkout
-          image: 'ghcr.io/ryanfaircloth/demo:0.11.16-checkout'
+          image: 'ghcr.io/ryanfaircloth/demo:0.11.17-checkout'
           imagePullPolicy: IfNotPresent
           ports:
             
@@ -875,7 +875,7 @@ kind: Deployment
 metadata:
   name: currency
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.16
+    helm.sh/chart: otel-demo-fork-0.11.17
     
     opentelemetry.io/name: currency
     
@@ -906,7 +906,7 @@ spec:
       serviceAccountName: release-name
       containers:
         - name: currency
-          image: 'ghcr.io/ryanfaircloth/demo:0.11.16-currency'
+          image: 'ghcr.io/ryanfaircloth/demo:0.11.17-currency'
           imagePullPolicy: IfNotPresent
           ports:
             
@@ -964,7 +964,7 @@ kind: Deployment
 metadata:
   name: email
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.16
+    helm.sh/chart: otel-demo-fork-0.11.17
     
     opentelemetry.io/name: email
     
@@ -995,7 +995,7 @@ spec:
       serviceAccountName: release-name
       containers:
         - name: email
-          image: 'ghcr.io/ryanfaircloth/demo:0.11.16-email'
+          image: 'ghcr.io/ryanfaircloth/demo:0.11.17-email'
           imagePullPolicy: IfNotPresent
           ports:
             
@@ -1051,7 +1051,7 @@ kind: Deployment
 metadata:
   name: flagd
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.16
+    helm.sh/chart: otel-demo-fork-0.11.17
     
     opentelemetry.io/name: flagd
     
@@ -1126,7 +1126,7 @@ spec:
             - name: config-rw
               mountPath: /etc/flagd
         - name: flagd-ui
-          image: 'ghcr.io/open-telemetry/demo:2.2.0-flagd-ui'
+          image: 'ghcr.io/ryanfaircloth/demo:0.11.17-flagd-ui'
           imagePullPolicy: IfNotPresent
           ports:
             
@@ -1157,6 +1157,18 @@ spec:
           resources:
             limits:
               memory: 250Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 4000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 4000
+            initialDelaySeconds: 5
+            periodSeconds: 10
           volumeMounts:
             - mountPath: /app/data
               name: config-rw
@@ -1185,7 +1197,7 @@ kind: Deployment
 metadata:
   name: fraud-detection
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.16
+    helm.sh/chart: otel-demo-fork-0.11.17
     
     opentelemetry.io/name: fraud-detection
     
@@ -1216,7 +1228,7 @@ spec:
       serviceAccountName: release-name
       containers:
         - name: fraud-detection
-          image: 'ghcr.io/ryanfaircloth/demo:0.11.16-fraud-detection'
+          image: 'ghcr.io/ryanfaircloth/demo:0.11.17-fraud-detection'
           imagePullPolicy: IfNotPresent
           env:
             - name: OTEL_SERVICE_NAME
@@ -1299,7 +1311,7 @@ kind: Deployment
 metadata:
   name: frontend
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.16
+    helm.sh/chart: otel-demo-fork-0.11.17
     
     opentelemetry.io/name: frontend
     
@@ -1330,7 +1342,7 @@ spec:
       serviceAccountName: release-name
       containers:
         - name: frontend
-          image: 'ghcr.io/ryanfaircloth/demo:0.11.16-frontend'
+          image: 'ghcr.io/ryanfaircloth/demo:0.11.17-frontend'
           imagePullPolicy: IfNotPresent
           ports:
             
@@ -1414,7 +1426,7 @@ kind: Deployment
 metadata:
   name: image-provider
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.16
+    helm.sh/chart: otel-demo-fork-0.11.17
     
     opentelemetry.io/name: image-provider
     
@@ -1451,7 +1463,7 @@ spec:
       serviceAccountName: release-name
       containers:
         - name: image-provider
-          image: 'ghcr.io/ryanfaircloth/demo:0.11.16-image-provider'
+          image: 'ghcr.io/ryanfaircloth/demo:0.11.17-image-provider'
           imagePullPolicy: IfNotPresent
           ports:
             
@@ -1501,7 +1513,7 @@ kind: Deployment
 metadata:
   name: load-generator
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.16
+    helm.sh/chart: otel-demo-fork-0.11.17
     
     opentelemetry.io/name: load-generator
     
@@ -1532,7 +1544,7 @@ spec:
       serviceAccountName: release-name
       containers:
         - name: load-generator
-          image: 'ghcr.io/ryanfaircloth/demo:0.11.16-load-generator'
+          image: 'ghcr.io/ryanfaircloth/demo:0.11.17-load-generator'
           imagePullPolicy: IfNotPresent
           ports:
             
@@ -1592,7 +1604,7 @@ kind: Deployment
 metadata:
   name: payment
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.16
+    helm.sh/chart: otel-demo-fork-0.11.17
     
     opentelemetry.io/name: payment
     
@@ -1623,7 +1635,7 @@ spec:
       serviceAccountName: release-name
       containers:
         - name: payment
-          image: 'ghcr.io/ryanfaircloth/demo:0.11.16-payment'
+          image: 'ghcr.io/ryanfaircloth/demo:0.11.17-payment'
           imagePullPolicy: IfNotPresent
           ports:
             
@@ -1687,7 +1699,7 @@ kind: Deployment
 metadata:
   name: product-catalog
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.16
+    helm.sh/chart: otel-demo-fork-0.11.17
     
     opentelemetry.io/name: product-catalog
     
@@ -1718,7 +1730,7 @@ spec:
       serviceAccountName: release-name
       containers:
         - name: product-catalog
-          image: 'ghcr.io/ryanfaircloth/demo:0.11.16-product-catalog'
+          image: 'ghcr.io/ryanfaircloth/demo:0.11.17-product-catalog'
           imagePullPolicy: IfNotPresent
           ports:
             
@@ -1807,7 +1819,7 @@ kind: Deployment
 metadata:
   name: quote
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.16
+    helm.sh/chart: otel-demo-fork-0.11.17
     
     opentelemetry.io/name: quote
     
@@ -1838,7 +1850,7 @@ spec:
       serviceAccountName: release-name
       containers:
         - name: quote
-          image: 'ghcr.io/ryanfaircloth/demo:0.11.16-quote'
+          image: 'ghcr.io/ryanfaircloth/demo:0.11.17-quote'
           imagePullPolicy: IfNotPresent
           ports:
             
@@ -1898,7 +1910,7 @@ kind: Deployment
 metadata:
   name: recommendation
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.16
+    helm.sh/chart: otel-demo-fork-0.11.17
     
     opentelemetry.io/name: recommendation
     
@@ -1929,7 +1941,7 @@ spec:
       serviceAccountName: release-name
       containers:
         - name: recommendation
-          image: 'ghcr.io/ryanfaircloth/demo:0.11.16-recommendation'
+          image: 'ghcr.io/ryanfaircloth/demo:0.11.17-recommendation'
           imagePullPolicy: IfNotPresent
           ports:
             
@@ -1993,7 +2005,7 @@ kind: Deployment
 metadata:
   name: shipping
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.16
+    helm.sh/chart: otel-demo-fork-0.11.17
     
     opentelemetry.io/name: shipping
     
@@ -2024,7 +2036,7 @@ spec:
       serviceAccountName: release-name
       containers:
         - name: shipping
-          image: 'ghcr.io/ryanfaircloth/demo:0.11.16-shipping'
+          image: 'ghcr.io/ryanfaircloth/demo:0.11.17-shipping'
           imagePullPolicy: IfNotPresent
           ports:
             
@@ -2078,7 +2090,7 @@ kind: Deployment
 metadata:
   name: valkey-cart
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.16
+    helm.sh/chart: otel-demo-fork-0.11.17
     
     opentelemetry.io/name: valkey-cart
     

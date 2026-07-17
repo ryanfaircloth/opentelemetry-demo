@@ -18,6 +18,11 @@ defmodule FlagdUiWeb.Router do
   end
 
   scope "/", FlagdUiWeb do
+    get "/healthz", HealthController, :healthz
+    get "/readyz", HealthController, :readyz
+  end
+
+  scope "/", FlagdUiWeb do
     pipe_through :browser
 
     live "/", Dashboard

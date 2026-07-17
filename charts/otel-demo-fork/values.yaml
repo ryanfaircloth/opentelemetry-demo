@@ -298,7 +298,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.16-accounting"
+      tag: "0.11.17-accounting"
     useDefault:
       env: true
     podAnnotations:
@@ -331,7 +331,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.16-ad"
+      tag: "0.11.17-ad"
     useDefault:
       env: true
     service:
@@ -374,7 +374,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.16-cart"
+      tag: "0.11.17-cart"
     useDefault:
       env: true
     service:
@@ -418,7 +418,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.16-checkout"
+      tag: "0.11.17-checkout"
     useDefault:
       env: true
     service:
@@ -478,7 +478,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.16-currency"
+      tag: "0.11.17-currency"
     useDefault:
       env: true
     service:
@@ -519,7 +519,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.16-email"
+      tag: "0.11.17-email"
     useDefault:
       env: true
     service:
@@ -557,7 +557,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.16-fraud-detection"
+      tag: "0.11.17-fraud-detection"
     useDefault:
       env: true
     podAnnotations:
@@ -585,7 +585,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.16-frontend"
+      tag: "0.11.17-frontend"
     useDefault:
       env: true
     service:
@@ -655,7 +655,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.16-image-provider"
+      tag: "0.11.17-image-provider"
     useDefault:
       env: true
     service:
@@ -695,7 +695,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.16-load-generator"
+      tag: "0.11.17-load-generator"
     useDefault:
       env: true
     service:
@@ -737,7 +737,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.16-payment"
+      tag: "0.11.17-payment"
     useDefault:
       env: true
     service:
@@ -784,7 +784,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.16-product-catalog"
+      tag: "0.11.17-product-catalog"
     useDefault:
       env: true
     service:
@@ -834,7 +834,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.16-quote"
+      tag: "0.11.17-quote"
     useDefault:
       env: true
     service:
@@ -876,7 +876,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.16-recommendation"
+      tag: "0.11.17-recommendation"
     useDefault:
       env: true
     service:
@@ -923,7 +923,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.16-shipping"
+      tag: "0.11.17-shipping"
     useDefault:
       env: true
     service:
@@ -1017,6 +1017,15 @@ components:
     # flagd-ui as a sidecar container in the same pod so the flag json file can be shared
     sidecarContainers:
       - name: flagd-ui
+        # Without this, the sidecar silently falls back to the untouched
+        # upstream ghcr.io/open-telemetry/demo image instead of this fork's
+        # own build - the same latent bug previously fixed for ad/
+        # image-provider/kafka - meaning fork-specific changes (like the
+        # /healthz /readyz routes added alongside this) would never actually
+        # be deployed via this chart.
+        imageOverride:
+          repository: "ghcr.io/ryanfaircloth/demo"
+          tag: "0.11.17-flagd-ui"
         useDefault:
           env: true
         service:
@@ -1035,6 +1044,18 @@ components:
         resources:
           limits:
             memory: 250Mi
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 4000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 4000
+          initialDelaySeconds: 5
+          periodSeconds: 10
         volumeMounts:
           - name: config-rw
             mountPath: /app/data
@@ -1056,7 +1077,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.16-kafka"
+      tag: "0.11.17-kafka"
     useDefault:
       env: true
     replicas: 1
