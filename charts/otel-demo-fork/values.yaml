@@ -111,7 +111,13 @@ postgresAccess:
       storageClass: ""
     # Optional; empty uses the CNPG operator's default supported Postgres image.
     imageName: ""
-    resources: {}
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 256Mi
     # CNPG's superuser role is always named "postgres" and is disabled by
     # default. It's enabled here (with this fixed demo password, stored in a
     # chart-managed Secret referenced via spec.superuserSecret) so the
@@ -323,8 +329,18 @@ components:
         value: http://$(OTEL_COLLECTOR_NAME):4318
       - name: OTEL_DOTNET_AUTO_TRACES_ENTITYFRAMEWORKCORE_INSTRUMENTATION_ENABLED
         value: "false"
+      # .NET's container-aware GC sizes its heap off the memory limit, but
+      # defaults to reserving up to 75% of it for the heap alone; pin this
+      # explicitly so it leaves headroom for non-heap (JIT, thread stacks,
+      # native allocations) within the 120Mi limit below.
+      - name: DOTNET_GCHeapHardLimitPercent
+        value: "60"
     resources:
+      requests:
+        cpu: 10m
+        memory: 60Mi
       limits:
+        cpu: 200m
         memory: 120Mi
 
   ad:
@@ -354,8 +370,17 @@ components:
         value: http://$(OTEL_COLLECTOR_NAME):4318
       - name: OTEL_LOGS_EXPORTER
         value: otlp
+      # JVM defaults to -XX:MaxRAMPercentage=25.0 in containers, which under-uses
+      # the 300Mi limit below; raise it so the heap actually gets most of the
+      # allotted memory instead of GC-thrashing well under the limit.
+      - name: JAVA_TOOL_OPTIONS
+        value: "-XX:MaxRAMPercentage=75.0"
     resources:
+      requests:
+        cpu: 50m
+        memory: 150Mi
       limits:
+        cpu: 300m
         memory: 300Mi
     livenessProbe:
       httpGet:
@@ -394,8 +419,14 @@ components:
         value: "8013"
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: http://$(OTEL_COLLECTOR_NAME):4317
+      - name: DOTNET_GCHeapHardLimitPercent
+        value: "60"
     resources:
+      requests:
+        cpu: 20m
+        memory: 80Mi
       limits:
+        cpu: 250m
         memory: 160Mi
     initContainers:
       - name: wait-for-valkey-cart
@@ -457,10 +488,14 @@ components:
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: http/protobuf
       - name: GOMEMLIMIT
-        value: 16MiB
+        value: 40MiB
     resources:
+      requests:
+        cpu: 10m
+        memory: 24Mi
       limits:
-        memory: 20Mi
+        cpu: 150m
+        memory: 48Mi
     livenessProbe:
       httpGet:
         path: /healthz
@@ -498,8 +533,12 @@ components:
       - name: VERSION
         value: "{{ .Chart.AppVersion }}"
     resources:
-      limits:
+      requests:
+        cpu: 10m
         memory: 20Mi
+      limits:
+        cpu: 100m
+        memory: 40Mi
     livenessProbe:
       httpGet:
         path: /healthz
@@ -536,7 +575,11 @@ components:
       - name: FLAGD_PORT
         value: "8013"
     resources:
+      requests:
+        cpu: 10m
+        memory: 50Mi
       limits:
+        cpu: 150m
         memory: 100Mi
     livenessProbe:
       httpGet:
@@ -575,8 +618,14 @@ components:
         value: "true"
       - name: OTEL_INSTRUMENTATION_MESSAGING_EXPERIMENTAL_RECEIVE_TELEMETRY_ENABLED
         value: "true"
+      - name: JAVA_TOOL_OPTIONS
+        value: "-XX:MaxRAMPercentage=75.0"
     resources:
+      requests:
+        cpu: 50m
+        memory: 150Mi
       limits:
+        cpu: 300m
         memory: 300Mi
 
   frontend:
@@ -629,8 +678,17 @@ components:
       # addition to port-forwarding frontend itself; override for real deployments.
       - name: PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
         value: http://localhost:4318/v1/traces
+      # Node's V8 heap isn't reliably cgroup-aware; without a cap it can grow
+      # well past the 250Mi limit below and get OOMKilled. Cap it with
+      # headroom for non-heap (buffers, native modules, Next.js server cache).
+      - name: NODE_OPTIONS
+        value: "--max-old-space-size=176"
     resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
       limits:
+        cpu: 300m
         memory: 250Mi
     securityContext:
       runAsUser: 1001  # nextjs
@@ -674,7 +732,11 @@ components:
       - name: OTEL_COLLECTOR_HOST
         value: $(OTEL_COLLECTOR_NAME)
     resources:
+      requests:
+        cpu: 10m
+        memory: 20Mi
       limits:
+        cpu: 100m
         memory: 50Mi
     livenessProbe:
       httpGet:
@@ -728,7 +790,11 @@ components:
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: http://$(OTEL_COLLECTOR_NAME):4317
     resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
       limits:
+        cpu: 1000m
         memory: 1500Mi
 
   payment:
@@ -756,8 +822,14 @@ components:
         value: "8013"
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: http://$(OTEL_COLLECTOR_NAME):4317
+      - name: NODE_OPTIONS
+        value: "--max-old-space-size=96"
     resources:
+      requests:
+        cpu: 20m
+        memory: 64Mi
       limits:
+        cpu: 200m
         memory: 140Mi
     securityContext:
       runAsUser: 1000  # node
@@ -805,14 +877,18 @@ components:
       - name: FLAGD_PORT
         value: "8013"
       - name: GOMEMLIMIT
-        value: 16MiB
+        value: 40MiB
       - name: OTEL_SEMCONV_STABILITY_OPT_IN
         value: database
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: http://$(OTEL_COLLECTOR_NAME):4317
     resources:
+      requests:
+        cpu: 10m
+        memory: 24Mi
       limits:
-        memory: 20Mi
+        cpu: 150m
+        memory: 48Mi
     livenessProbe:
       httpGet:
         path: /healthz
@@ -847,7 +923,11 @@ components:
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: http://$(OTEL_COLLECTOR_NAME):4318
     resources:
+      requests:
+        cpu: 10m
+        memory: 20Mi
       limits:
+        cpu: 100m
         memory: 40Mi
     securityContext:
       runAsUser: 33  # www-data
@@ -898,7 +978,11 @@ components:
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: http://$(OTEL_COLLECTOR_NAME):4318
     resources:
+      requests:
+        cpu: 50m
+        memory: 200Mi
       limits:
+        cpu: 300m
         memory: 500Mi            # This is high to enable supporting the recommendationCache feature flag use case
     livenessProbe:
       httpGet:
@@ -932,8 +1016,12 @@ components:
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: http://$(OTEL_COLLECTOR_NAME):4318
     resources:
-      limits:
+      requests:
+        cpu: 10m
         memory: 20Mi
+      limits:
+        cpu: 100m
+        memory: 40Mi
     livenessProbe:
       httpGet:
         path: /health
@@ -966,7 +1054,11 @@ components:
       - name: OTEL_COLLECTOR_HOST
         value: $(OTEL_COLLECTOR_NAME)
     resources:
+      requests:
+        cpu: 10m
+        memory: 50Mi
       limits:
+        cpu: 100m
         memory: 100Mi
 
   flagd:
@@ -992,8 +1084,12 @@ components:
       - name: GOMEMLIMIT
         value: 60MiB
     resources:
+      requests:
+        cpu: 10m
+        memory: 40Mi
       limits:
-        memory: 75Mi
+        cpu: 100m
+        memory: 100Mi
     command:
       - "/flagd-build"
       - "start"
@@ -1034,7 +1130,11 @@ components:
           - name: PHX_HOST
             value: localhost
         resources:
+          requests:
+            cpu: 20m
+            memory: 64Mi
           limits:
+            cpu: 200m
             memory: 250Mi
         livenessProbe:
           httpGet:
@@ -1094,7 +1194,11 @@ components:
       - name: KAFKA_CONTROLLER_QUORUM_VOTERS
         value: 1@kafka:9093
     resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
       limits:
+        cpu: 1000m
         memory: 700Mi
     securityContext:
       runAsUser: 1000  # appuser
@@ -1149,7 +1253,11 @@ components:
         mountPath: /docker-entrypoint-initdb.d
         existingConfigMap: postgresql-init
     resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
       limits:
+        cpu: 250m
         memory: 100Mi
 
   valkey-cart:
@@ -1171,8 +1279,12 @@ components:
         username: valkey
         collection_interval: 10s
     resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
       limits:
-        memory: 20Mi
+        cpu: 100m
+        memory: 64Mi
     securityContext:
       runAsUser: 999  # valkey
       runAsGroup: 1000
@@ -1197,7 +1309,11 @@ opentelemetry-collector:
       metrics:
         enabled: true
   resources:
+    requests:
+      cpu: 50m
+      memory: 100Mi
     limits:
+      cpu: 300m
       memory: 200Mi
   service:
     enabled: true
