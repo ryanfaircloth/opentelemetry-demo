@@ -97,7 +97,6 @@ services:
       - OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
       - OTEL_RESOURCE_ATTRIBUTES=${OTEL_RESOURCE_ATTRIBUTES},service.criticality=high
       - OTEL_SERVICE_NAME=cart
-      - ASPNETCORE_URLS=http://*:${CART_PORT}
     depends_on:
       valkey-cart:
         condition: service_healthy
@@ -127,6 +126,7 @@ services:
       - FLAGD_HOST
       - FLAGD_PORT
       - CHECKOUT_PORT
+      - CHECKOUT_HEALTH_PORT
       - CART_ADDR
       - CURRENCY_ADDR
       - EMAIL_ADDR
@@ -140,7 +140,7 @@ services:
       - OTEL_RESOURCE_ATTRIBUTES=${OTEL_RESOURCE_ATTRIBUTES},service.criticality=critical
       - OTEL_SERVICE_NAME=checkout
     healthcheck:
-      test: ["CMD", "/bin/grpc_health_probe", "-addr=:${CHECKOUT_PORT}"]
+      test: ["CMD", "/usr/src/app/healthcheck"]
       start_period: 10s
       interval: 5s
       timeout: 5s
@@ -515,6 +515,7 @@ services:
       - "${PRODUCT_CATALOG_PORT}"
     environment:
       - PRODUCT_CATALOG_PORT
+      - PRODUCT_CATALOG_HEALTH_PORT
       - FLAGD_HOST
       - FLAGD_PORT
       - GOMEMLIMIT=16MiB
@@ -526,7 +527,7 @@ services:
       - OTEL_SEMCONV_STABILITY_OPT_IN=database
       - DB_CONNECTION_STRING=postgres://astronomy_user:${POSTGRES_ASTRONOMY_PASSWORD}@${POSTGRES_HOST}/astronomy_db?sslmode=disable
     healthcheck:
-      test: ["CMD", "/bin/grpc_health_probe", "-addr=:${PRODUCT_CATALOG_PORT}"]
+      test: ["CMD", "/usr/src/app/healthcheck"]
       start_period: 10s
       interval: 5s
       timeout: 5s

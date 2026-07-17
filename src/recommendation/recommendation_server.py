@@ -167,6 +167,14 @@ if __name__ == "__main__":
     logger.addHandler(console_handler)
     logger.setLevel(logging.INFO)
 
+    # Started before the blocking product-catalog wait below so the probe
+    # doesn't kill the pod while it's still legitimately waiting on a
+    # slow-starting dependency.
+    health_port = os.environ.get('RECOMMENDATION_HEALTH_PORT', '8081')
+    health_server = ThreadingHTTPServer(('', int(health_port)), HealthCheckHandler)
+    threading.Thread(target=health_server.serve_forever, daemon=True).start()
+    logger.info(f'Health check endpoint listening on port {health_port}')
+
     catalog_addr = must_map_env('PRODUCT_CATALOG_ADDR')
     # grpc.enable_retries=0: works around a longstanding grpcio C-core bug
     # (call combiner ref-count assertion, e.g. "Check failed: prev_size >= 1u"
@@ -212,8 +220,4 @@ if __name__ == "__main__":
     server.start()
     logger.info(f'Recommendation service started, listening on port {port}')
 
-    health_port = os.environ.get('RECOMMENDATION_HEALTH_PORT', '8081')
-    health_server = ThreadingHTTPServer(('', int(health_port)), HealthCheckHandler)
-    threading.Thread(target=health_server.serve_forever, daemon=True).start()
-    logger.info(f'Health check endpoint listening on port {health_port}')
     server.wait_for_termination()

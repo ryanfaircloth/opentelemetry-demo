@@ -12,6 +12,7 @@ using cart.healthcheck;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
@@ -20,6 +21,21 @@ using OpenFeature.Hooks;
 using OpenFeature.Providers.Flagd;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// gRPC requires a pure HTTP/2 endpoint. Kestrel's EndpointDefaults config
+// (appsettings.json / Kestrel__EndpointDefaults__*) only applies to endpoints
+// declared under the Kestrel:Endpoints section, not to the endpoint Kestrel
+// derives from ASPNETCORE_URLS - so it silently falls back to HTTP/1.1
+// without TLS, breaking gRPC. Give the health check its own HTTP/1.1 port
+// instead of trying to share the gRPC port.
+int cartPort = int.Parse(builder.Configuration["CART_PORT"] ?? "8080");
+int healthPort = int.Parse(builder.Configuration["CART_HEALTH_PORT"] ?? "8081");
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenAnyIP(cartPort, listenOptions => listenOptions.Protocols = HttpProtocols.Http2);
+    options.ListenAnyIP(healthPort, listenOptions => listenOptions.Protocols = HttpProtocols.Http1);
+});
+
 string valkeyAddress = builder.Configuration["VALKEY_ADDR"];
 if (string.IsNullOrEmpty(valkeyAddress))
 {
@@ -93,9 +109,9 @@ app.MapGrpcService<CartService>();
 // probe needs no gRPC client tooling and avoids the
 // fragile-precompiled-gencode class of problem gRPC health checking
 // libraries can hit under auto-instrumentation injection (see the
-// recommendation service's RECOMMENDATION_HEALTH_PORT for precedent).
-// Requires Kestrel's "Http1AndHttp2" protocol so this HTTP/1.1 route and the
-// HTTP/2 gRPC service can share the same port.
+// recommendation service's RECOMMENDATION_HEALTH_PORT for precedent). Served
+// on its own HTTP/1.1-only port (see ConfigureKestrel above) rather than the
+// gRPC port.
 app.MapHealthChecks("/healthz");
 
 app.MapGet("/", async context =>

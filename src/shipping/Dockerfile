@@ -43,5 +43,6 @@ COPY --from=builder /app/target/release/shipping shipping
 COPY --from=builder /app/target/release/healthcheck healthcheck
 
 EXPOSE ${SHIPPING_PORT}
+EXPOSE ${SHIPPING_HEALTH_PORT}
 
 CMD ["./shipping"]

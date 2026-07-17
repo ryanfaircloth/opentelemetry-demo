@@ -4,6 +4,7 @@
 require "logger"
 require "ostruct"
 require "pony"
+require "socket"
 require "sinatra"
 require "open_feature/sdk"
 require "openfeature/flagd/provider"
@@ -22,6 +23,26 @@ set :port, ENV["EMAIL_PORT"]
 # whether the OTLP collector is reachable.
 $console_logger = Logger.new($stdout)
 $console_logger.level = Logger::WARN
+
+# A plain HTTP health endpoint on its own port, started immediately and
+# independent of the flagd retry below: Sinatra's classic app doesn't start
+# listening on EMAIL_PORT until this whole file finishes loading, so a
+# probe against the main port would kill the pod while it's still
+# legitimately waiting on a slow-starting flagd.
+health_port = (ENV["EMAIL_HEALTH_PORT"] || "8081").to_i
+Thread.new do
+  server = TCPServer.new(health_port)
+  loop do
+    client = server.accept
+    begin
+      client.write("HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+    rescue StandardError
+      # ignore write errors from a client that disconnected early
+    ensure
+      client.close
+    end
+  end
+end
 
 # Initialize OpenFeature SDK with flagd provider, retrying with exponential
 # backoff since flagd may not be up yet when this service starts.

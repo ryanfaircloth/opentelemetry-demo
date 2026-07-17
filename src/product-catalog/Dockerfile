@@ -14,17 +14,17 @@ RUN go mod download
 COPY ./src/product-catalog/genproto/oteldemo/ genproto/oteldemo/
 COPY ./src/product-catalog/flags/ flags/
 COPY ./src/product-catalog/main.go main.go
+COPY ./src/product-catalog/healthcheck/ healthcheck/
 
 RUN CGO_ENABLED=0 GOOS=linux GO111MODULE=on go build -ldflags "-s -w" -o product-catalog main.go
-
-FROM ghcr.io/grpc-ecosystem/grpc-health-probe:v0.4.52@sha256:0303b506a288d544ed99fef17a55c8c5ce872f498f643c396b532b3595089ac9 AS grpc-health-probe
+RUN CGO_ENABLED=0 GOOS=linux GO111MODULE=on go build -ldflags "-s -w" -o healthcheck ./healthcheck
 
 FROM gcr.io/distroless/static-debian12:nonroot@sha256:d093aa3e30dbadd3efe1310db061a14da60299baff8450a17fe0ccc514a16639
 
 WORKDIR /usr/src/app/
 
 COPY --from=builder /usr/src/app/product-catalog/ ./
-COPY --from=grpc-health-probe /ko-app/grpc-health-probe /bin/grpc_health_probe
+COPY --from=builder /usr/src/app/healthcheck /usr/src/app/healthcheck
 
 EXPOSE ${PRODUCT_CATALOG_PORT}
 ENTRYPOINT [ "./product-catalog" ]

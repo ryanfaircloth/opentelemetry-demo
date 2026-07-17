@@ -671,8 +671,8 @@ spec:
               value: cumulative
             - name: CART_PORT
               value: "8080"
-            - name: ASPNETCORE_URLS
-              value: http://*:$(CART_PORT)
+            - name: CART_HEALTH_PORT
+              value: "8081"
             - name: VALKEY_ADDR
               value: valkey-cart:6379
             - name: FLAGD_HOST
@@ -689,13 +689,13 @@ spec:
           livenessProbe:
             httpGet:
               path: /healthz
-              port: 8080
+              port: 8081
             initialDelaySeconds: 5
             periodSeconds: 10
           readinessProbe:
             httpGet:
               path: /healthz
-              port: 8080
+              port: 8081
             initialDelaySeconds: 5
             periodSeconds: 10
           volumeMounts:
@@ -993,6 +993,8 @@ spec:
               value: cumulative
             - name: EMAIL_PORT
               value: "8080"
+            - name: EMAIL_HEALTH_PORT
+              value: "8081"
             - name: APP_ENV
               value: production
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
@@ -1009,13 +1011,13 @@ spec:
           livenessProbe:
             httpGet:
               path: /healthz
-              port: 8080
+              port: 8081
             initialDelaySeconds: 5
             periodSeconds: 10
           readinessProbe:
             httpGet:
               path: /healthz
-              port: 8080
+              port: 8081
             initialDelaySeconds: 5
             periodSeconds: 10
           volumeMounts:
@@ -1996,6 +1998,8 @@ spec:
               value: cumulative
             - name: SHIPPING_PORT
               value: "8080"
+            - name: SHIPPING_HEALTH_PORT
+              value: "8081"
             - name: QUOTE_ADDR
               value: http://quote:8080
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
@@ -2010,13 +2014,13 @@ spec:
           livenessProbe:
             httpGet:
               path: /health
-              port: 8080
+              port: 8081
             initialDelaySeconds: 5
             periodSeconds: 10
           readinessProbe:
             httpGet:
               path: /health
-              port: 8080
+              port: 8081
             initialDelaySeconds: 5
             periodSeconds: 10
           volumeMounts:

@@ -89,6 +89,27 @@ async fn main() -> std::io::Result<()> {
         message = "Shipping service is running"
     );
 
+    // A plain HTTP health endpoint on its own port, started immediately and
+    // independent of the flagd retry below: the main App below doesn't start
+    // listening on SHIPPING_PORT until flagd is ready, so a probe against
+    // that port would kill the pod while it's still legitimately waiting on
+    // a slow-starting flagd.
+    let health_port: u16 = env::var("SHIPPING_HEALTH_PORT")
+        .ok()
+        .and_then(|p| p.parse().ok())
+        .unwrap_or(8081);
+    let health_addr = format!("[::]:{}", health_port);
+    actix_web::rt::spawn(
+        HttpServer::new(|| {
+            App::new().route(
+                "/health",
+                web::get().to(|| async { HttpResponse::Ok().finish() }),
+            )
+        })
+        .bind(health_addr)?
+        .run(),
+    );
+
     let provider = init_flagd_provider_with_retry().await;
 
     let flag_provider = web::Data::from(Arc::new(provider) as Arc<dyn FeatureProvider>);
@@ -100,10 +121,6 @@ async fn main() -> std::io::Result<()> {
             .wrap(RequestMetrics::default())
             .service(get_quote)
             .service(ship_order)
-            .route(
-                "/health",
-                web::get().to(|| async { HttpResponse::Ok().finish() }),
-            )
     })
     .bind(&addr)?
     .run()

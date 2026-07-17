@@ -7,6 +7,7 @@
 #include <math.h>
 #include <thread>
 #include <arpa/inet.h>
+#include <csignal>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <demo.grpc.pb.h>
@@ -285,7 +286,10 @@ void RunHealthHttpServer(uint16_t port)
     if (client_fd < 0) {
       continue;
     }
-    write(client_fd, response, sizeof(response) - 1);
+    // MSG_NOSIGNAL: a probe that closes its side early would otherwise raise
+    // SIGPIPE, whose default disposition kills the whole process (not just
+    // this thread).
+    send(client_fd, response, sizeof(response) - 1, MSG_NOSIGNAL);
     close(client_fd);
   }
 }
@@ -319,6 +323,11 @@ void RunServer(uint16_t port)
 }
 
 int main(int argc, char **argv) {
+
+  // A client (e.g. a probe) closing its side of a socket before we finish
+  // writing would otherwise raise SIGPIPE, whose default disposition kills
+  // the whole process.
+  signal(SIGPIPE, SIG_IGN);
 
   if (argc < 2) {
     std::cout << "Usage: currency <port>";

@@ -208,6 +208,28 @@ func main() {
 	global.SetLoggerProvider(sdk.LoggerProvider())
 	otel.SetTextMapPropagator(sdk.Propagator())
 
+	// A plain HTTP health endpoint: kubelet's httpGet probe needs no gRPC
+	// client tooling and avoids the fragile-precompiled-gencode class of
+	// problem gRPC health checking libraries can hit under
+	// auto-instrumentation injection (see the recommendation service's
+	// RECOMMENDATION_HEALTH_PORT for precedent). Replaces the gRPC health
+	// service this service used to register. Started before the blocking
+	// database wait below so the probe doesn't kill the pod while it's still
+	// legitimately waiting on a slow-starting database.
+	healthPort := os.Getenv("PRODUCT_CATALOG_HEALTH_PORT")
+	if healthPort == "" {
+		healthPort = "8081"
+	}
+	go func() {
+		mux := http.NewServeMux()
+		mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+		})
+		if err := http.ListenAndServe(fmt.Sprintf(":%s", healthPort), mux); err != nil {
+			logger.Error(fmt.Sprintf("health check HTTP server failed: %v", err))
+		}
+	}()
+
 	// Initialize database connection
 	if err := initDatabase(); err != nil {
 		bootLogger.Error("Error initializing database", slog.Any("error", err))
@@ -256,26 +278,6 @@ func main() {
 	mustMapEnv(&port, "PRODUCT_CATALOG_PORT")
 
 	logger.Info(fmt.Sprintf("Product Catalog gRPC server started on port: %s", port))
-
-	// A plain HTTP health endpoint: kubelet's httpGet probe needs no gRPC
-	// client tooling and avoids the fragile-precompiled-gencode class of
-	// problem gRPC health checking libraries can hit under
-	// auto-instrumentation injection (see the recommendation service's
-	// RECOMMENDATION_HEALTH_PORT for precedent). Replaces the gRPC health
-	// service this service used to register.
-	healthPort := os.Getenv("PRODUCT_CATALOG_HEALTH_PORT")
-	if healthPort == "" {
-		healthPort = "8081"
-	}
-	go func() {
-		mux := http.NewServeMux()
-		mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusOK)
-		})
-		if err := http.ListenAndServe(fmt.Sprintf(":%s", healthPort), mux); err != nil {
-			logger.Error(fmt.Sprintf("health check HTTP server failed: %v", err))
-		}
-	}()
 
 	ln, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
 	if err != nil {
