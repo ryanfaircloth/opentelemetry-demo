@@ -251,7 +251,7 @@ class CurrencyService final : public oteldemo::CurrencyService::Service
 // probe that just needs a 2xx status line.
 void RunHealthHttpServer(uint16_t port)
 {
-  int server_fd = socket(AF_INET, SOCK_STREAM, 0);
+  int server_fd = socket(AF_INET6, SOCK_STREAM, 0);
   if (server_fd < 0) {
     logger->Error(eventName("currency.health.socket_failed"), "failed to create health check socket");
     return;
@@ -259,11 +259,14 @@ void RunHealthHttpServer(uint16_t port)
 
   int opt = 1;
   setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+  // IPV6_V6ONLY off (the Linux default) makes this socket dual-stack.
+  int v6only = 0;
+  setsockopt(server_fd, IPPROTO_IPV6, IPV6_V6ONLY, &v6only, sizeof(v6only));
 
-  sockaddr_in addr{};
-  addr.sin_family = AF_INET;
-  addr.sin_addr.s_addr = INADDR_ANY;
-  addr.sin_port = htons(port);
+  sockaddr_in6 addr{};
+  addr.sin6_family = AF_INET6;
+  addr.sin6_addr = in6addr_any;
+  addr.sin6_port = htons(port);
 
   if (bind(server_fd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) < 0 ||
       listen(server_fd, 16) < 0) {
@@ -289,18 +292,10 @@ void RunHealthHttpServer(uint16_t port)
 
 void RunServer(uint16_t port)
 {
-  std::string ip("0.0.0.0");
-
-  const char* ipv6_enabled = std::getenv("IPV6_ENABLED");
-
-  if (ipv6_enabled != nullptr && std::strcmp(ipv6_enabled, "true") == 0) {
-    ip = "[::]";
-    logger->Info(eventName("currency.server.ip_overwrite"),
-                 "Overwriting Localhost IP",
-                 opentelemetry::common::MakeAttributes({{"server.address", ip.c_str()}}));
-  }
-
-  std::string address(ip + ":" +  std::to_string(port));
+  // "[::]" binds dual-stack (IPv4 and IPv6) on Linux by default, since
+  // IPV6_V6ONLY defaults to off; gRPC falls back to IPv4-only "0.0.0.0" if
+  // the host has no IPv6 support at all.
+  std::string address("[::]:" + std::to_string(port));
 
   CurrencyService currencyService;
   ServerBuilder builder;

@@ -15,7 +15,8 @@ logger = logging.getLogger(__name__)
 
 class AstronomyShopMcp:
     def __init__(self) -> None:
-        self.host = "0.0.0.0"
+        # "::" binds dual-stack (IPv4 and IPv6) by default on Linux.
+        self.host = "::"
         self.port = int(os.getenv("MCP_PORT", "8011"))
         self.mcp = FastMCP("astronomy-shop-mcp")
 

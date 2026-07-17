@@ -88,16 +88,8 @@ $server = new HttpServer(function (ServerRequestInterface $request) use ($app) {
     return $response;
 });
 
-$ip = "0.0.0.0";
-
-$ipv6_enabled = getenv('IPV6_ENABLED');
-
-if ($ipv6_enabled == "true") {
-    $ip = "[::]";
-    echo "Overwriting Localhost IP: {$ip}" . PHP_EOL;
-} 
-
-$address = $ip . ':' . getenv('QUOTE_PORT');
+// "[::]" binds dual-stack (IPv4 and IPv6) by default on Linux.
+$address = '[::]:' . getenv('QUOTE_PORT');
 
 $socket = new SocketServer($address);
 $server->listen($socket);

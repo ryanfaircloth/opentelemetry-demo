@@ -497,8 +497,6 @@ components:
         value: http://$(OTEL_COLLECTOR_NAME):4317
       - name: VERSION
         value: "{{ .Chart.AppVersion }}"
-      - name: IPV6_ENABLED
-        value: "false"
     resources:
       limits:
         memory: 20Mi
@@ -704,7 +702,7 @@ components:
       resource.opentelemetry.io/service.namespace: otel-demo
     env:
       - name: LOCUST_WEB_HOST
-        value: "0.0.0.0"
+        value: "::"
       - name: LOCUST_WEB_PORT
         value: "8089"
       - name: LOCUST_USERS
@@ -758,8 +756,6 @@ components:
         value: "8013"
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: http://$(OTEL_COLLECTOR_NAME):4317
-      - name: IPV6_ENABLED
-        value: "false"
     resources:
       limits:
         memory: 140Mi
@@ -850,8 +846,6 @@ components:
         value: "true"
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: http://$(OTEL_COLLECTOR_NAME):4318
-      - name: IPV6_ENABLED
-        value: "false"
     resources:
       limits:
         memory: 40Mi
@@ -937,8 +931,6 @@ components:
         value: http://quote:8080
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: http://$(OTEL_COLLECTOR_NAME):4318
-      - name: IPV6_ENABLED
-        value: "false"
     resources:
       limits:
         memory: 20Mi

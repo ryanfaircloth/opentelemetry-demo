@@ -81,16 +81,8 @@ async fn main() -> std::io::Result<()> {
         .parse()
         .expect("$SHIPPING_PORT is not a valid port");
 
-    let mut ip = "0.0.0.0".to_string();
-
-    if let Ok(ipv6_enabled) = env::var("IPV6_ENABLED") {
-        if ipv6_enabled == "true" {
-            ip = "[::]".to_string();
-            info!("Overwriting Localhost IP:  {ip}");
-        }
-    }
-
-    let addr = format!("{}:{}", ip, port);
+    // "[::]" binds dual-stack (IPv4 and IPv6) by default on Linux.
+    let addr = format!("[::]:{}", port);
     info!(
         name: "shipping.server.started",
         addr = addr.as_str(),

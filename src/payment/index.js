@@ -40,16 +40,8 @@ const server = new grpc.Server()
 server.addService(otelDemoPackage.oteldemo.PaymentService.service, { charge: chargeServiceHandler })
 
 
-let ip = "0.0.0.0";
-
-const ipv6_enabled = process.env.IPV6_ENABLED;
-
-if (ipv6_enabled == "true") {
-  ip = "[::]";
-  logger.info(`Overwriting Localhost IP: ${ip}`)
-}
-
-const address = ip + `:${process.env['PAYMENT_PORT']}`;
+// "[::]" binds dual-stack (IPv4 and IPv6) by default on Linux/Node.
+const address = `[::]:${process.env['PAYMENT_PORT']}`;
 
 server.bindAsync(address, grpc.ServerCredentials.createInsecure(), (err, port) => {
   if (err) {
