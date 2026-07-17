@@ -488,14 +488,14 @@ components:
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: http/protobuf
       - name: GOMEMLIMIT
-        value: 40MiB
+        value: 56MiB
     resources:
       requests:
         cpu: 10m
-        memory: 24Mi
+        memory: 40Mi
       limits:
         cpu: 150m
-        memory: 48Mi
+        memory: 80Mi
     livenessProbe:
       httpGet:
         path: /healthz
@@ -535,10 +535,10 @@ components:
     resources:
       requests:
         cpu: 10m
-        memory: 20Mi
+        memory: 32Mi
       limits:
         cpu: 100m
-        memory: 40Mi
+        memory: 64Mi
     livenessProbe:
       httpGet:
         path: /healthz
@@ -577,10 +577,10 @@ components:
     resources:
       requests:
         cpu: 10m
-        memory: 50Mi
+        memory: 80Mi
       limits:
         cpu: 150m
-        memory: 100Mi
+        memory: 160Mi
     livenessProbe:
       httpGet:
         path: /healthz
@@ -734,10 +734,10 @@ components:
     resources:
       requests:
         cpu: 10m
-        memory: 20Mi
+        memory: 32Mi
       limits:
         cpu: 100m
-        memory: 50Mi
+        memory: 64Mi
     livenessProbe:
       httpGet:
         path: /status
@@ -877,7 +877,7 @@ components:
       - name: FLAGD_PORT
         value: "8013"
       - name: GOMEMLIMIT
-        value: 40MiB
+        value: 56MiB
       - name: OTEL_SEMCONV_STABILITY_OPT_IN
         value: database
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
@@ -885,10 +885,10 @@ components:
     resources:
       requests:
         cpu: 10m
-        memory: 24Mi
+        memory: 40Mi
       limits:
         cpu: 150m
-        memory: 48Mi
+        memory: 80Mi
     livenessProbe:
       httpGet:
         path: /healthz
@@ -925,10 +925,10 @@ components:
     resources:
       requests:
         cpu: 10m
-        memory: 20Mi
+        memory: 32Mi
       limits:
         cpu: 100m
-        memory: 40Mi
+        memory: 64Mi
     securityContext:
       runAsUser: 33  # www-data
       runAsGroup: 33
@@ -1018,10 +1018,10 @@ components:
     resources:
       requests:
         cpu: 10m
-        memory: 20Mi
+        memory: 40Mi
       limits:
         cpu: 100m
-        memory: 40Mi
+        memory: 80Mi
     livenessProbe:
       httpGet:
         path: /health
@@ -1255,10 +1255,10 @@ components:
     resources:
       requests:
         cpu: 50m
-        memory: 64Mi
+        memory: 128Mi
       limits:
         cpu: 250m
-        memory: 100Mi
+        memory: 256Mi
 
   valkey-cart:
     enabled: true
@@ -1281,10 +1281,10 @@ components:
     resources:
       requests:
         cpu: 10m
-        memory: 32Mi
+        memory: 48Mi
       limits:
         cpu: 100m
-        memory: 64Mi
+        memory: 96Mi
     securityContext:
       runAsUser: 999  # valkey
       runAsGroup: 1000
