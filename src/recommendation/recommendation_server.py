@@ -8,8 +8,10 @@
 import os
 import random
 import sys
+import threading
 import time
 from concurrent import futures
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 # Pip
 import grpc
@@ -31,8 +33,6 @@ from openfeature.contrib.hook.opentelemetry import TracingHook
 import logging
 import demo_pb2
 import demo_pb2_grpc
-from grpc_health.v1 import health_pb2
-from grpc_health.v1 import health_pb2_grpc
 
 from metrics import (
     init_metrics
@@ -57,13 +57,24 @@ class RecommendationService(demo_pb2_grpc.RecommendationServiceServicer):
 
         return response
 
-    def Check(self, request, context):
-        return health_pb2.HealthCheckResponse(
-            status=health_pb2.HealthCheckResponse.SERVING)
 
-    def Watch(self, request, context):
-        return health_pb2.HealthCheckResponse(
-            status=health_pb2.HealthCheckResponse.UNIMPLEMENTED)
+class HealthCheckHandler(BaseHTTPRequestHandler):
+    """Plain HTTP health endpoint, deliberately independent of gRPC/protobuf:
+    a gRPC health check would pull in grpc_health's bundled protobuf gencode,
+    whose version must stay compatible with whatever protobuf runtime an
+    externally injected auto-instrumentation agent provides - a coincidental
+    alignment that has already broken this service once (see CHANGELOG)."""
+
+    def do_GET(self):
+        if self.path == '/healthz':
+            self.send_response(200)
+            self.end_headers()
+        else:
+            self.send_response(404)
+            self.end_headers()
+
+    def log_message(self, format, *args):
+        pass
 
 
 def get_product_list(request_product_ids):
@@ -194,11 +205,15 @@ if __name__ == "__main__":
     # Add class to gRPC server
     service = RecommendationService()
     demo_pb2_grpc.add_RecommendationServiceServicer_to_server(service, server)
-    health_pb2_grpc.add_HealthServicer_to_server(service, server)
 
     # Start server
     port = must_map_env('RECOMMENDATION_PORT')
     server.add_insecure_port(f'[::]:{port}')
     server.start()
     logger.info(f'Recommendation service started, listening on port {port}')
+
+    health_port = os.environ.get('RECOMMENDATION_HEALTH_PORT', '8081')
+    health_server = ThreadingHTTPServer(('', int(health_port)), HealthCheckHandler)
+    threading.Thread(target=health_server.serve_forever, daemon=True).start()
+    logger.info(f'Health check endpoint listening on port {health_port}')
     server.wait_for_termination()

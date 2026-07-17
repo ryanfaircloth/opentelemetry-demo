@@ -7,6 +7,21 @@ the release.
 
 ## Unreleased
 
+* [recommendation] Replace the gRPC health check (`grpc_health.v1`,
+  registered via `add_HealthServicer_to_server`) with a plain stdlib HTTP
+  endpoint (`GET /healthz` on `RECOMMENDATION_HEALTH_PORT`, default
+  `8081`). The gRPC health check pulled in `grpcio-health-checking`'s
+  bundled, pre-compiled protobuf gencode - exactly the kind of
+  version-sensitive compiled dependency that broke this service under
+  real auto-instrumentation injection two releases ago (0.11.14). An
+  HTTP health check needs no protobuf at all, eliminating that entire
+  class of fragility for the health endpoint specifically. Confirmed
+  nothing in this repo's compose/chart config currently probes the gRPC
+  health check (no `livenessProbe`/`readinessProbe` configured for
+  recommendation), so this is a zero-impact swap; wiring an actual
+  `readinessProbe` against the new HTTP endpoint is a natural follow-up,
+  not done here. Verified: builds, and the new endpoint returns 200 for
+  `/healthz` and 404 otherwise.
 * [recommendation] Revert the grpcio/protobuf/opentelemetry version bump
   from the previous release (grpcio-health-checking 1.82.1,
   openfeature-provider-flagd 0.5.1, opentelemetry-api/sdk/
