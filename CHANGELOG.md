@@ -7,6 +7,30 @@ the release.
 
 ## Unreleased
 
+* [recommendation] Revert the grpcio/protobuf/opentelemetry version bump
+  from the previous release (grpcio-health-checking 1.82.1,
+  openfeature-provider-flagd 0.5.1, opentelemetry-api/sdk/
+  exporter-otlp-proto-grpc 1.44.0) - confirmed via a real deployment
+  under the operator's injected Python auto-instrumentation to cause a
+  fatal, deterministic crash on startup. That bump required
+  protobuf>=7.35.1, but the operator's injected bundle ships an older
+  protobuf 6.33.6 ahead of the app's own venv on PYTHONPATH; protobuf's
+  own runtime-version guard then raises `VersionError` on the very first
+  import in recommendation_server.py, killing the process every time. It
+  was a speculative "free to take, not confirmed to help" change to
+  begin with; the previous release's grpc.enable_retries=0 channel
+  option is the actually-targeted fix for the original crash and doesn't
+  require any version change, so it stays. Verified: builds, resolves to
+  protobuf==6.33.6 (matching what the operator's bundle ships), and
+  starts cleanly.
+
+  Also noted, not fixed: the same deployment log showed
+  `psutil`/`_psutil_linux.abi3.so: mallinfo: symbol not found` - the same
+  musl-vs-glibc class of issue fixed for cart in 0.11.6. recommendation
+  still runs on Alpine (musl); the operator's injected auto-instrumentation
+  bundle ships glibc-compiled psutil, so its SystemMetricsInstrumentor
+  silently fails to load (non-fatal, gracefully skipped, not a crash).
+  Left as a known gap rather than switching base images in this release.
 * [currency] Update RPC span attributes to current OpenTelemetry semantic
   conventions, found while auditing the fleet against real-world
   telemetry best practices: `rpc.system` -> `rpc.system.name`,
