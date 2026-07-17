@@ -7,6 +7,15 @@ the release.
 
 ## Unreleased
 
+* [recommendation] Fix the `psutil`/`mallinfo` auto-instrumentation failure
+  noted below as a known gap: switched the Dockerfile from
+  `python:3.14.6-alpine` to `python:3.14.6-slim-bookworm` (glibc), matching
+  every other Python service in the repo, and dropped the now-unneeded
+  `gcc`/`g++`/`linux-headers` build deps since manylinux wheels cover glibc.
+  The operator's injected auto-instrumentation bundle ships glibc-compiled
+  psutil, so its `SystemMetricsInstrumentor` now loads instead of silently
+  failing to relocate `mallinfo`. Verified: builds and starts cleanly on the
+  new base image.
 * [flagd-ui] Add `GET /healthz` (plain 200, liveness) and `GET /readyz`
   (readiness) routes. `/readyz` checks that the `Storage` GenServer -
   which loads the shared flag config file on init and backs every route in
@@ -100,13 +109,15 @@ the release.
   protobuf==6.33.6 (matching what the operator's bundle ships), and
   starts cleanly.
 
-  Also noted, not fixed: the same deployment log showed
+  Also noted, not fixed at the time: the same deployment log showed
   `psutil`/`_psutil_linux.abi3.so: mallinfo: symbol not found` - the same
   musl-vs-glibc class of issue fixed for cart in 0.11.6. recommendation
-  still runs on Alpine (musl); the operator's injected auto-instrumentation
+  still ran on Alpine (musl); the operator's injected auto-instrumentation
   bundle ships glibc-compiled psutil, so its SystemMetricsInstrumentor
-  silently fails to load (non-fatal, gracefully skipped, not a crash).
-  Left as a known gap rather than switching base images in this release.
+  silently failed to load (non-fatal, gracefully skipped, not a crash).
+  Left as a known gap rather than switching base images in that release -
+  see the newer entry above, which fixes this by moving recommendation off
+  Alpine.
 * [currency] Update RPC span attributes to current OpenTelemetry semantic
   conventions, found while auditing the fleet against real-world
   telemetry best practices: `rpc.system` -> `rpc.system.name`,
