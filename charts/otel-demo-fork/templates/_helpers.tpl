@@ -34,7 +34,6 @@ app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 {{- if .name }}
 app.kubernetes.io/component: {{ .name}}
-app.kubernetes.io/name: {{ .name }}
 {{- end }}
 {{- end }}
 
@@ -46,7 +45,8 @@ Selector labels
 */}}
 {{- define "otel-demo.selectorLabels" -}}
 {{- if .name }}
-opentelemetry.io/name: {{ .name }}
+app.kubernetes.io/name: {{ .name }}
+app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 {{- end }}
 
