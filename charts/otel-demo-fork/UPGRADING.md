@@ -5,6 +5,37 @@
 > another. If you need to upgrade the chart, you must first delete the existing
 > release and then install the new version.
 
+## To 0.11.21
+
+`appVersion` and the `.env` `IMAGE_VERSION` no longer track the upstream
+OpenTelemetry Demo release (`2.2.0`) - they now move in lock step with the
+chart `version` field, since this fork's `src/**` components have diverged
+from upstream and no longer share a release cadence with it. The
+`app.kubernetes.io/version` label rendered by every resource changes from
+`2.2.0` to `0.11.21` accordingly. This is label-only; no image tags, selectors,
+or spec fields changed.
+
+## To 0.11.19
+
+Common labels (`helm.sh/chart`, `app.kubernetes.io/*`) are now applied to
+every chart resource, not just per-component ones - `serviceaccount.yaml`,
+`flagd-config.yaml`, `kafka-strimzi.yaml`, `postgresql-cnpg*.yaml`, and
+`collector-httproute.yaml` previously rendered without
+`app.kubernetes.io/name`/`instance` at all. No selector or spec fields
+changed in this release; only informational labels were added.
+
+## To 0.11.18
+
+The Deployment/Service selector label changed from the non-standard
+`opentelemetry.io/name` to the Kubernetes-recommended pair
+`app.kubernetes.io/name` and `app.kubernetes.io/instance` (same category of
+change as the `To 0.21` entry below). Because `Deployment.spec.selector` is
+immutable, an in-place
+`helm upgrade` across this version will fail to update existing Deployments
+while their Services pick up the new selector immediately - Services will
+have zero endpoints until you follow the delete-then-reinstall note at the
+top of this document.
+
 ## To 0.11.20
 
 Updates the chart-managed and example `KafkaTopic`/`KafkaUser` resources
