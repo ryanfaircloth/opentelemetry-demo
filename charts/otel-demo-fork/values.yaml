@@ -676,7 +676,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.64-frontend"
+      tag: "0.11.65-frontend"
     useDefault:
       env: true
     service:
@@ -1186,7 +1186,7 @@ components:
         # be deployed via this chart.
         imageOverride:
           repository: "ghcr.io/ryanfaircloth/demo"
-          tag: "0.11.64-flagd-ui"
+          tag: "0.11.65-flagd-ui"
         useDefault:
           env: true
         service:
