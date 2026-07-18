@@ -7,6 +7,12 @@ the release.
 
 ## Unreleased
 
+* [chatbot] Same audit: `chat_interface.py`'s catch-all logged only the
+  exception's message (no stack trace, via `logging.error(f"Error : {e}")`)
+  and returned the raw exception text directly into the chat bubble shown
+  to the end user. Now logs via `logging.exception` and returns a generic
+  apology message instead.
+
 * [agent] Same audit as the `tools.py` fix below: `agents.py`'s `run_agent`
   turned an unexpected failure inside `agent.ainvoke(...)` into
   `HTTPException(detail=str(e))` with no server-side log at all, so the

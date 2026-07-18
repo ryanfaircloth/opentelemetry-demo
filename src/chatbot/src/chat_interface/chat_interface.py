@@ -85,9 +85,9 @@ class ChatAgentUI:
                 )
             return "Error: Received an unexpected response format from the agent."
 
-        except Exception as e:
-            logging.error(f"Error : {e}")
-            return f"Error: {e}"
+        except Exception:
+            logging.exception("Error handling chat request")
+            return "Sorry, something went wrong while processing your request. Please try again."
 
     def launch(self, agent_config=None):
         config = {
