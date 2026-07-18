@@ -18,11 +18,38 @@ require "opentelemetry-exporter-otlp-metrics"
 require "opentelemetry/instrumentation/sinatra"
 
 set :port, ENV["EMAIL_PORT"]
+# Sinatra's classic app enables Rack::CommonLogger by default, which logs an
+# access-log line for every request at a level that bypasses $console_logger
+# entirely - disable it so console output is actually governed by LOG_LEVEL.
+set :logging, false
 
 # Plain stdlib logger so WARN/ERROR always reach the console, independent of
-# whether the OTLP collector is reachable.
+# whether the OTLP collector is reachable. Level configurable via LOG_LEVEL
+# (this service demonstrates the "default, unstructured" logging tier).
 $console_logger = Logger.new($stdout)
-$console_logger.level = Logger::WARN
+$console_logger.level = Logger.const_get((ENV["LOG_LEVEL"] || "WARN").upcase)
+
+# OTel logger is created before OpenTelemetry::SDK.configure runs (needed to
+# capture WARN/ERROR from the flagd retry loop below, which happens first) -
+# emitting through the pre-configure no-op provider is harmless, it just
+# drops those records until the real provider is active.
+$logger = OpenTelemetry.logger_provider.logger(name: 'email')
+
+# Logs both to the console (with backtrace, if any) and to the OTel logger
+# (INFO+ regardless of the console's WARN+ floor), matching the standard's
+# expectation that OTel exposes strictly more than console.
+def log_warn_or_error(severity, message, exception: nil)
+  console_message = exception ? "#{message}: #{exception.message}\n#{exception.backtrace&.join("\n")}" : message
+  $console_logger.send(severity, console_message)
+
+  attributes = exception ? { 'exception.message' => exception.message, 'exception.stacktrace' => exception.backtrace&.join("\n") } : {}
+  $logger.on_emit(
+    timestamp: Time.now,
+    severity_text: severity.to_s.upcase,
+    body: message,
+    attributes: attributes,
+  )
+end
 
 # A plain HTTP health endpoint on its own port, started immediately and
 # independent of the flagd retry below: Sinatra's classic app doesn't start
@@ -62,11 +89,11 @@ begin
   end
 rescue StandardError => e
   if total_waited >= max_total_wait
-    $console_logger.error("Failed to configure flagd client after #{total_waited}s, giving up: #{e.message}")
+    log_warn_or_error(:error, "Failed to configure flagd client after #{total_waited}s, giving up", exception: e)
     exit(1)
   end
 
-  $console_logger.warn("Failed to configure flagd client (retrying in #{retry_delay}s): #{e.message}")
+  log_warn_or_error(:warn, "Failed to configure flagd client (retrying in #{retry_delay}s)", exception: e)
   sleep retry_delay
   total_waited += retry_delay
   retry_delay = [retry_delay * 2, 30].min
@@ -80,8 +107,6 @@ end
 OpenTelemetry::SDK.configure do |c|
   c.use "OpenTelemetry::Instrumentation::Sinatra"
 end
-
-$logger = OpenTelemetry.logger_provider.logger(name: 'email')
 
 otlp_metric_exporter = OpenTelemetry::Exporter::OTLP::Metrics::MetricsExporter.new
 OpenTelemetry.meter_provider.add_metric_reader(otlp_metric_exporter)
@@ -108,7 +133,7 @@ end
 
 error do
   OpenTelemetry::Trace.current_span.record_exception(env['sinatra.error'])
-  $console_logger.error("Unhandled exception while processing request: #{env['sinatra.error'].message}")
+  log_warn_or_error(:error, "Unhandled exception while processing request", exception: env['sinatra.error'])
 end
 
 def send_email(data)
@@ -145,8 +170,6 @@ def send_email(data)
       attributes: { 'demo.order.id' => data.order.order_id },
       event_name: 'email.confirmation_sent',
     )
-
-    puts "Order confirmation email sent for order #{data.order.order_id}"
   end
   # manually created spans need to be ended
   # in Ruby, the method `in_span` ends it automatically

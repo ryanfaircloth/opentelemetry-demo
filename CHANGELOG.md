@@ -7,6 +7,18 @@ the release.
 
 ## Unreleased
 
+* [email] Assigned Tier C ("default, unstructured") for this pass: kept the
+  stdlib `Logger`, now with a `LOG_LEVEL`-driven level (default `WARN`)
+  instead of hardcoded. Fixed several gaps: Sinatra's default
+  `Rack::CommonLogger` was logging an access-log line for every request,
+  bypassing `$console_logger`'s level entirely - disabled via `set
+  :logging, false`. A stray unstructured `puts` on the send-email success
+  path bypassed logging altogether - removed. WARN/ERROR events (flagd
+  retry, the top-level Sinatra `error` handler) previously went only to
+  console with `.message` alone, never to the OTel logger and never with a
+  backtrace - a new `log_warn_or_error` helper now emits to both, with the
+  backtrace included in the console message and as OTel log attributes.
+
 * [quote] Assigned Tier B ("default-but-structured") for this pass: kept
   Monolog's default `LineFormatter`, but replaced the hardcoded
   `LogLevel::DEBUG` setting (which only happened to produce a WARN-only

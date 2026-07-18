@@ -589,7 +589,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.32-email"
+      tag: "0.11.50-email"
     useDefault:
       env: true
     service:
@@ -609,6 +609,8 @@ components:
         value: flagd
       - name: FLAGD_PORT
         value: "8013"
+      - name: LOG_LEVEL
+        value: WARN
     resources:
       requests:
         cpu: 10m
