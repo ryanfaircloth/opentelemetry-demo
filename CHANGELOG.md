@@ -7,6 +7,12 @@ the release.
 
 ## Unreleased
 
+* [accounting] Follow-up from a re-review of the logging/exception pass:
+  `SetErrorHandler` logged fatal Kafka client errors (`error.IsFatal`) but
+  never acted on that flag - the consumer kept running indefinitely on a
+  client librdkafka itself considers unrecoverable. Now exits on a fatal
+  error so the pod restarts.
+
 * [telemetry-docs] Same fix as image-provider: added an `otel_json`
   `log_format` (JSON, trace/span-correlated via `ngx_otel_module`, OTel HTTP
   semantic-convention field names, using the existing `$otel_route`

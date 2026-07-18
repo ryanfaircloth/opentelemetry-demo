@@ -198,7 +198,17 @@ internal class Consumer : BackgroundService
             .SetLogHandler((_, logMessage) => Log.KafkaClientLog(logger, logMessage.Facility, logMessage.Message))
             // Reports broker-level issues (e.g. all brokers down, DNS failures) that
             // librdkafka retries internally and does not throw as a ConsumeException.
-            .SetErrorHandler((_, error) => Log.KafkaClientError(logger, error.Reason, error.IsFatal))
+            // A fatal client-level error means the client itself is unusable going
+            // forward (librdkafka won't recover it internally) - exit so the pod
+            // restarts instead of running on indefinitely in a broken state.
+            .SetErrorHandler((_, error) =>
+            {
+                Log.KafkaClientError(logger, error.Reason, error.IsFatal);
+                if (error.IsFatal)
+                {
+                    Environment.Exit(1);
+                }
+            })
             .Build();
     }
 
