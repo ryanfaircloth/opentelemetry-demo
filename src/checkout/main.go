@@ -702,15 +702,18 @@ func (cs *checkout) convertCurrency(ctx context.Context, from *pb.Money, toCurre
 	return result, err
 }
 
-func (cs *checkout) chargeCard(ctx context.Context, amount *pb.Money, paymentInfo *pb.CreditCardInfo) (string, error) {
-	paymentService := cs.paymentSvcClient
-	if flags.PaymentUnreachable.Value(ctx, openfeature.EvaluationContext{}) {
-		badAddress := "badAddress:50051"
-		c := mustCreateClient(badAddress)
-		paymentService = pb.NewPaymentServiceClient(c)
-	}
+// paymentChargeTimeout bounds how long checkout waits for the payment
+// service's Charge RPC. The "paymentUnreachable" flag is simulated
+// server-side in payment (see src/payment/charge.js) by delaying its
+// response past this deadline, so this timeout is what actually turns
+// that delay into a failed charge instead of an indefinite hang.
+const paymentChargeTimeout = 5 * time.Second
 
-	paymentResp, err := paymentService.Charge(ctx, &pb.ChargeRequest{
+func (cs *checkout) chargeCard(ctx context.Context, amount *pb.Money, paymentInfo *pb.CreditCardInfo) (string, error) {
+	chargeCtx, cancel := context.WithTimeout(ctx, paymentChargeTimeout)
+	defer cancel()
+
+	paymentResp, err := cs.paymentSvcClient.Charge(chargeCtx, &pb.ChargeRequest{
 		Amount:     amount,
 		CreditCard: paymentInfo,
 	})

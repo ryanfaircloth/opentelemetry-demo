@@ -15,6 +15,11 @@ const transactionsCounter = meter.createCounter('demo.payment.transactions');
 
 const LOYALTY_LEVEL = ['platinum', 'gold', 'silver', 'bronze'];
 
+// Comfortably longer than checkout's paymentChargeTimeout (src/checkout/main.go),
+// so the "paymentUnreachable" flag reproduces a client-side timeout rather than
+// an instant connection failure.
+const PAYMENT_UNREACHABLE_DELAY_MS = 30_000;
+
 /** Return random element from given array */
 function random(arr) {
   const index = Math.floor(Math.random() * arr.length);
@@ -33,6 +38,11 @@ module.exports.charge = async request => {
     }
 
     await OpenFeature.setProviderAndWait(flagProvider);
+
+    const paymentUnreachable = await OpenFeature.getClient().getBooleanValue('paymentUnreachable', false);
+    if (paymentUnreachable) {
+      await new Promise(resolve => setTimeout(resolve, PAYMENT_UNREACHABLE_DELAY_MS));
+    }
 
     const numberVariant = await OpenFeature.getClient().getNumberValue("paymentFailure", 0);
 

@@ -78,6 +78,11 @@ export const EmptyCartContainer = styled.div`
   }
 `;
 
+export const ErrorMessage = styled.p`
+  color: ${({ theme }) => theme.colors.otelRed};
+  margin: 0;
+`;
+
 export const EmptyCartButton = styled(Button)`
   font-weight: ${({ theme }) => theme.fonts.regular};
   color: ${({ theme }) => theme.colors.otelRed};

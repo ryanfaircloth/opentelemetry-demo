@@ -5,11 +5,6 @@
       "defaultValue": 0,
       "description": "simulates kafka queue problems",
       "flagType": "integer"
-    },
-    "paymentUnreachable": {
-      "defaultValue": false,
-      "description": "simulates payment unreachable issue",
-      "flagType": "boolean"
     }
   }
 }

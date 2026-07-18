@@ -47,25 +47,3 @@ var KafkaQueueProblems = struct {
 		return client.IntValueDetails(ctx, "kafkaQueueProblems", 0, evalCtx)
 	},
 }
-
-// PaymentUnreachable returns the value of the "paymentUnreachable" feature flag.
-// simulates payment unreachable issue
-//
-// The flag is a type of boolean and defaults to false.
-var PaymentUnreachable = struct {
-	fmt.Stringer
-	// Value returns the value of the [PaymentUnreachable] flag.
-	Value evaluationValue[bool]
-
-	// ValueWithDetails returns the evaluation details of the [PaymentUnreachable] flag
-	// and the evaluation error, if any.
-	ValueWithDetails evaluationDetails[bool]
-}{
-	Stringer: stringer("paymentUnreachable"),
-	Value: func(ctx context.Context, evalCtx openfeature.EvaluationContext) bool {
-		return client.Boolean(ctx, "paymentUnreachable", false, evalCtx)
-	},
-	ValueWithDetails: func(ctx context.Context, evalCtx openfeature.EvaluationContext) (openfeature.GenericEvaluationDetails[bool], error) {
-		return client.BooleanValueDetails(ctx, "paymentUnreachable", false, evalCtx)
-	},
-}

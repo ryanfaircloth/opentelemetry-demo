@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { useRouter } from 'next/router';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import CartItems from '../CartItems';
 import CheckoutForm from '../CheckoutForm';
 import { IFormData } from '../CheckoutForm/CheckoutForm';
@@ -21,6 +21,7 @@ const CartDetail = () => {
   } = useCart();
   const { selectedCurrency } = useCurrency();
   const { push } = useRouter();
+  const [orderError, setOrderError] = useState<string>();
 
   const onPlaceOrder = useCallback(
     async ({
@@ -35,29 +36,34 @@ const CartDetail = () => {
       creditCardExpirationYear,
       creditCardNumber,
     }: IFormData) => {
-      const order = await placeOrder({
-        userId,
-        email,
-        address: {
-          streetAddress,
-          state,
-          country,
-          city,
-          zipCode,
-        },
-        userCurrency: selectedCurrency,
-        creditCard: {
-          creditCardCvv,
-          creditCardExpirationMonth,
-          creditCardExpirationYear,
-          creditCardNumber,
-        },
-      });
+      setOrderError(undefined);
+      try {
+        const order = await placeOrder({
+          userId,
+          email,
+          address: {
+            streetAddress,
+            state,
+            country,
+            city,
+            zipCode,
+          },
+          userCurrency: selectedCurrency,
+          creditCard: {
+            creditCardCvv,
+            creditCardExpirationMonth,
+            creditCardExpirationYear,
+            creditCardNumber,
+          },
+        });
 
-      push({
-        pathname: `/cart/checkout/${order.orderId}`,
-        query: { order: JSON.stringify(order) },
-      });
+        push({
+          pathname: `/cart/checkout/${order.orderId}`,
+          query: { order: JSON.stringify(order) },
+        });
+      } catch (error) {
+        setOrderError('Failed to place order. Please try again.');
+      }
     },
     [placeOrder, push, selectedCurrency]
   );
@@ -73,6 +79,7 @@ const CartDetail = () => {
         </S.Header>
         <CartItems productList={items} />
       </div>
+      {orderError && <S.ErrorMessage>{orderError}</S.ErrorMessage>}
       <CheckoutForm onSubmit={onPlaceOrder} />
     </S.Container>
   );
