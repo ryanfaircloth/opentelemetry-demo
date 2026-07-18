@@ -12,9 +12,8 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Slim\App;
 
-function calculateQuote($jsonObject): float
+function calculateQuote($jsonObject, LoggerInterface $logger): float
 {
-    $quote = 0.0;
     $childSpan = Globals::tracerProvider()->getTracer('manual-instrumentation')
         ->spanBuilder('calculate-quote')
         ->setSpanKind(SpanKind::KIND_INTERNAL)
@@ -40,11 +39,14 @@ function calculateQuote($jsonObject): float
             ->getMeter('quotes')
             ->createCounter('quotes', 'quotes', 'number of quotes calculated');
         $counter->add(1, ['number_of_items' => $numberOfItems]);
-    } catch (\Exception $exception) {
+
+        return $quote;
+    } catch (\InvalidArgumentException $exception) {
         $childSpan->recordException($exception);
+        $logger->error('Failed to calculate quote', ['exception' => $exception]);
+        throw $exception;
     } finally {
         $childSpan->end();
-        return $quote;
     }
 }
 
@@ -59,7 +61,16 @@ return function (App $app) {
 
         $jsonObject = $request->getParsedBody();
 
-        $data = calculateQuote($jsonObject);
+        try {
+            $data = calculateQuote($jsonObject, $logger);
+        } catch (\InvalidArgumentException $exception) {
+            $payload = json_encode(['error' => $exception->getMessage()]);
+            $response->getBody()->write($payload);
+
+            return $response
+                ->withHeader('Content-Type', 'application/json')
+                ->withStatus(400);
+        }
 
         $payload = json_encode($data);
         $response->getBody()->write($payload);

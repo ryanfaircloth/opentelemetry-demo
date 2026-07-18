@@ -7,6 +7,15 @@ the release.
 
 ## Unreleased
 
+* [quote] Fixed `/getquote` silently returning a fake `$0.00` quote with an
+  HTTP 200 when the request body was missing `numberOfItems`: the exception
+  was only recorded on the OTel span, never logged, and the `finally` block
+  returned the default `$quote` value regardless of failure. Now the
+  exception is logged via the injected `LoggerInterface` (with the exception
+  object in context so Monolog captures the stack trace) and rethrown; the
+  route handler catches it and returns a 400 with an error payload instead of
+  a bogus successful quote.
+
 * [docker] Fixed a latent `EXPOSE ${VAR}` build failure present in 18
   services' Dockerfiles (accounting, ad, agent, cart, chatbot, checkout,
   currency, email, flagd-ui, frontend, frontend-proxy, image-provider, mcp,

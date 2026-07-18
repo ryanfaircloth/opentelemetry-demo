@@ -931,7 +931,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.32-quote"
+      tag: "0.11.33-quote"
     useDefault:
       env: true
     service:
