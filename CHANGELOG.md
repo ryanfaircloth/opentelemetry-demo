@@ -7,6 +7,15 @@ the release.
 
 ## Unreleased
 
+* [cart] Assigned Tier C ("default, unstructured") for this pass: kept the
+  default plain-text console formatter but added a `LOG_LEVEL`-driven WARN
+  floor (default `WARN`), while the overall minimum level stays
+  `Information` so the injected .NET auto-instrumentation bridge still
+  captures Info+. Also added the missing `ILogger` calls to `CartService`'s
+  three `RpcException` catch blocks (`AddItem`/`GetCart`/`EmptyCart`), which
+  previously only recorded the exception on the `Activity`/trace - gRPC
+  failures were invisible in application logs entirely.
+
 * [accounting] Assigned Tier A ("modern JSON") for this pass: switched the
   console provider to `AddJsonConsole()` with a `LOG_LEVEL`-driven WARN
   floor (`AddFilter<ConsoleLoggerProvider>`), while the overall minimum

@@ -55,4 +55,16 @@ internal static partial class Log
 
     [LoggerMessage(Level = LogLevel.Warning, EventName = "cart.redis.ping_failed", Message = "Redis ping failed")]
     public static partial void RedisPingFailed(ILogger logger, Exception exception);
+
+    [LoggerMessage(Level = LogLevel.Warning, EventName = "cart.grpc.rpc_failed", Message = "{method} failed")]
+    public static partial void RpcFailed(ILogger logger, string method, Exception exception);
+
+    public static LogLevel? ParseLogLevel(string? value) => value?.ToUpperInvariant() switch
+    {
+        "DEBUG" => LogLevel.Debug,
+        "INFO" or "INFORMATION" => LogLevel.Information,
+        "WARN" or "WARNING" => LogLevel.Warning,
+        "ERROR" => LogLevel.Error,
+        _ => null,
+    };
 }

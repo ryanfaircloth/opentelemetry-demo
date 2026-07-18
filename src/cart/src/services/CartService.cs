@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System;
 using Grpc.Core;
 using cart.cartstore;
+using Microsoft.Extensions.Logging;
 using OpenFeature;
 using Oteldemo;
 
@@ -16,12 +17,14 @@ public class CartService : Oteldemo.CartService.CartServiceBase
     private readonly ICartStore _badCartStore;
     private readonly ICartStore _cartStore;
     private readonly IFeatureClient _featureFlagHelper;
+    private readonly ILogger<CartService> _logger;
 
-    public CartService(ICartStore cartStore, ICartStore badCartStore, IFeatureClient featureFlagService)
+    public CartService(ICartStore cartStore, ICartStore badCartStore, IFeatureClient featureFlagService, ILogger<CartService> logger)
     {
         _badCartStore = badCartStore;
         _cartStore = cartStore;
         _featureFlagHelper = featureFlagService;
+        _logger = logger;
     }
 
     public override async Task<Empty> AddItem(AddItemRequest request, ServerCallContext context)
@@ -41,6 +44,7 @@ public class CartService : Oteldemo.CartService.CartServiceBase
         {
             activity?.AddException(ex);
             activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            Log.RpcFailed(_logger, nameof(AddItem), ex);
             throw;
         }
     }
@@ -67,6 +71,7 @@ public class CartService : Oteldemo.CartService.CartServiceBase
         {
             activity?.AddException(ex);
             activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            Log.RpcFailed(_logger, nameof(GetCart), ex);
             throw;
         }
     }
@@ -93,6 +98,7 @@ public class CartService : Oteldemo.CartService.CartServiceBase
         {
             Activity.Current?.AddException(ex);
             Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            Log.RpcFailed(_logger, nameof(EmptyCart), ex);
             throw;
         }
 

@@ -46,7 +46,14 @@ if (string.IsNullOrEmpty(valkeyAddress))
     Environment.Exit(1);
 }
 
+// Console is for operators: default plain-text formatter (this service
+// demonstrates the "default, unstructured" logging tier), WARN+ only via
+// LOG_LEVEL (default WARN). Overall minimum level stays Information so the
+// injected .NET auto-instrumentation's log bridge still captures Info+.
+var cartConsoleLevel = cart.Log.ParseLogLevel(Environment.GetEnvironmentVariable("LOG_LEVEL")) ?? LogLevel.Warning;
 builder.Logging.AddConsole();
+builder.Logging.AddFilter<Microsoft.Extensions.Logging.Console.ConsoleLoggerProvider>(level => level >= cartConsoleLevel);
+builder.Logging.SetMinimumLevel(LogLevel.Information);
 
 builder.Services.AddSingleton<ICartStore>(x =>
 {
@@ -92,7 +99,8 @@ builder.Services.AddSingleton(x =>
     new CartService(
         x.GetRequiredService<ICartStore>(),
         new ValkeyCartStore(x.GetRequiredService<ILogger<ValkeyCartStore>>(), "badhost:1234"),
-        x.GetRequiredService<IFeatureClient>()
+        x.GetRequiredService<IFeatureClient>(),
+        x.GetRequiredService<ILogger<CartService>>()
 ));
 
 

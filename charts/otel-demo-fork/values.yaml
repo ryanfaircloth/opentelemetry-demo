@@ -418,7 +418,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.34-cart"
+      tag: "0.11.44-cart"
     useDefault:
       env: true
     service:
@@ -445,6 +445,10 @@ components:
       # chart.
       - name: DOTNET_GCHeapHardLimitPercent
         value: "60"
+      # Console-only floor (plain text); the injected auto-instrumentation
+      # bridge still sees Information+ regardless of this.
+      - name: LOG_LEVEL
+        value: WARN
     resources:
       requests:
         cpu: 20m
