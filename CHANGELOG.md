@@ -7,6 +7,18 @@ the release.
 
 ## Unreleased
 
+* [shared] Extending this release's "all helm-deployed components" logging
+  review to the newer `agent`/`chatbot`/`mcp` services turned up the same
+  leak pattern seen elsewhere, at larger scale: `tools.py` (built into both
+  `agent` and `mcp`) has ten tool functions, and every one of them caught
+  `Exception`, logged nothing server-side, and returned the raw exception
+  string as the tool's own result. A transport failure to cart/checkout/
+  shipping/etc. would surface only as raw internal error text (occasionally
+  including internal hostnames) that the LLM then relays straight into the
+  shopper's chat, with no corresponding log line for on-call to find. All
+  ten now log the real exception via `logger.exception(...)` and return a
+  generic, safe message instead.
+
 * [shipping] Independent re-verification of this release's earlier shipping
   fixes turned up two small regressions: the `use tracing::error;` import
   added earlier landed out of alphabetical order (a `cargo fmt` violation),

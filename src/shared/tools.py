@@ -4,12 +4,15 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import json
+import logging
 import os
 
 import httpx
 
 BASE_URL = os.getenv("APPLICATION_ENDPOINT", "localhost:8080")
 TIMEOUT = httpx.Timeout(10.0)
+
+logger = logging.getLogger(__name__)
 
 
 async def get_ads(category: str):
@@ -22,8 +25,9 @@ async def get_ads(category: str):
             res = await client.get(url, params=params)
             res.raise_for_status()
             return res.json()
-    except Exception as e:
-        return f"Error fetching ads: {e}"
+    except Exception:
+        logger.exception("Failed to fetch ads for category=%s", category)
+        return "Sorry, I couldn't fetch the promotional ads right now. Please try again later."
 
 
 async def add_to_cart(user_id: str, product_id: str, quantity: int = 1):
@@ -41,8 +45,9 @@ async def add_to_cart(user_id: str, product_id: str, quantity: int = 1):
             res = await client.post(url, json=data)
             res.raise_for_status()
             return res.json()
-    except Exception as e:
-        return f"Error while adding product to cart: {e}"
+    except Exception:
+        logger.exception("Failed to add product=%s to cart for user=%s", product_id, user_id)
+        return "Sorry, I couldn't add that item to your cart right now. Please try again."
 
 
 async def get_cart(user_id: str):
@@ -53,8 +58,9 @@ async def get_cart(user_id: str):
             res = await client.get(url, params={"user_id": user_id})
             res.raise_for_status()
             return res.json()
-    except Exception as e:
-        return f"Error while fetching cart: {e}"
+    except Exception:
+        logger.exception("Failed to fetch cart for user=%s", user_id)
+        return "Sorry, I couldn't retrieve your cart right now. Please try again later."
 
 
 async def empty_cart(user_id: str):
@@ -68,8 +74,9 @@ async def empty_cart(user_id: str):
             if res.status_code == 204 or not res.content:
                 return {"status": "success", "message": f"Cart emptied for user {user_id}"}
             return res.json()
-    except Exception as e:
-        return f"Error while emptying cart: {e}"
+    except Exception:
+        logger.exception("Failed to empty cart for user=%s", user_id)
+        return "Sorry, I couldn't empty your cart right now. Please try again later."
 
 
 async def list_products():
@@ -80,8 +87,9 @@ async def list_products():
             res = await client.get(url)
             res.raise_for_status()
             return res.json()
-    except Exception as e:
-        return f"Error while fetching product list: {e}"
+    except Exception:
+        logger.exception("Failed to fetch product list")
+        return "Sorry, I couldn't fetch the product list right now. Please try again later."
 
 
 async def get_product(product_id: str):
@@ -92,8 +100,9 @@ async def get_product(product_id: str):
             res = await client.get(url)
             res.raise_for_status()
             return res.json()
-    except Exception as e:
-        return f"Error while fetching product {product_id}: {e}"
+    except Exception:
+        logger.exception("Failed to fetch product=%s", product_id)
+        return "Sorry, I couldn't fetch that product's details right now. Please try again later."
 
 
 async def checkout(checkout_person):
@@ -116,8 +125,9 @@ async def checkout(checkout_person):
                     "calling checkout; call add_to_cart first."
                 )
             return res.json()
-    except Exception as e:
-        return f"Error while performing checkout: {e}"
+    except Exception:
+        logger.exception("Checkout failed for user=%s", checkout_person.get("userId", "<unknown>"))
+        return "Sorry, checkout failed unexpectedly. Please try again."
 
 
 async def get_supported_currencies():
@@ -128,8 +138,9 @@ async def get_supported_currencies():
             res = await client.get(url)
             res.raise_for_status()
             return res.json()
-    except Exception as e:
-        return f"Error while fetching currency list: {e}"
+    except Exception:
+        logger.exception("Failed to fetch currency list")
+        return "Sorry, I couldn't fetch the currency list right now. Please try again later."
 
 
 async def get_recommendations(product_id: str):
@@ -141,8 +152,9 @@ async def get_recommendations(product_id: str):
             res = await client.get(url, params=params)
             res.raise_for_status()
             return res.json()
-    except Exception as e:
-        return f"Error fetching recommendations: {e}"
+    except Exception:
+        logger.exception("Failed to fetch recommendations for product=%s", product_id)
+        return "Sorry, I couldn't fetch recommendations right now. Please try again later."
 
 
 async def get_shipping_quote(items, currency_code, address):
@@ -178,5 +190,6 @@ async def get_shipping_quote(items, currency_code, address):
                 body = res.text.strip() or "<empty body>"
                 return f"Shipping quote failed with HTTP {res.status_code}: {body}. "
             return res.json()
-    except Exception as e:
-        return f"Error fetching shipping quote: {e}"
+    except Exception:
+        logger.exception("Failed to fetch shipping quote")
+        return "Sorry, I couldn't fetch a shipping quote right now. Please try again later."
