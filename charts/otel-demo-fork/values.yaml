@@ -995,7 +995,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.32-recommendation"
+      tag: "0.11.45-recommendation"
     useDefault:
       env: true
     service:
@@ -1022,6 +1022,8 @@ components:
         value: "8013"
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: http://$(OTEL_COLLECTOR_NAME):4318
+      - name: LOG_LEVEL
+        value: WARNING
     resources:
       requests:
         cpu: 50m

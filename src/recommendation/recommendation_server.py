@@ -16,6 +16,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 # Pip
 import grpc
+from pythonjsonlogger.json import JsonFormatter
 from opentelemetry import trace, metrics
 from opentelemetry._logs import set_logger_provider
 from opentelemetry.exporter.otlp.proto.http._log_exporter import (
@@ -44,7 +45,15 @@ first_run = True
 
 class RecommendationService(demo_pb2_grpc.RecommendationServiceServicer):
     def ListRecommendations(self, request, context):
-        prod_list = get_product_list(request.product_ids)
+        try:
+            prod_list = get_product_list(request.product_ids)
+        except grpc.RpcError as e:
+            logger.exception("get_product_list failed calling product catalog")
+            context.abort(grpc.StatusCode.UNAVAILABLE, f"failed to fetch product catalog: {e}")
+        except Exception:
+            logger.exception("get_product_list failed unexpectedly")
+            context.abort(grpc.StatusCode.INTERNAL, "failed to compute recommendations")
+
         span = trace.get_current_span()
         span.set_attribute("demo.product.recommended.count", len(prod_list))
         logger.info(f"Receive ListRecommendations for product ids:{prod_list}")
@@ -167,11 +176,16 @@ if __name__ == "__main__":
     handler = LoggingHandler(level=logging.NOTSET, logger_provider=logger_provider)
 
     # Attach OTLP handler to logger, plus a console handler so WARN+ is
-    # always visible even if the collector is unreachable
+    # always visible even if the collector is unreachable. Console is JSON
+    # (this service demonstrates the "modern structured" logging tier);
+    # its floor is configurable via LOG_LEVEL, defaulting to WARNING.
     logger = logging.getLogger('main')
     logger.addHandler(handler)
     console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(logging.WARNING)
+    console_handler.setFormatter(JsonFormatter(
+        "%(asctime)s %(levelname)s %(name)s %(message)s"))
+    console_handler.setLevel(
+        getattr(logging, os.environ.get('LOG_LEVEL', 'WARNING').upper(), logging.WARNING))
     logger.addHandler(console_handler)
     logger.setLevel(logging.INFO)
 

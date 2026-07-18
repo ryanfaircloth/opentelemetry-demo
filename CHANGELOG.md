@@ -7,6 +7,16 @@ the release.
 
 ## Unreleased
 
+* [recommendation] Assigned Tier A ("modern JSON") for this pass: added
+  `python-json-logger` and switched the console handler's formatter to
+  `JsonFormatter`, with its WARN+ floor now driven by `LOG_LEVEL` (default
+  `WARNING`) instead of hardcoded. Also wrapped `ListRecommendations` (the
+  actual RPC handler, which previously had no exception handling at all) in
+  a try/except that calls `context.abort` with a proper status
+  (`UNAVAILABLE` for a downstream `grpc.RpcError`, `INTERNAL` for anything
+  else) and logs via `logger.exception` so the traceback is captured,
+  instead of letting failures propagate raw as an opaque `UNKNOWN` status.
+
 * [cart] Assigned Tier C ("default, unstructured") for this pass: kept the
   default plain-text console formatter but added a `LOG_LEVEL`-driven WARN
   floor (default `WARN`), while the overall minimum level stays
