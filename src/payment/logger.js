@@ -36,7 +36,13 @@ const transport = pino.transport({
   ]
 })
 
-const logger = pino(transport, {
+// pino's signature is pino(options, destination) - options first. This was
+// previously called as pino(transport, {...}), which silently discards the
+// whole options object (pino sees a stream-like first argument and treats
+// the second as unused): level/mixin/formatters below never took effect,
+// service.name was missing from every log record, and LOG_LEVEL couldn't
+// actually raise verbosity below pino's default 'info' root level.
+const logger = pino({
   // pino's root level is a hard gate: a call below it never reaches any
   // transport regardless of that transport's own level. Set to the lowest
   // level any target could plausibly use (LOG_LEVEL is operator-controlled)
@@ -52,6 +58,6 @@ const logger = pino(transport, {
       return { 'level': label };
     },
   },
-});
+}, transport);
 
 module.exports = logger;

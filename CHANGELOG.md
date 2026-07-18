@@ -7,6 +7,43 @@ the release.
 
 ## Unreleased
 
+* [payment] Critical fix caught by the sixth re-review pass (verified
+  empirically against the real pino source, not just read): `logger.js` was
+  calling `pino(transport, {...})` - options and destination reversed from
+  pino's actual `pino(options, destination)` signature. Pino sees a
+  stream-like first argument and silently drops the second entirely, so
+  `level`, `mixin()`, and `formatters` never took effect. This wasn't
+  introduced by this release's earlier payment commit - it's been broken
+  since the file was first written, and every previous "fix" to this
+  file's level configuration was inert. Consequences: `service.name` was
+  missing from every emitted record, the level field rendered as a raw
+  number instead of a string label, and `LOG_LEVEL` could never actually
+  raise verbosity below pino's default `info` root level. Swapped the
+  argument order.
+
+* [product-catalog] User-flagged design issue, not caught by any prior
+  audit pass: `GetProduct`'s not-found branch (`sql.ErrNoRows`) was calling
+  `span.SetStatus(otelcodes.Error, msg)` - marking the span itself as an
+  error for a client looking up a product ID that simply doesn't exist.
+  That's an expected outcome of a well-formed request, not a fault; doing
+  this pollutes span-based error-rate dashboards/alerting the same way
+  logging it at ERROR would pollute log-based alerting (which this file
+  already correctly avoids for this exact path). Removed the `SetStatus`
+  call; kept the span event and added a `demo.product.found` attribute so
+  the outcome stays traceable without being flagged as an error. The gRPC
+  `NotFound` status still communicates the result to the caller.
+
+* [frontend] Same design issue, one level up the stack: `ProductCatalog.gateway.ts`'s
+  `getProduct` unconditionally called `Log.error(...)` on ANY error from the
+  backend, including a legitimate `NOT_FOUND`, and the API route had no
+  handling for it either - so a normal "product doesn't exist" navigation
+  (mistyped URL, stale link) would log an application error and fall
+  through to `InstrumentationMiddleware`'s generic 500 response, instead of
+  the client seeing a real 404. The gateway now skips the error log for
+  `GrpcStatus.NOT_FOUND`, and `pages/api/products/[productId]/index.ts` now
+  catches it specifically and returns a proper `404` before the error can
+  reach the middleware's generic error path.
+
 * [frontend] Follow-up from the fifth re-review pass, four fixes: (1)
   `pages/api/healthz.ts` was the one API route not wrapped by
   `InstrumentationMiddleware` - harmless today since the handler body can't
