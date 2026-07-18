@@ -7,6 +7,10 @@ the release.
 
 ## Unreleased
 
+* [chatbot] Added `LOG_LEVEL` env var support (previously hardcoded to
+  `INFO`), same reasoning as `agent`: no OTel log exporter exists yet, so
+  the default stays `INFO`.
+
 * [agent] Added `LOG_LEVEL` env var support (previously hardcoded to
   `INFO`). No OTel log exporter exists in this service yet, so the
   default stays `INFO` rather than the `WARN` default used elsewhere in
