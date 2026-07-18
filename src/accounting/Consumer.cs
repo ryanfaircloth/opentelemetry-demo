@@ -82,7 +82,7 @@ internal class Consumer : BackgroundService
                     throw;
                 }
 
-                Log.KafkaConnectRetrying(logger, attempt, backoff, e.Message);
+                Log.KafkaConnectRetrying(logger, attempt, backoff, e);
                 Thread.Sleep(backoff);
                 backoff = TimeSpan.FromSeconds(Math.Min(backoff.TotalSeconds * 2, KafkaConnectMaxBackoff.TotalSeconds));
             }
@@ -172,8 +172,11 @@ internal class Consumer : BackgroundService
         {
             Log.DuplicateOrderSkipped(_logger);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is Google.Protobuf.InvalidProtocolBufferException or DbUpdateException)
         {
+            // Malformed message or a (non-duplicate) DB write failure: log and
+            // skip this record rather than crashing the consumer loop. Any other
+            // exception type is unexpected and should propagate.
             Log.OrderParsingFailed(_logger, ex);
         }
     }

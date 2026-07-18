@@ -29,8 +29,8 @@ namespace Accounting
         [LoggerMessage(
             Level = LogLevel.Warning,
             EventName = "accounting.kafka.connect_retrying",
-            Message = "Kafka not ready yet (attempt {attempt}), retrying in {backoff}: {reason}")]
-        public static partial void KafkaConnectRetrying(ILogger logger, int attempt, TimeSpan backoff, string reason);
+            Message = "Kafka not ready yet (attempt {attempt}), retrying in {backoff}")]
+        public static partial void KafkaConnectRetrying(ILogger logger, int attempt, TimeSpan backoff, Exception exception);
 
         [LoggerMessage(
             Level = LogLevel.Error,

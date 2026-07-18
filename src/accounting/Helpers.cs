@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 using System.Collections;
+using Microsoft.Extensions.Logging;
 
 namespace Accounting
 {
@@ -23,12 +24,21 @@ namespace Accounting
             }
         }
 
-        public static void OutputInOrder(this IEnumerable<DictionaryEntry> envs)
+        public static void OutputInOrder(this IEnumerable<DictionaryEntry> envs, ILogger logger)
         {
             foreach (var env in envs.OrderBy(x => x.Key))
             {
-                Console.WriteLine(env);
+                logger.LogInformation("startup env: {Key}={Value}", env.Key, env.Value);
             }
         }
+
+        public static LogLevel? ParseLogLevel(string? value) => value?.ToUpperInvariant() switch
+        {
+            "DEBUG" => LogLevel.Debug,
+            "INFO" or "INFORMATION" => LogLevel.Information,
+            "WARN" or "WARNING" => LogLevel.Warning,
+            "ERROR" => LogLevel.Error,
+            _ => null,
+        };
     }
 }

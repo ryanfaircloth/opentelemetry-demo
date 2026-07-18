@@ -7,6 +7,20 @@ the release.
 
 ## Unreleased
 
+* [accounting] Assigned Tier A ("modern JSON") for this pass: switched the
+  console provider to `AddJsonConsole()` with a `LOG_LEVEL`-driven WARN
+  floor (`AddFilter<ConsoleLoggerProvider>`), while the overall minimum
+  level stays at `Information` so the injected .NET auto-instrumentation's
+  log bridge still captures Info+. Replaced the two raw, unstructured
+  `Console.WriteLine` startup calls with `ILogger` calls so they go through
+  the same JSON formatter/level gate instead of bypassing logging entirely.
+  Also fixed the Kafka-connect retry log passing `e.Message` instead of the
+  exception object (dropping the stack trace on every transient retry), and
+  narrowed `ProcessMessage`'s catch-all `Exception` handler to the specific
+  `InvalidProtocolBufferException`/`DbUpdateException` cases it was actually
+  meant to handle - any other exception now propagates instead of being
+  silently swallowed as a "parsing failure."
+
 * [fraud-detection] Assigned Tier B ("default-but-structured") for this
   pass: kept the existing `PatternLayout` (with trace/span MDC context) but
   added a `ThresholdFilter` so stdout is WARN+ only, and Root level is now

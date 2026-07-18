@@ -304,7 +304,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.32-accounting"
+      tag: "0.11.43-accounting"
     useDefault:
       env: true
     podAnnotations:
@@ -337,6 +337,10 @@ components:
       # native allocations) within the 120Mi limit below.
       - name: DOTNET_GCHeapHardLimitPercent
         value: "60"
+      # Console-only floor (JSON formatter); the injected auto-instrumentation
+      # bridge still sees Information+ regardless of this.
+      - name: LOG_LEVEL
+        value: WARN
     resources:
       requests:
         cpu: 10m
