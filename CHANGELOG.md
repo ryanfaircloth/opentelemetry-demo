@@ -7,6 +7,12 @@ the release.
 
 ## Unreleased
 
+* [frontend] `utils/Log.ts` unconditionally called `console.warn`/
+  `console.error` with no level control at all. Added a `LOG_LEVEL` env
+  var (default `warn`, matching current behavior) wired through
+  `next.config.js`'s `env` block so it's available in both server and
+  client bundles.
+
 * [mcp] Added `LOG_LEVEL` env var support; also removed a duplicate
   `logging.basicConfig(level=logging.INFO)` in
   `astronomy_shop_mcp_server.py` that ran at import time, before
