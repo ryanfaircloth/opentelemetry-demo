@@ -7,6 +7,14 @@ the release.
 
 ## Unreleased
 
+* [telemetry-docs] Same fix as image-provider: added an `otel_json`
+  `log_format` (JSON, trace/span-correlated via `ngx_otel_module`, OTel HTTP
+  semantic-convention field names, using the existing `$otel_route`
+  low-cardinality mapping for `url.path`) and pointed `access_log` at it,
+  replacing the default plain-text combined format. Same ingestion caveat
+  as image-provider applies - this is a format fix, not a pipeline-wiring
+  fix.
+
 * [image-provider] nginx access logs were using the default combined
   plain-text format with no trace correlation. Added an `otel_json`
   `log_format` (JSON, `escape=json`) carrying OTel HTTP semantic-convention
