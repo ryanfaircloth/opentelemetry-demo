@@ -72,9 +72,27 @@ func init() {
 	// unreachable. Fan WARN+ records out to stdout as well so operational
 	// visibility doesn't depend on the collector.
 	otelHandler := otelslog.NewHandler("product-catalog")
-	stdoutWarnHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelWarn})
+	stdoutWarnHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: consoleLogLevel()})
 	logger = slog.New(newFanoutHandler(otelHandler, stdoutWarnHandler))
 	bootLogger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
+}
+
+// consoleLogLevel returns the minimum level the stdout handler emits at,
+// defaulting to WARN (per this repo's console-is-for-operators convention)
+// but overridable via LOG_LEVEL for local troubleshooting.
+func consoleLogLevel() slog.Level {
+	switch strings.ToUpper(os.Getenv("LOG_LEVEL")) {
+	case "DEBUG":
+		return slog.LevelDebug
+	case "INFO":
+		return slog.LevelInfo
+	case "WARN", "WARNING":
+		return slog.LevelWarn
+	case "ERROR":
+		return slog.LevelError
+	default:
+		return slog.LevelWarn
+	}
 }
 
 // fanoutHandler is a slog.Handler that forwards every record to a set of

@@ -7,6 +7,21 @@ the release.
 
 ## Unreleased
 
+* [logging] Kicking off a repo-wide logging consistency pass: every service
+  gets a `LOG_LEVEL` env var, console output stays WARN+ while the injected/
+  explicit OTel log export still captures INFO+, and the demo deliberately
+  spreads console *format* across three tiers (modern structured JSON,
+  framework-default-but-structured, and plain unstructured) instead of
+  making every service look the same, so the fleet reflects real-world
+  logging heterogeneity. Exception/error-handling idioms are being brought
+  in line with each language's best practices as part of the same pass.
+  Tracked per-service below as each lands.
+
+* [product-catalog] Added a `LOG_LEVEL` env var (default `WARN`) controlling
+  the stdout JSON handler's minimum level, which was previously hardcoded.
+  This service was already the reference implementation for the
+  console(WARN+)/OTel(INFO+) split introduced here.
+
 * [shipping] Fixed `request_quote` calling `.expect("Invalid quote service
   address")` on every `/get-quote` request instead of only at startup — a
   bad `QUOTE_ADDR` value would panic per-request rather than once at boot
