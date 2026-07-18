@@ -1040,10 +1040,10 @@ components:
       periodSeconds: 10
 
   telemetry-docs:
-    # Disabled: no versioned image (e.g. <chart-version>-telemetry-docs) has
-    # ever been published for this service, so the default image reference
-    # never resolves to a pullable tag.
-    enabled: false
+    enabled: true
+    imageOverride:
+      repository: "ghcr.io/ryanfaircloth/demo"
+      tag: "0.11.26-telemetry-docs"
     useDefault:
       env: true
     service:
@@ -1064,6 +1064,18 @@ components:
       limits:
         cpu: 100m
         memory: 100Mi
+    livenessProbe:
+      httpGet:
+        path: /
+        port: 8000
+      initialDelaySeconds: 10
+      periodSeconds: 10
+    readinessProbe:
+      httpGet:
+        path: /
+        port: 8000
+      initialDelaySeconds: 10
+      periodSeconds: 10
 
   flagd:
     enabled: true

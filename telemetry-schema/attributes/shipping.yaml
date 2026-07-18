@@ -15,12 +15,6 @@ attributes:
     stability: stable
     note: The total cost of shipping for an order (string representation)
     examples: ["10.50", "25.00"]
-  - key: demo.shipping.items_count
-    type: int
-    brief: Number of items being shipped
-    stability: stable
-    note: The count of items included in a shipment
-    examples: [1, 5, 10]
   - key: demo.shipping.tracking.id
     type: string
     brief: Shipping tracking identifier

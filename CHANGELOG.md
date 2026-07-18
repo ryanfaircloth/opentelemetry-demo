@@ -7,6 +7,20 @@ the release.
 
 ## Unreleased
 
+* [telemetry-schema] Removed the orphaned `demo.shipping.items_count`
+  attribute from `telemetry-schema/attributes/shipping.yaml`: it was never
+  referenced by any `telemetry-schema/services/*.yaml` entry and no service
+  emits it, so the generated telemetry-docs site was documenting an
+  attribute that doesn't exist in practice.
+* [chart] Enable `telemetry-docs` by default: it was disabled with a comment
+  claiming no versioned image had ever been published for it, but the
+  `component-build-images.yml` matrix has built and pushed
+  `<version>-telemetry-docs` alongside every other component since the
+  service was added, and `ghcr.io/ryanfaircloth/demo:0.11.26-telemetry-docs`
+  is confirmed present in the registry. Added the same `imageOverride` pin
+  every other component gets, plus liveness/readiness probes (it was
+  disabled during the earlier chart-wide probe rollout, so it never
+  received them).
 * [chart] `0.11.25` never actually got published: the release commit
   only touched `.env`/`Chart.yaml`/`values.yaml`, and `component-release.yml`
   only triggered on `src/**` changes, so the workflow never ran and no
