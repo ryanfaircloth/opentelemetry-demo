@@ -33,11 +33,18 @@ val groupID: String = System.getenv("KAFKA_CONSUMER_GROUP") ?: "fraud-detection"
 private val logger: Logger = LogManager.getLogger(groupID)
 
 fun main() {
-    val options = FlagdOptions.builder()
-    .withGlobalTelemetry(true)
-    .build()
-    val flagdProvider = FlagdProvider(options)
-    OpenFeatureAPI.getInstance().setProvider(flagdProvider)
+    try {
+        val options = FlagdOptions.builder()
+        .withGlobalTelemetry(true)
+        .build()
+        val flagdProvider = FlagdProvider(options)
+        OpenFeatureAPI.getInstance().setProvider(flagdProvider)
+    } catch (e: Exception) {
+        // Same "non-critical" rationale as getFeatureFlagValue below - a flagd
+        // setup failure shouldn't take down the whole consumer loop, since
+        // feature flags here only gate an optional simulated-slowdown demo.
+        logger.warn("Failed to set up flagd provider, feature flags will default to disabled", e)
+    }
 
     logger.info("Connecting to Kafka bootstrap.servers=${System.getenv("KAFKA_ADDR")}, topic=$topic, groupId=$groupID")
     val props = buildConsumerProps()

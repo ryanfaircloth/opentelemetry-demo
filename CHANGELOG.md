@@ -7,6 +7,17 @@ the release.
 
 ## Unreleased
 
+* [fraud-detection] Follow-up from the fifth re-review pass: the console
+  `PatternLayout` had no `%p`/`%level` conversion specifier, so an operator
+  reading stdout (WARN+ only, per the appender's `ThresholdFilter`) couldn't
+  tell WARN from ERROR on any given line - the one piece of information the
+  WARN+ gate makes most relevant was the one field missing. Also wrapped
+  flagd provider construction/registration in `main()` in a try/catch: it
+  ran unprotected before the Kafka consumer loop even started, so a bad
+  flagd config would crash the whole service on the same "non-critical
+  feature-flag dependency" the rest of the file explicitly isolates (see
+  `getFeatureFlagValue`'s existing guard).
+
 * [currency] Follow-up from the fifth re-review pass: the try/catch in both
   `GetSupportedCurrencies` and `Convert` only wrapped the business-logic
   portion of each method - the span-setup/context-extraction preamble
