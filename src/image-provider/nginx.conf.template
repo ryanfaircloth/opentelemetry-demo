@@ -15,6 +15,23 @@ http {
     otel_service_name ${OTEL_SERVICE_NAME};
     otel_span_name image-provider;
 
+    # Structured access log correlated to the request's trace/span (from
+    # ngx_otel_module above), using OTel HTTP semantic-convention field
+    # names, instead of nginx's default plain-text combined format.
+    log_format otel_json escape=json
+        '{'
+            '"timestamp":"$time_iso8601",'
+            '"trace_id":"$otel_trace_id",'
+            '"span_id":"$otel_span_id",'
+            '"http.request.method":"$request_method",'
+            '"url.path":"$uri",'
+            '"http.response.status_code":$status,'
+            '"http.response.body.size":$body_bytes_sent,'
+            '"http.request.duration":$request_time,'
+            '"network.protocol.version":"$server_protocol",'
+            '"user_agent.original":"$http_user_agent"'
+        '}';
+    access_log /dev/stdout otel_json;
 
     include mime.types;
     sendfile on;

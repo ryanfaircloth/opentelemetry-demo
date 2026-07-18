@@ -7,6 +7,17 @@ the release.
 
 ## Unreleased
 
+* [image-provider] nginx access logs were using the default combined
+  plain-text format with no trace correlation. Added an `otel_json`
+  `log_format` (JSON, `escape=json`) carrying OTel HTTP semantic-convention
+  field names plus `trace_id`/`span_id` from `ngx_otel_module`'s
+  `$otel_trace_id`/`$otel_span_id` variables, and pointed `access_log` at
+  it. Note: this makes the access log itself structured and
+  trace-correlated on stdout; it does not by itself wire the log into the
+  OTel Collector's `logs` pipeline (that pipeline currently only receives
+  via `otlp`, with no `filelog` receiver) - format and ingestion are two
+  separate changes.
+
 * [frontend] Fixed `InstrumentationMiddleware` (which wraps every Next.js
   API route) only recording the exception on the OTel span and rethrowing
   raw - added a `Log.error` call so failures actually show up in

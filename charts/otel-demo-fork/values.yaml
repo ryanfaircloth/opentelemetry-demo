@@ -757,7 +757,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.32-image-provider"
+      tag: "0.11.53-image-provider"
     useDefault:
       env: true
     service:
