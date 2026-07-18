@@ -7,6 +7,12 @@ the release.
 
 ## Unreleased
 
+* [agent] Added `LOG_LEVEL` env var support (previously hardcoded to
+  `INFO`). No OTel log exporter exists in this service yet, so the
+  default stays `INFO` rather than the `WARN` default used elsewhere in
+  this repo, to avoid silently losing visibility with nowhere else for
+  those records to go.
+
 * [chatbot] Same audit: `chat_interface.py`'s catch-all logged only the
   exception's message (no stack trace, via `logging.error(f"Error : {e}")`)
   and returned the raw exception text directly into the chat bubble shown
