@@ -216,7 +216,14 @@ if __name__ == "__main__":
             backoff_seconds = min(backoff_seconds * 2, 30)
 
     # Create gRPC server
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    # grpc.enable_retries=0: same call-combiner workaround as the
+    # product-catalog channel above (grpc/grpc#26537, grpc/grpc#38251) -
+    # the assertion lives in shared C-core machinery, so inbound RPCs
+    # (e.g. a client cancelling mid-call) can trigger it too.
+    server = grpc.server(
+        futures.ThreadPoolExecutor(max_workers=10),
+        options=(('grpc.enable_retries', 0),),
+    )
 
     # Add class to gRPC server
     service = RecommendationService()

@@ -7,6 +7,18 @@ the release.
 
 ## Unreleased
 
+* [recommendation] Extended the existing `grpc.enable_retries=0` call-combiner
+  workaround (grpc/grpc#26537, grpc/grpc#38251) to the inbound gRPC server,
+  not just the outbound product-catalog channel: confirmed in a live PR
+  preview environment that the process was periodically SIGABRT'ing
+  (`call_combiner.cc:144] Check failed: prev_size >= 1u`) despite the
+  existing client-side fix, since the assertion lives in gRPC's shared
+  C-core machinery and can equally be triggered by inbound RPC
+  cancellations/retries. Verified this isn't a `flagd` chaos/fault-injection
+  flag (only `recommendationCacheFailure` exists for this service, and it's
+  unrelated) - it's a genuine, still-open upstream bug with no full fix
+  available in any known grpcio version, so the workaround is applied
+  symmetrically instead.
 * [chart] `ad` was still crash-looping after the previous release's IPv4/IPv6
   health-check fix, but for an unrelated reason: this cluster's OBI eBPF
   DaemonSet dynamically attaches its own Java agent to every JVM in the
