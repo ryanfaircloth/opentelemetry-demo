@@ -7,6 +7,21 @@ the release.
 
 ## Unreleased
 
+* [chart] `ad` was still crash-looping after the previous release's IPv4/IPv6
+  health-check fix, but for an unrelated reason: this cluster's OBI eBPF
+  DaemonSet dynamically attaches its own Java agent to every JVM in the
+  `demo-pr-194` namespace, alongside the OTel Operator's own `-javaagent`
+  injection this chart already configures for `ad` - two agents doing
+  bytecode instrumentation concurrently at startup, under `ad`'s previous
+  `300m` CPU limit, took long enough that kubelet's liveness/readiness
+  probes (5s initial delay, 3 failures at 10s) killed the container before
+  it ever opened a single socket. Raised `ad`'s CPU request/limit
+  (`50m`/`300m` -> `200m`/`1000m`) and gave both probes more runway
+  (`initialDelaySeconds` 5 -> 30, added `failureThreshold: 12`, ~150s total)
+  since this chart's probe template/schema has no `startupProbe` support to
+  use instead. The underlying double-instrumentation collision between the
+  per-PR OBI deployment and this chart's Java auto-instrumentation
+  annotation is a separate, cross-team question still worth resolving.
 * [ad, email, recommendation] Fixed health-check HTTP servers binding an
   IPv4-only wildcard address (`InetSocketAddress(port)` in Java,
   `TCPServer.new(port)` in Ruby, `http.server`'s default `AF_INET` in
