@@ -7,6 +7,15 @@ the release.
 
 ## Unreleased
 
+* [accounting] `Log.cs`'s `OrderReceivedMessage` template used
+  `{@OrderResult}` - Serilog's destructuring syntax, which the
+  `[LoggerMessage]` source generator doesn't support; it's just a
+  literal placeholder name that doesn't match the `orderResult`
+  parameter, and since `OrderResult.ToString()` already emits JSON, the
+  field ended up as an unrelated placeholder wrapping already-serialized
+  JSON as a string. Fixed the placeholder to `{orderResult}`, matching
+  every other entry's naming convention in this file.
+
 * [flagd-ui] This fork's flagd-ui is Elixir/Phoenix, not Node - the
   logger level was hardcoded to `:info` in `config/prod.exs` with no
   runtime override at all. Added `LOG_LEVEL` handling in

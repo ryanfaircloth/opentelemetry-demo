@@ -11,7 +11,7 @@ namespace Accounting
         [LoggerMessage(
             Level = LogLevel.Information,
             EventName = "accounting.order.received",
-            Message = "Order details: {@OrderResult}.")]
+            Message = "Order details: {orderResult}.")]
         public static partial void OrderReceivedMessage(ILogger logger, OrderResult orderResult);
 
         [LoggerMessage(
