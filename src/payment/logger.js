@@ -37,7 +37,11 @@ const transport = pino.transport({
 })
 
 const logger = pino(transport, {
-  level: 'info',
+  // pino's root level is a hard gate: a call below it never reaches any
+  // transport regardless of that transport's own level. Set to the lowest
+  // level any target could plausibly use (LOG_LEVEL is operator-controlled)
+  // so each target's own `level` above does the real filtering.
+  level: 'trace',
   mixin() {
     return {
       'service.name': process.env['OTEL_SERVICE_NAME'],

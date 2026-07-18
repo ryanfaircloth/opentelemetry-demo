@@ -7,6 +7,14 @@ the release.
 
 ## Unreleased
 
+* [payment] Follow-up from the fifth re-review pass, verified empirically
+  against the actual pinned pino/pino-opentelemetry-transport versions: the
+  root pino logger's `level: 'info'` is a hard gate in pino - a call below
+  it never reaches any transport regardless of that transport's own level.
+  This silently defeated `LOG_LEVEL=debug`/`trace` on the console target
+  despite the code advertising full env-var control. Set the root level to
+  `'trace'` so each target's own `level` does the real filtering.
+
 * [recommendation] Follow-up from the fifth re-review pass: `logger.setLevel(logging.INFO)`
   on the root logger silently capped `LOG_LEVEL=DEBUG` (or any value below
   INFO) on the console handler - a Python logger drops a record before it
