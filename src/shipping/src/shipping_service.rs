@@ -4,7 +4,7 @@
 use actix_web::{post, web, HttpResponse, Responder};
 use open_feature::provider::FeatureProvider;
 use open_feature::EvaluationContext;
-use tracing::{info, warn};
+use tracing::{error, info, warn};
 
 mod quote;
 use quote::create_quote_from_count;
@@ -24,7 +24,8 @@ pub async fn get_quote(req: web::Json<GetQuoteRequest>) -> impl Responder {
     let quote = match create_quote_from_count(itemct).await {
         Ok(q) => q,
         Err(e) => {
-            return HttpResponse::InternalServerError().body(format!("Failed to get quote: {}", e));
+            error!(error = %e, "Failed to get quote");
+            return HttpResponse::InternalServerError().body("Failed to get quote");
         }
     };
 

@@ -7,6 +7,14 @@ the release.
 
 ## Unreleased
 
+* [shipping] Follow-up from a third re-review pass: `get_quote`'s error
+  branch neither logged the failure nor gated what reached the client - it
+  formatted the raw error straight into the 500 response body
+  (`format!("Failed to get quote: {}", e)`), the same "caught but not
+  logged, and leaked to the client" pattern already fixed in `cart` and
+  `quote`. Added `error!(error = %e, ...)` and replaced the response body
+  with a generic message.
+
 * [product-catalog] Follow-up from a second re-review pass: `ListProducts`
   and `SearchProducts` only set span status on a DB error, unlike
   `GetProduct` (fixed in the prior commit), which also logs. Added the
