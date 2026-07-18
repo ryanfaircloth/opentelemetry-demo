@@ -74,7 +74,10 @@ func init() {
 	otelHandler := otelslog.NewHandler("product-catalog")
 	stdoutWarnHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: consoleLogLevel()})
 	logger = slog.New(newFanoutHandler(otelHandler, stdoutWarnHandler))
-	bootLogger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	// Explicit Level (nil defaults to Info, which would silently drop any
+	// future Debug-level startup diagnostic) - this logger's whole purpose is
+	// maximum visibility during startup, so nothing should be filtered.
+	bootLogger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 }
 
 // consoleLogLevel returns the minimum level the stdout handler emits at,
@@ -429,7 +432,7 @@ func getProductsFromRows(ctx context.Context, rows *sql.Rows) ([]*pb.Product, er
 	logger.LogAttrs(
 		ctx,
 		slog.LevelInfo,
-		fmt.Sprintf("Found %d products from database", len(products)),
+		"Found products from database",
 		slog.Int("products", len(products)),
 	)
 
@@ -498,6 +501,7 @@ func (p *productCatalog) GetProduct(ctx context.Context, req *pb.GetProductReque
 		msg := "Error: Product Catalog Fail Feature Flag Enabled"
 		span.SetStatus(otelcodes.Error, msg)
 		span.AddEvent(msg)
+		logger.Warn(msg, slog.String("product_id", req.Id))
 		return nil, status.Error(codes.Internal, msg)
 	}
 

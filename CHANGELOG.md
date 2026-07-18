@@ -7,6 +7,17 @@ the release.
 
 ## Unreleased
 
+* [product-catalog] Follow-up from the fifth re-review pass: a `fmt.Sprintf`
+  was still being fed into `logger.LogAttrs` at the products-loaded log site
+  (the exact anti-pattern already swept elsewhere in this file). The
+  feature-flag-triggered simulated failure path in `GetProduct` returned an
+  `Internal` error without logging it or recording it on the span, unlike
+  every other error path in the same function. `bootLogger`'s
+  `slog.NewJSONHandler(os.Stdout, nil)` defaults to an `Info` floor despite
+  this logger's whole purpose being maximum startup visibility - a future
+  `bootLogger.Debug(...)` call would have been silently dropped; now
+  explicit `Level: slog.LevelDebug`.
+
 * [checkout] Follow-up from a fifth re-review pass (parallel independent
   agent audits, one per service): `prepOrderItems` dropped the underlying
   error entirely on two paths (`fmt.Errorf("failed to get product #%q", ...)`
