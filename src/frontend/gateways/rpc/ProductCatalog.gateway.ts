@@ -1,7 +1,7 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-import { ChannelCredentials } from '@grpc/grpc-js';
+import { ChannelCredentials, status as GrpcStatus, ServiceError } from '@grpc/grpc-js';
 import { ListProductsResponse, Product, ProductCatalogServiceClient } from '../../protos/demo';
 import Log from '../../utils/Log';
 
@@ -21,8 +21,14 @@ const ProductCatalogGateway = () => ({
   getProduct(id: string) {
     return new Promise<Product>((resolve, reject) =>
       client.getProduct({ id }, (error, response) => (error ? reject(error) : resolve(response)))
-    ).catch((error) => {
-      Log.error('ProductCatalogGateway.getProduct failed', error);
+    ).catch((error: ServiceError) => {
+      // A client looking up a product ID that doesn't exist is an expected
+      // outcome of a well-formed request, not an application error - don't
+      // log it as one (that's the same log-noise/alerting-fatigue problem
+      // as marking an expected "not found" span as an error).
+      if (error.code !== GrpcStatus.NOT_FOUND) {
+        Log.error('ProductCatalogGateway.getProduct failed', error);
+      }
       throw error;
     });
   },
