@@ -433,8 +433,11 @@ func (cs *checkout) PlaceOrder(ctx context.Context, req *pb.PlaceOrderRequest) (
 		// Every early-return failure path in this function shares this err
 		// variable, so logging it here once (rather than at each call site)
 		// guarantees PlaceOrder failures are never recorded on the span alone
-		// without also reaching the logs.
-		if err != nil {
+		// without also reaching the logs. InvalidArgument (e.g. a declined
+		// card, propagated from chargeCard) is an expected checkout outcome,
+		// not a fault - skip the error-span/log treatment for it so routine
+		// declines don't pollute error-rate dashboards/alerting.
+		if err != nil && status.Code(err) != codes.InvalidArgument {
 			span.RecordError(err)
 			logger.Error("PlaceOrder failed", slog.String("user_id", req.UserId), slog.Any("error", err))
 		}
@@ -470,7 +473,15 @@ func (cs *checkout) PlaceOrder(ctx context.Context, req *pb.PlaceOrderRequest) (
 
 	txID, err := cs.chargeCard(ctx, total, req.CreditCard)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to charge card: %+v", err)
+		// Propagate payment's own status code (e.g. InvalidArgument for a
+		// declined card) instead of collapsing every charge failure to
+		// Internal - a card decline is a normal checkout outcome the caller
+		// needs to distinguish from an actual payment-service fault.
+		code := status.Code(err)
+		if code == codes.OK || code == codes.Unknown {
+			code = codes.Internal
+		}
+		return nil, status.Errorf(code, "failed to charge card: %+v", err)
 	}
 
 	span.AddEvent("charged",
