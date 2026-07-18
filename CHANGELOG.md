@@ -7,6 +7,17 @@ the release.
 
 ## Unreleased
 
+* [ad] Assigned Tier A ("modern JSON") for this pass: swapped the console
+  appender's `PatternLayout` for `JsonTemplateLayout` (added the
+  `log4j-layout-template-json` dependency) and added a `ThresholdFilter` so
+  stdout only emits WARN+ regardless of the Root logger's level. Root level
+  is now `${env:LOG_LEVEL:-INFO}` instead of hardcoded, governing what the
+  injected Java agent's log4j2 bridge exports as OTLP. Also fixed `getAds`
+  logging `e.getStatus()` instead of the throwable (dropping the stack
+  trace) and added a catch-all `Exception` boundary so any unexpected
+  failure still returns a proper gRPC `Status` via `onError` instead of
+  propagating uncaught.
+
 * [checkout] Assigned Tier B ("default-but-structured") for this pass:
   switched the console handler from JSON to `slog.TextHandler` and actually
   applied the WARN floor its own code comment already claimed but never

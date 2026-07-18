@@ -273,8 +273,18 @@ public final class AdService {
         span.addEvent(
             "Error", Attributes.of(AttributeKey.stringKey("exception.message"), e.getMessage()));
         span.setStatus(StatusCode.ERROR);
-        logger.log(Level.WARN, "GetAds Failed with status {}", e.getStatus());
+        logger.log(Level.WARN, "GetAds failed with status {}", e.getStatus(), e);
         responseObserver.onError(e);
+      } catch (Exception e) {
+        // Catch-all boundary: any unexpected exception (e.g. from feature-flag
+        // evaluation or baggage lookups) must still translate into a gRPC
+        // Status via onError rather than propagating uncaught, which would
+        // otherwise close the stream with no proper status.
+        span.recordException(e);
+        span.setStatus(StatusCode.ERROR);
+        logger.log(Level.ERROR, "GetAds failed unexpectedly", e);
+        responseObserver.onError(
+            Status.INTERNAL.withDescription("failed to get ads").withCause(e).asRuntimeException());
       }
     }
   }

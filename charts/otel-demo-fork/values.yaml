@@ -349,7 +349,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.32-ad"
+      tag: "0.11.41-ad"
     useDefault:
       env: true
     service:
@@ -378,6 +378,10 @@ components:
       # allotted memory instead of GC-thrashing well under the limit.
       - name: JAVA_TOOL_OPTIONS
         value: "-XX:MaxRAMPercentage=75.0"
+      # Governs the Root logger level (log4j2.xml); the console appender's own
+      # ThresholdFilter independently keeps stdout at WARN+ regardless.
+      - name: LOG_LEVEL
+        value: INFO
     resources:
       requests:
         cpu: 200m
