@@ -230,21 +230,23 @@ class CurrencyService final : public oteldemo::CurrencyService::Service
       string from_code = from.currency_code();
       string to_code = request->to_code();
 
+      // An unsupported currency code is a normal validation outcome for a
+      // well-formed request (e.g. a stale client-side currency list), not a
+      // system fault - don't mark the span/logs as an error over it, which
+      // would pollute error-rate dashboards the same way the now-fixed
+      // product-catalog "not found" case did. The INVALID_ARGUMENT status
+      // below already communicates the outcome to the caller.
       if (currency_conversion.find(from_code) == currency_conversion.end()) {
         string msg = "unsupported currency code: " + from_code;
         span->AddEvent("Conversion failed");
-        span->SetStatus(StatusCode::kError, msg);
-        logger->Error(eventName("currency.conversion_failed"), msg.c_str());
-        console_logger->Error(eventName("currency.conversion_failed"), msg.c_str());
+        span->SetAttribute("demo.exchange.supported", false);
         span->End();
         return Status(grpc::StatusCode::INVALID_ARGUMENT, msg);
       }
       if (currency_conversion.find(to_code) == currency_conversion.end()) {
         string msg = "unsupported currency code: " + to_code;
         span->AddEvent("Conversion failed");
-        span->SetStatus(StatusCode::kError, msg);
-        logger->Error(eventName("currency.conversion_failed"), msg.c_str());
-        console_logger->Error(eventName("currency.conversion_failed"), msg.c_str());
+        span->SetAttribute("demo.exchange.supported", false);
         span->End();
         return Status(grpc::StatusCode::INVALID_ARGUMENT, msg);
       }
