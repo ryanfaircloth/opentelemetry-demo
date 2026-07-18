@@ -280,7 +280,7 @@ func main() {
 
 	err := runtime.Start(runtime.WithMinimumReadMemStatsInterval(time.Second))
 	if err != nil {
-		logger.Error((err.Error()))
+		logger.Error("failed to start Go runtime metrics collection", slog.Any("error", err))
 	}
 
 	provider, err := flagd.NewProvider()
@@ -710,11 +710,11 @@ func (cs *checkout) prepOrderItems(ctx context.Context, items []*pb.CartItem, us
 	for i, item := range items {
 		product, err := cs.productCatalogSvcClient.GetProduct(ctx, &pb.GetProductRequest{Id: item.GetProductId()})
 		if err != nil {
-			return nil, fmt.Errorf("failed to get product #%q", item.GetProductId())
+			return nil, fmt.Errorf("failed to get product #%q: %w", item.GetProductId(), err)
 		}
 		price, err := cs.convertCurrency(ctx, product.GetPriceUsd(), userCurrency)
 		if err != nil {
-			return nil, fmt.Errorf("failed to convert price of %q to %s", item.GetProductId(), userCurrency)
+			return nil, fmt.Errorf("failed to convert price of %q to %s: %w", item.GetProductId(), userCurrency, err)
 		}
 		out[i] = &pb.OrderItem{
 			Item: item,

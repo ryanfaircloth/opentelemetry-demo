@@ -7,6 +7,17 @@ the release.
 
 ## Unreleased
 
+* [checkout] Follow-up from a fifth re-review pass (parallel independent
+  agent audits, one per service): `prepOrderItems` dropped the underlying
+  error entirely on two paths (`fmt.Errorf("failed to get product #%q", ...)`
+  / `"failed to convert price..."`, both missing `%w err`) instead of
+  wrapping it, and a `runtime.Start` failure was logged via
+  `logger.Error((err.Error()))` - an unstructured message with a stray
+  double-parenthesis, missing the `slog.Any("error", err)` field used
+  everywhere else. Also removed a dead duplicate
+  `saramaConfig.Producer.Return.Successes = true` assignment in
+  `kafka/producer.go` (already set two lines earlier).
+
 * [checkout] Follow-up from a fourth re-review pass: `PlaceOrder` - the
   single most important handler in the demo - had six early-return error
   paths (order UUID generation, cart/shipping prep, order totaling ×2, card
