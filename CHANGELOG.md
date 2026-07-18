@@ -7,6 +7,55 @@ the release.
 
 ## Unreleased
 
+* [shipping] Independent re-verification of this release's earlier shipping
+  fixes turned up two small regressions: the `use tracing::error;` import
+  added earlier landed out of alphabetical order (a `cargo fmt` violation),
+  and the quote-service-call failure was being logged twice at two
+  different severities for the same event (`warn!` inside
+  `create_quote_from_count`, then `error!` again in the HTTP handler that
+  calls it). Fixed the import ordering and removed the redundant inner
+  `warn!`, leaving the single log at the HTTP handler boundary that
+  actually decides the response.
+
+* [quote] A repo-wide sweep for the "expected outcome marked as an error"
+  pattern turned up a real regression in the original fix: `calculateQuote`
+  only validated that `numberOfItems` was *present* (`array_key_exists`),
+  not that it was numeric - `intval()` silently coerces a string, `null`,
+  bool, or array to `0`/`1` with no error, so a malformed (but present)
+  value still produced a bogus "successful" quote instead of a 400. Added
+  an `is_numeric()` check. Also downgraded the validation-failure log from
+  `error` to `warning`: a malformed request is a normal client 400, not a
+  system fault.
+
+* [currency] Same sweep, same pattern as the already-fixed product-catalog
+  case: `Convert`'s unsupported-currency-code branches called
+  `span->SetStatus(StatusCode::kError, ...)` plus `logger->Error`/
+  `console_logger->Error` for what's a normal validation outcome of a
+  well-formed request (e.g. a stale client-side currency list), not a
+  fault - the `INVALID_ARGUMENT` status already returned to the caller
+  communicates the outcome. Removed the error-status/log calls, kept the
+  span event, and added a `demo.exchange.supported` attribute.
+
+* [checkout] Same sweep: `PlaceOrder`/`chargeCard` collapsed every payment
+  failure - including a plain declined card (`InvalidArgument` from
+  payment) - into a generic `codes.Internal` response and the deferred
+  error-logging closure's `span.RecordError`/`logger.Error` treatment,
+  losing the `InvalidArgument` semantic the caller needs and treating a
+  routine decline as a fault. `chargeCard`'s caller now propagates
+  payment's actual status code instead of hardcoding `Internal`, and the
+  deferred closure skips the error-span/log treatment specifically for
+  `codes.InvalidArgument`.
+
+* [payment] Same sweep: `charge()`'s catch-all treated `InvalidCardError`
+  (invalid number, unsupported brand, expired card - the single most
+  common "expected" outcome in a checkout flow) identically to unexpected
+  faults (flagd/network errors), marking the span an error and logging at
+  `warn` for every declined card; `index.js`'s gRPC handler did the same at
+  the RPC boundary despite already correctly mapping the error to
+  `INVALID_ARGUMENT`. Both now branch on `InvalidCardError` specifically:
+  a span event/attribute plus an `info`-level log instead of
+  `recordException`/`setStatus(Error)`/`warn`.
+
 * [payment] Critical fix caught by the sixth re-review pass (verified
   empirically against the real pino source, not just read): `logger.js` was
   calling `pino(transport, {...})` - options and destination reversed from

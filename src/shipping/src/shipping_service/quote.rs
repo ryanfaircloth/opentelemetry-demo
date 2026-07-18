@@ -30,7 +30,10 @@ pub async fn create_quote_from_count(count: u32) -> Result<Quote, tonic::Status>
     let f = match request_quote(count).await {
         Ok(float) => float,
         Err(err) => {
-            warn!(error = %err, "Failed to get quote from quote service");
+            // Logged once, at the HTTP handler boundary (shipping_service.rs)
+            // that actually decides the response - not here too, which
+            // would double-log the identical retry-exhausted failure at two
+            // different severities for one event.
             return Err(tonic::Status::unknown(err.to_string()));
         }
     };
