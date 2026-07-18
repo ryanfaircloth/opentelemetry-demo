@@ -9,7 +9,7 @@ import os
 from fastmcp import FastMCP
 from src.mcp_server import tools
 
-logging.basicConfig(level=logging.INFO)
+# Level is configured once, in run.py, before this module is imported.
 logger = logging.getLogger(__name__)
 
 

@@ -7,6 +7,13 @@ the release.
 
 ## Unreleased
 
+* [mcp] Added `LOG_LEVEL` env var support; also removed a duplicate
+  `logging.basicConfig(level=logging.INFO)` in
+  `astronomy_shop_mcp_server.py` that ran at import time, before
+  `run.py`'s own call - since `basicConfig` no-ops once the root logger
+  already has a handler, the duplicate silently made `run.py`'s
+  configuration (and thus `LOG_LEVEL`) dead code.
+
 * [chatbot] Added `LOG_LEVEL` env var support (previously hardcoded to
   `INFO`), same reasoning as `agent`: no OTel log exporter exists yet, so
   the default stays `INFO`.
