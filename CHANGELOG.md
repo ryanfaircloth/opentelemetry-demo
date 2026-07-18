@@ -7,6 +7,15 @@ the release.
 
 ## Unreleased
 
+* [telemetry-docs] Follow-up from the fifth re-review pass: same invalid
+  `access_log on;` fix as image-provider's `/status` location. Also fixed
+  the `url.path` log field, which used `$otel_route` (the low-cardinality
+  span-naming template, e.g. `/attributes/{business_domain}`) instead of
+  `$uri` (the actual request path) - collapsing every `/attributes/*.html`
+  or `/services/*.html` request to the same templated string in the access
+  log, making the actual page requested unrecoverable. Low cardinality is
+  the right call for a span *name*; a log line should keep the real path.
+
 * [image-provider] Follow-up from the fifth re-review pass: the `/status`
   location's pre-existing `access_log on;` directive is not valid nginx
   syntax (only `off` is a recognized keyword; anything else is parsed as a

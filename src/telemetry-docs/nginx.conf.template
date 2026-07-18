@@ -29,14 +29,19 @@ http {
 
     # Structured access log correlated to the request's trace/span (from
     # ngx_otel_module above), using OTel HTTP semantic-convention field
-    # names, instead of nginx's default plain-text combined format.
+    # names, instead of nginx's default plain-text combined format. url.path
+    # uses $uri (the actual request path), not $otel_route: the low-
+    # cardinality template above is right for a span *name* (aggregation/
+    # backend cost), but a log line should keep the real path - collapsing
+    # every /attributes/*.html request to one templated string would make
+    # the actual page requested unrecoverable from the log.
     log_format otel_json escape=json
         '{'
             '"timestamp":"$time_iso8601",'
             '"trace_id":"$otel_trace_id",'
             '"span_id":"$otel_span_id",'
             '"http.request.method":"$request_method",'
-            '"url.path":"$otel_route",'
+            '"url.path":"$uri",'
             '"http.response.status_code":$status,'
             '"http.response.body.size":$body_bytes_sent,'
             '"http.request.duration":$request_time,'
@@ -80,7 +85,13 @@ http {
         location /status {
             otel_trace off;
             stub_status on;
-            access_log  on;
+            # Inherits the http-level `access_log /dev/stdout otel_json;`
+            # above - "on" is not a valid access_log argument (nginx only
+            # recognizes "off" as a keyword; anything else is parsed as a
+            # file path), so the previous `access_log on;` here silently
+            # fell back to the default combined text format instead of
+            # otel_json, and would have tried to write to a file literally
+            # named "on".
             allow all;
         }
     }
