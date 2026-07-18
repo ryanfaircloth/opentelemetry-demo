@@ -7,6 +7,20 @@ the release.
 
 ## Unreleased
 
+* [chart] Sync every per-component `image.tag` pin in `values.yaml`
+  (`ad`, `cart`, `checkout`, `currency`, `email`, `fraud-detection`,
+  `frontend`, `image-provider`, `load-generator`, `payment`,
+  `product-catalog`, `quote`, `recommendation`, `shipping`, `flagd-ui`,
+  `kafka`, `accounting`) from stale `0.11.17-*` tags up to `0.11.25-*`.
+  The release process bumps `Chart.yaml`'s `version`/`appVersion` and
+  `.env`'s `IMAGE_VERSION` on every release (see the `0.11.21` "sync
+  appVersion and IMAGE_VERSION" fix), but never bumped these hardcoded
+  per-component tags, so every chart release since `0.11.18` kept
+  deploying `0.11.17` images regardless of the chart version - masking
+  every fix landed since, including the `0.11.23` health-check fixes.
+  Confirmed via a live PR preview environment still pulling
+  `0.11.17-{ad,cart,checkout,currency,email,shipping}` and
+  crash-looping on the exact liveness-probe failures `0.11.23` fixed.
 * [recommendation] Fix the `psutil`/`mallinfo` auto-instrumentation failure
   noted below as a known gap: switched the Dockerfile from
   `python:3.14.6-alpine` to `python:3.14.6-slim-bookworm` (glibc), matching
