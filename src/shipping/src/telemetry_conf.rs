@@ -85,9 +85,13 @@ fn init_logger_provider() -> SdkLoggerProvider {
     let otel_layer = OpenTelemetryTracingBridge::new(&logger_provider);
     let filter_otel = EnvFilter::new("info");
     let otel_layer = otel_layer.with_filter(filter_otel);
-    let stdout_layer = fmt::layer()
-        .with_writer(std::io::stdout)
-        .with_filter(EnvFilter::new("info"));
+    // Console is for operators: default fmt layer (this service demonstrates
+    // the "default-but-structured" logging tier), WARN+ only, configurable
+    // via LOG_LEVEL - independent of the OTel layer above, which always gets
+    // Info+.
+    let stdout_layer = fmt::layer().with_writer(std::io::stdout).with_filter(
+        EnvFilter::try_from_env("LOG_LEVEL").unwrap_or_else(|_| EnvFilter::new("warn")),
+    );
 
     tracing_subscriber::registry()
         .with(otel_layer)

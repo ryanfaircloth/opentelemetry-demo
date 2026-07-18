@@ -44,17 +44,19 @@ async fn init_flagd_provider_with_retry() -> FlagdProvider {
             Err(err) => {
                 if start.elapsed() >= total_budget {
                     error!(
-                        "Failed to initialize flagd provider after {} attempts over {:?}: {}",
+                        error = %err,
                         attempt,
-                        start.elapsed(),
-                        err
+                        elapsed = ?start.elapsed(),
+                        "Failed to initialize flagd provider, giving up"
                     );
                     std::process::exit(1);
                 }
 
                 warn!(
-                    "Attempt {} to initialize flagd provider failed: {}. Retrying in {:?}",
-                    attempt, err, delay
+                    error = %err,
+                    attempt,
+                    delay = ?delay,
+                    "Failed to initialize flagd provider, retrying"
                 );
 
                 actix_web::rt::time::sleep(delay).await;

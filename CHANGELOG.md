@@ -7,6 +7,17 @@ the release.
 
 ## Unreleased
 
+* [shipping] Assigned Tier B ("default-but-structured") for this pass: kept
+  `tracing_subscriber`'s default `fmt` layer (not `.json()`) but split its
+  filter from the OTel layer's - console is now `LOG_LEVEL`-driven (default
+  `warn`) via `EnvFilter::try_from_env`, while the OTel layer stays fixed at
+  `info`. Previously both layers used the identical hardcoded `"info"`
+  filter, so console got the same verbosity as the OTLP export. Also
+  standardized error logging to attach the error as a structured field
+  (`error = %err`) instead of string-interpolating it into the message, in
+  `main.rs`'s flagd-retry logging and `quote.rs`'s quote-service-call
+  retry/failure logging.
+
 * [payment] Already Tier A (pino JSON) - fixed the level split: console and
   OTLP export previously shared a single unset pino level (defaulting to
   `info`) via one combined record processor, so console got the exact same

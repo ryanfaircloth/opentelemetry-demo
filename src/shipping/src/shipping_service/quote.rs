@@ -30,9 +30,8 @@ pub async fn create_quote_from_count(count: u32) -> Result<Quote, tonic::Status>
     let f = match request_quote(count).await {
         Ok(float) => float,
         Err(err) => {
-            let msg = format!("{}", err);
-            warn!("Failed to get quote from quote service: {}", msg);
-            return Err(tonic::Status::unknown(msg));
+            warn!(error = %err, "Failed to get quote from quote service");
+            return Err(tonic::Status::unknown(err.to_string()));
         }
     };
 
@@ -84,8 +83,10 @@ async fn request_quote(count: u32) -> Result<f64, anyhow::Error> {
             Ok(response) => break response,
             Err(err) if attempt < MAX_ATTEMPTS => {
                 warn!(
-                    "Attempt {} to call quote service failed: {}. Retrying in {:?}",
-                    attempt, err, delay
+                    error = %err,
+                    attempt,
+                    delay = ?delay,
+                    "Attempt to call quote service failed, retrying"
                 );
                 actix_web::rt::time::sleep(delay).await;
                 delay *= 2;
