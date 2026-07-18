@@ -7,6 +7,13 @@ the release.
 
 ## Unreleased
 
+* [currency] Follow-up from a re-review: `GetSupportedCurrencies` was still
+  the one public gRPC handler with zero exception handling (the original
+  audit flagged this; only `Convert` got a guard). Wrapped it in the same
+  try/catch pattern as `Convert` so an unexpected exception there returns a
+  proper `Status::CANCELLED` instead of propagating uncaught and crashing
+  the process.
+
 * [accounting] Follow-up from a re-review of the logging/exception pass:
   `SetErrorHandler` logged fatal Kafka client errors (`error.IsFatal`) but
   never acted on that flag - the consumer kept running indefinitely on a

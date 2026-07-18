@@ -130,21 +130,38 @@ class CurrencyService final : public oteldemo::CurrencyService::Service
 
     span->AddEvent("Processing supported currencies request");
 
-    for (auto &code : currency_conversion) {
-      response->add_currency_codes(code.first);
+    try {
+      for (auto &code : currency_conversion) {
+        response->add_currency_codes(code.first);
+      }
+
+      span->AddEvent("Currencies fetched, response sent back");
+      span->SetStatus(StatusCode::kOk);
+
+      logger->Info(eventName("currency.get_supported_currencies"), "GetSupportedCurrencies successful");
+      if (consoleShouldLogInfo()) {
+        console_logger->Info(eventName("currency.get_supported_currencies"), "GetSupportedCurrencies successful");
+      }
+
+      span->End();
+      return Status::OK;
+
+    } catch(const std::exception& e) {
+      span->AddEvent("GetSupportedCurrencies failed");
+      span->SetStatus(StatusCode::kError, e.what());
+      logger->Error(eventName("currency.get_supported_currencies_failed"), e.what());
+      console_logger->Error(eventName("currency.get_supported_currencies_failed"), e.what());
+      span->End();
+      return Status::CANCELLED;
+
+    } catch(...) {
+      span->AddEvent("GetSupportedCurrencies failed");
+      span->SetStatus(StatusCode::kError);
+      logger->Error(eventName("currency.get_supported_currencies_failed"), "failed to fetch supported currencies");
+      console_logger->Error(eventName("currency.get_supported_currencies_failed"), "failed to fetch supported currencies");
+      span->End();
+      return Status::CANCELLED;
     }
-
-    span->AddEvent("Currencies fetched, response sent back");
-    span->SetStatus(StatusCode::kOk);
-
-    logger->Info(eventName("currency.get_supported_currencies"), "GetSupportedCurrencies successful");
-    if (consoleShouldLogInfo()) {
-      console_logger->Info(eventName("currency.get_supported_currencies"), "GetSupportedCurrencies successful");
-    }
-
-    // Make sure to end your spans!
-    span->End();
-  	return Status::OK;
   }
 
   double getDouble(Money& money) {

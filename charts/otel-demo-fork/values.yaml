@@ -543,7 +543,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.51-currency"
+      tag: "0.11.56-currency"
     useDefault:
       env: true
     service:
