@@ -7,6 +7,7 @@
 # Python
 import os
 import random
+import socket
 import sys
 import threading
 import time
@@ -75,6 +76,13 @@ class HealthCheckHandler(BaseHTTPRequestHandler):
 
     def log_message(self, format, *args):
         pass
+
+
+class DualStackHTTPServer(ThreadingHTTPServer):
+    """http.server binds AF_INET (IPv4-only) by default; on IPv6-only pod
+    networks that leaves kubelet's probe unable to reach it at all."""
+
+    address_family = socket.AF_INET6
 
 
 def get_product_list(request_product_ids):
@@ -171,7 +179,7 @@ if __name__ == "__main__":
     # doesn't kill the pod while it's still legitimately waiting on a
     # slow-starting dependency.
     health_port = os.environ.get('RECOMMENDATION_HEALTH_PORT', '8081')
-    health_server = ThreadingHTTPServer(('', int(health_port)), HealthCheckHandler)
+    health_server = DualStackHTTPServer(('::', int(health_port)), HealthCheckHandler)
     threading.Thread(target=health_server.serve_forever, daemon=True).start()
     logger.info(f'Health check endpoint listening on port {health_port}')
 

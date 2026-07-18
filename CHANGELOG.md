@@ -7,6 +7,16 @@ the release.
 
 ## Unreleased
 
+* [ad, email, recommendation] Fixed health-check HTTP servers binding an
+  IPv4-only wildcard address (`InetSocketAddress(port)` in Java,
+  `TCPServer.new(port)` in Ruby, `http.server`'s default `AF_INET` in
+  Python), which kubelet's liveness/readiness probes could never reach on
+  an IPv6-only pod network - the pods crash-looped forever since kubelet
+  killed them for repeated `connection refused` probe failures. All three
+  now explicitly bind the IPv6 wildcard (`::`), matching the dual-stack
+  behavior Go's `net.Listen(":8081")` already had (e.g. `cart`, which was
+  unaffected). Confirmed via a live PR preview environment where these
+  three `0.11.26` pods were the only ones crash-looping.
 * [telemetry-schema] Removed the orphaned `demo.shipping.items_count`
   attribute from `telemetry-schema/attributes/shipping.yaml`: it was never
   referenced by any `telemetry-schema/services/*.yaml` entry and no service

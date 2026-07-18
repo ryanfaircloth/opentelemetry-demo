@@ -31,7 +31,9 @@ $console_logger.level = Logger::WARN
 # legitimately waiting on a slow-starting flagd.
 health_port = (ENV["EMAIL_HEALTH_PORT"] || "8081").to_i
 Thread.new do
-  server = TCPServer.new(health_port)
+  # TCPServer.new(port) binds INADDR_ANY (IPv4-only), unreachable from
+  # kubelet on IPv6-only pod networks - bind the IPv6 wildcard instead.
+  server = TCPServer.new("::", health_port)
   loop do
     client = server.accept
     begin

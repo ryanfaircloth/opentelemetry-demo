@@ -27,6 +27,7 @@ import io.prometheus.metrics.core.metrics.Counter;
 import io.prometheus.metrics.exporter.httpserver.HTTPServer;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -116,7 +117,10 @@ public final class AdService {
     // service this service used to register.
     int healthPort =
         Integer.parseInt(Optional.ofNullable(System.getenv("AD_HEALTH_PORT")).orElse("8081"));
-    healthHttpServer = HttpServer.create(new InetSocketAddress(healthPort), 0);
+    // InetSocketAddress(port) alone resolves to an IPv4-only wildcard on this JVM,
+    // unreachable from kubelet on IPv6-only pod networks - bind the IPv6 wildcard instead.
+    healthHttpServer =
+        HttpServer.create(new InetSocketAddress(InetAddress.getByName("::"), healthPort), 0);
     healthHttpServer.createContext(
         "/healthz",
         exchange -> {
