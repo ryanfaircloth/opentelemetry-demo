@@ -170,7 +170,7 @@ internal class Consumer : BackgroundService
         }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
         {
-            Log.DuplicateOrderSkipped(_logger);
+            Log.DuplicateOrderSkipped(_logger, ex);
         }
         catch (Exception ex) when (ex is Google.Protobuf.InvalidProtocolBufferException or DbUpdateException)
         {

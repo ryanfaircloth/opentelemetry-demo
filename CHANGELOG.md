@@ -7,6 +7,13 @@ the release.
 
 ## Unreleased
 
+* [accounting] Follow-up from the fifth re-review pass: the duplicate-order
+  catch block (`Consumer.cs`) called `Log.DuplicateOrderSkipped(_logger)`
+  with no `Exception` parameter at all - not even `.Message` - so the
+  actual constraint-violation exception was never recorded anywhere. Added
+  an `Exception` parameter to the generated log method and passed it
+  through.
+
 * [fraud-detection] Follow-up from the fifth re-review pass: the console
   `PatternLayout` had no `%p`/`%level` conversion specifier, so an operator
   reading stdout (WARN+ only, per the appender's `ThresholdFilter`) couldn't

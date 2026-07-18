@@ -60,7 +60,7 @@ namespace Accounting
             Level = LogLevel.Information,
             EventName = "accounting.order.duplicate_skipped",
             Message = "Duplicate order received, skipping.")]
-        public static partial void DuplicateOrderSkipped(ILogger logger);
+        public static partial void DuplicateOrderSkipped(ILogger logger, Exception exception);
 
         [LoggerMessage(
             Level = LogLevel.Error,
