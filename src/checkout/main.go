@@ -430,8 +430,13 @@ func (cs *checkout) PlaceOrder(ctx context.Context, req *pb.PlaceOrderRequest) (
 
 	var err error
 	defer func() {
+		// Every early-return failure path in this function shares this err
+		// variable, so logging it here once (rather than at each call site)
+		// guarantees PlaceOrder failures are never recorded on the span alone
+		// without also reaching the logs.
 		if err != nil {
 			span.RecordError(err)
+			logger.Error("PlaceOrder failed", slog.String("user_id", req.UserId), slog.Any("error", err))
 		}
 	}()
 

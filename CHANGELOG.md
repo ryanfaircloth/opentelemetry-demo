@@ -7,6 +7,17 @@ the release.
 
 ## Unreleased
 
+* [checkout] Follow-up from a fourth re-review pass: `PlaceOrder` - the
+  single most important handler in the demo - had six early-return error
+  paths (order UUID generation, cart/shipping prep, order totaling ×2, card
+  charge, shipping) that returned a gRPC error to the client without a
+  single `logger` call; only `span.RecordError` captured them, so a
+  `PlaceOrder` failure was visible in traces but invisible in logs. Rather
+  than adding six near-duplicate log calls, extended the existing deferred
+  closure (which already does `span.RecordError(err)` using the function's
+  single shared `err` variable) to also log once, guaranteeing every
+  failure path is covered without touching each call site individually.
+
 * [shipping] Follow-up from a third re-review pass: `get_quote`'s error
   branch neither logged the failure nor gated what reached the client - it
   formatted the raw error straight into the 500 response body
