@@ -7,6 +7,15 @@ the release.
 
 ## Unreleased
 
+* [product-catalog] Fixed `mustMapEnv`/startup `net.Listen` failures being
+  logged but not fatal, letting the process limp forward broken (e.g.
+  `mustMapEnv` left the target env var empty, feeding an invalid `:` address
+  into `net.Listen` later). Both now `os.Exit(1)` on failure. Also fixed
+  `GetProduct` mapping *every* `getProductFromDB` error (including real DB
+  outages, not just a missing row) to gRPC `NotFound` — a database problem
+  now correctly distinguishes `sql.ErrNoRows` (still `NotFound`) from any
+  other error (now `Internal`, and logged).
+
 * [checkout] Fixed three request-handling bugs in `PlaceOrder`/`main`: (1) a
   failure to empty the cart after a successful order was silently discarded
   (`_ = cs.emptyUserCart(...)`) instead of logged; (2) `net.Listen` failures

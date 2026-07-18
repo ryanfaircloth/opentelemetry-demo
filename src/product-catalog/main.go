@@ -11,6 +11,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net"
@@ -282,6 +283,7 @@ func main() {
 	ln, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
 	if err != nil {
 		logger.Error(fmt.Sprintf("TCP Listen: %v", err))
+		os.Exit(1)
 	}
 
 	srv := grpc.NewServer(
@@ -380,7 +382,7 @@ func getProductFromDB(ctx context.Context, productID string) (*pb.Product, error
 
 	if err := row.Scan(&id, &name, &description, &picture, &currencyCode, &units, &nanos, &categoriesStr); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("product not found")
+			return nil, fmt.Errorf("product %q not found: %w", productID, sql.ErrNoRows)
 		}
 		return nil, fmt.Errorf("failed to scan product row: %w", err)
 	}
@@ -446,6 +448,7 @@ func mustMapEnv(target *string, key string) {
 	value, present := os.LookupEnv(key)
 	if !present {
 		logger.Error(fmt.Sprintf("Environment Variable Not Set: %q", key))
+		os.Exit(1)
 	}
 	*target = value
 }
@@ -481,10 +484,16 @@ func (p *productCatalog) GetProduct(ctx context.Context, req *pb.GetProductReque
 
 	found, err := getProductFromDB(ctx, req.Id)
 	if err != nil {
-		msg := fmt.Sprintf("Product Not Found: %s", req.Id)
-		span.SetStatus(otelcodes.Error, msg)
-		span.AddEvent(msg)
-		return nil, status.Error(codes.NotFound, msg)
+		if errors.Is(err, sql.ErrNoRows) {
+			msg := fmt.Sprintf("Product Not Found: %s", req.Id)
+			span.SetStatus(otelcodes.Error, msg)
+			span.AddEvent(msg)
+			return nil, status.Error(codes.NotFound, msg)
+		}
+		logger.Error(fmt.Sprintf("failed to get product %q: %v", req.Id, err))
+		span.SetStatus(otelcodes.Error, err.Error())
+		span.RecordError(err)
+		return nil, status.Error(codes.Internal, "failed to get product")
 	}
 
 	span.AddEvent("Product Found")
