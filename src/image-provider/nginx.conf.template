@@ -50,7 +50,13 @@ http {
 
         location /status {
             stub_status on;
-            access_log  on;
+            # Inherits the http-level `access_log /dev/stdout otel_json;`
+            # above - "on" is not a valid access_log argument (nginx only
+            # recognizes "off" as a keyword; anything else is parsed as a
+            # file path), so the previous `access_log on;` here silently
+            # fell back to the default combined text format instead of
+            # otel_json, and would have tried to write to a file literally
+            # named "on".
             allow all;
         }
     }

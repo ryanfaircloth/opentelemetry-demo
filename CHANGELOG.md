@@ -7,6 +7,14 @@ the release.
 
 ## Unreleased
 
+* [image-provider] Follow-up from the fifth re-review pass: the `/status`
+  location's pre-existing `access_log on;` directive is not valid nginx
+  syntax (only `off` is a recognized keyword; anything else is parsed as a
+  file path) - it silently fell back to the default combined text format
+  instead of the new `otel_json` format, and would have attempted to write
+  to a file literally named `on`. Removed the directive so `/status`
+  inherits the correct http-level `access_log` setting.
+
 * [payment] Follow-up from the fifth re-review pass, verified empirically
   against the actual pinned pino/pino-opentelemetry-transport versions: the
   root pino logger's `level: 'info'` is a hard gate in pino - a call below
