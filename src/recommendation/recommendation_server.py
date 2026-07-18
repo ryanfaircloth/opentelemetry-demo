@@ -47,9 +47,9 @@ class RecommendationService(demo_pb2_grpc.RecommendationServiceServicer):
     def ListRecommendations(self, request, context):
         try:
             prod_list = get_product_list(request.product_ids)
-        except grpc.RpcError as e:
+        except grpc.RpcError:
             logger.exception("get_product_list failed calling product catalog")
-            context.abort(grpc.StatusCode.UNAVAILABLE, f"failed to fetch product catalog: {e}")
+            context.abort(grpc.StatusCode.UNAVAILABLE, "failed to fetch product catalog")
         except Exception:
             logger.exception("get_product_list failed unexpectedly")
             context.abort(grpc.StatusCode.INTERNAL, "failed to compute recommendations")
@@ -173,7 +173,10 @@ if __name__ == "__main__":
     set_logger_provider(logger_provider)
     log_exporter = OTLPLogExporter()
     logger_provider.add_log_record_processor(BatchLogRecordProcessor(log_exporter))
-    handler = LoggingHandler(level=logging.NOTSET, logger_provider=logger_provider)
+    # Fixed at INFO regardless of the console handler's LOG_LEVEL - OTel
+    # should always capture Info+, independent of how verbose/quiet console
+    # is configured to be.
+    handler = LoggingHandler(level=logging.INFO, logger_provider=logger_provider)
 
     # Attach OTLP handler to logger, plus a console handler so WARN+ is
     # always visible even if the collector is unreachable. Console is JSON
@@ -187,7 +190,11 @@ if __name__ == "__main__":
     console_handler.setLevel(
         getattr(logging, os.environ.get('LOG_LEVEL', 'WARNING').upper(), logging.WARNING))
     logger.addHandler(console_handler)
-    logger.setLevel(logging.INFO)
+    # The logger's own level must stay at or below the lowest level any
+    # handler wants: a record below the logger's level is dropped before it
+    # ever reaches a handler, which would silently defeat LOG_LEVEL=DEBUG on
+    # the console handler above. Handlers do their own filtering.
+    logger.setLevel(logging.DEBUG)
 
     # Started before the blocking product-catalog wait below so the probe
     # doesn't kill the pod while it's still legitimately waiting on a

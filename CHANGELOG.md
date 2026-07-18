@@ -7,6 +7,19 @@ the release.
 
 ## Unreleased
 
+* [recommendation] Follow-up from the fifth re-review pass: `logger.setLevel(logging.INFO)`
+  on the root logger silently capped `LOG_LEVEL=DEBUG` (or any value below
+  INFO) on the console handler - a Python logger drops a record before it
+  ever reaches a handler if the record is below the *logger's* own level,
+  regardless of what the handler's own level allows. Set the logger itself
+  to `DEBUG` (permissive) and pinned the OTLP handler explicitly to `INFO`
+  (previously `NOTSET`, which only worked because the logger was
+  incidentally gating it to INFO+ already) so each handler does its own
+  filtering independently, matching the pattern already used correctly in
+  other services. Also stopped `ListRecommendations` interpolating the raw
+  downstream exception text into the `grpc.StatusCode.UNAVAILABLE` message
+  returned to RPC clients - now a generic message, detail stays in the log.
+
 * [email] Follow-up from the fifth re-review pass: `set :logging, false`
   correctly suppressed Sinatra's per-request access log, but Sinatra's
   separate `dump_errors` setting (default `true` outside `:test`) still
