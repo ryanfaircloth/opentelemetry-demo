@@ -56,3 +56,54 @@ jobs:
       version: ${{ needs.version.outputs.version }}
       ghcr_repo: ghcr.io/ryanfaircloth/demo
       dockerhub_repo: ryanfaircloth/demo
+
+  verify_chart_tags:
+    name: Verify chart tags match released images
+    needs: [version, build_images]
+    # build_images fails overall if any single component's build fails, but
+    # merge_manifests (inside it) still pushes every component that did
+    # succeed - so this check must run regardless to catch those.
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        with:
+          persist-credentials: false
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c  # v4.2.0
+      - name: Log in to container registry
+        uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0  # v4.4.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ github.token }}
+      - name: Compare values.yaml tags against released images
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+          GHCR_REPO: ghcr.io/ryanfaircloth/demo
+          VALUES_FILE: charts/otel-demo-fork/values.yaml
+        run: |
+          # Every tag_suffix built by component-build-images.yml that is also
+          # pinned in values.yaml (flagd-ui is nested under components.flagd).
+          components="accounting ad cart checkout currency email fraud-detection frontend image-provider kafka load-generator payment product-catalog quote recommendation shipping telemetry-docs flagd-ui"
+          mismatches=0
+          for suffix in $components; do
+            if docker buildx imagetools inspect "${GHCR_REPO}:${VERSION}-${suffix}" >/dev/null 2>&1; then
+              current=$(grep -m1 "\-${suffix}\"" "$VALUES_FILE" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' || true)
+              expected="tag: \"${VERSION}-${suffix}\""
+              if [ "$current" != "$expected" ]; then
+                echo "::error file=${VALUES_FILE}::${suffix} was released as ${VERSION}-${suffix} but values.yaml has: ${current:-<no match found>}"
+                mismatches=$((mismatches + 1))
+              fi
+            else
+              echo "${suffix}: no ${VERSION}-${suffix} image published this release (build likely failed) - values.yaml left as-is, not checked."
+            fi
+          done
+          if [ "$mismatches" -gt 0 ]; then
+            echo "::error::${mismatches} component(s) were released under ${VERSION} but charts/otel-demo-fork/values.yaml doesn't pin them there. Update the tags and push again."
+            exit 1
+          fi
