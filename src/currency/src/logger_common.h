@@ -3,14 +3,13 @@
 
 #include <iostream>
 
-#include "opentelemetry/exporters/otlp/otlp_grpc_exporter_factory.h"
 #include "opentelemetry/logs/provider.h"
 #include "opentelemetry/sdk/logs/logger.h"
 #include "opentelemetry/sdk/logs/logger_provider_factory.h"
 #include "opentelemetry/sdk/logs/batch_log_record_processor_factory.h"
 #include "opentelemetry/sdk/logs/simple_log_record_processor_factory.h"
 #include "opentelemetry/sdk/logs/logger_context_factory.h"
-#include "opentelemetry/exporters/otlp/otlp_grpc_log_record_exporter_factory.h"
+#include "opentelemetry/exporters/otlp/otlp_http_log_record_exporter_factory.h"
 #include "opentelemetry/exporters/ostream/log_record_exporter_factory.h"
 
 using namespace std;
@@ -22,8 +21,8 @@ namespace logs_sdk  = opentelemetry::sdk::logs;
 namespace
 {
   void initLogger() {
-    otlp::OtlpGrpcLogRecordExporterOptions loggerOptions;
-    auto otlp_exporter  = otlp::OtlpGrpcLogRecordExporterFactory::Create(loggerOptions);
+    otlp::OtlpHttpLogRecordExporterOptions loggerOptions;
+    auto otlp_exporter  = otlp::OtlpHttpLogRecordExporterFactory::Create(loggerOptions);
     auto otlp_processor = logs_sdk::BatchLogRecordProcessorFactory::Create(std::move(otlp_exporter), {});
 
     // Console exporter so logs are still visible when the OTel collector is

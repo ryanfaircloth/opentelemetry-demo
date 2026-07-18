@@ -21,7 +21,7 @@ from opentelemetry.instrumentation.system_metrics import SystemMetricsInstrument
 from opentelemetry.instrumentation.urllib3 import URLLib3Instrumentor
 from opentelemetry.instrumentation.logging import LoggingInstrumentor
 from opentelemetry._logs import set_logger_provider
-from opentelemetry.exporter.otlp.proto.grpc._log_exporter import OTLPLogExporter
+from opentelemetry.exporter.otlp.proto.http._log_exporter import OTLPLogExporter
 from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
 from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
 
@@ -44,7 +44,7 @@ logger_provider = LoggerProvider()
 set_logger_provider(logger_provider)
 
 # Set up log exporter and processor
-log_exporter = OTLPLogExporter(insecure=True)
+log_exporter = OTLPLogExporter()
 logger_provider.add_log_record_processor(BatchLogRecordProcessor(log_exporter))
 
 # Create logging handler that will include trace context

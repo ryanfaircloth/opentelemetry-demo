@@ -18,7 +18,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import grpc
 from opentelemetry import trace, metrics
 from opentelemetry._logs import set_logger_provider
-from opentelemetry.exporter.otlp.proto.grpc._log_exporter import (
+from opentelemetry.exporter.otlp.proto.http._log_exporter import (
     OTLPLogExporter,
 )
 from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
@@ -162,7 +162,7 @@ if __name__ == "__main__":
         resource = Resource.create({}),
     )
     set_logger_provider(logger_provider)
-    log_exporter = OTLPLogExporter(insecure=True)
+    log_exporter = OTLPLogExporter()
     logger_provider.add_log_record_processor(BatchLogRecordProcessor(log_exporter))
     handler = LoggingHandler(level=logging.NOTSET, logger_provider=logger_provider)
 
@@ -184,11 +184,8 @@ if __name__ == "__main__":
     logger.info(f'Health check endpoint listening on port {health_port}')
 
     catalog_addr = must_map_env('PRODUCT_CATALOG_ADDR')
-    # grpc.enable_retries=0: works around a longstanding grpcio C-core bug
-    # (call combiner ref-count assertion, e.g. "Check failed: prev_size >= 1u"
-    # in call_combiner.cc) tied to gRPC's internal retry/cancellation
-    # machinery - see grpc/grpc#26537, grpc/grpc#38251. We don't set a retry
-    # policy ourselves; this disables gRPC's own implicit core-level retries.
+    # We don't set a retry policy ourselves, so this just disables gRPC's own
+    # implicit core-level retries, which we never rely on.
     pc_channel = grpc.insecure_channel(catalog_addr, options=(('grpc.enable_retries', 0),))
     product_catalog_stub = demo_pb2_grpc.ProductCatalogServiceStub(pc_channel)
 
@@ -216,10 +213,6 @@ if __name__ == "__main__":
             backoff_seconds = min(backoff_seconds * 2, 30)
 
     # Create gRPC server
-    # grpc.enable_retries=0: same call-combiner workaround as the
-    # product-catalog channel above (grpc/grpc#26537, grpc/grpc#38251) -
-    # the assertion lives in shared C-core machinery, so inbound RPCs
-    # (e.g. a client cancelling mid-call) can trigger it too.
     server = grpc.server(
         futures.ThreadPoolExecutor(max_workers=10),
         options=(('grpc.enable_retries', 0),),

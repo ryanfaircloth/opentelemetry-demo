@@ -304,7 +304,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.29-accounting"
+      tag: "0.11.30-accounting"
     useDefault:
       env: true
     podAnnotations:
@@ -325,8 +325,10 @@ components:
       format: dotnet
       legacy: "Host=postgresql;Username=otelu;Password=otelp;Database=otel"
     env:
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: http://$(OTEL_COLLECTOR_NAME):4318
+      # accounting has no OpenTelemetry package references of its own (see
+      # its .csproj) - it's instrumented entirely via the OTel Operator's
+      # injected .NET auto-instrumentation, which supplies its own
+      # OTEL_EXPORTER_OTLP_ENDPOINT from the cluster's Instrumentation CR.
       - name: OTEL_DOTNET_AUTO_TRACES_ENTITYFRAMEWORKCORE_INSTRUMENTATION_ENABLED
         value: "false"
       # .NET's container-aware GC sizes its heap off the memory limit, but
@@ -347,7 +349,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.29-ad"
+      tag: "0.11.30-ad"
     useDefault:
       env: true
     service:
@@ -366,10 +368,11 @@ components:
         value: flagd
       - name: FLAGD_PORT
         value: "8013"
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: http://$(OTEL_COLLECTOR_NAME):4318
-      - name: OTEL_LOGS_EXPORTER
-        value: otlp
+      # ad is instrumented via the OTel Operator's injected Java auto-
+      # instrumentation (see the OBI note below), which supplies its own
+      # OTEL_EXPORTER_OTLP_ENDPOINT/OTEL_LOGS_EXPORTER from the cluster's
+      # Instrumentation CR - this chart shouldn't hardcode a deployment-
+      # specific destination that could drift from what the operator sets.
       # JVM defaults to -XX:MaxRAMPercentage=25.0 in containers, which under-uses
       # the 300Mi limit below; raise it so the heap actually gets most of the
       # allotted memory instead of GC-thrashing well under the limit.
@@ -407,7 +410,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.29-cart"
+      tag: "0.11.30-cart"
     useDefault:
       env: true
     service:
@@ -425,8 +428,13 @@ components:
         value: flagd
       - name: FLAGD_PORT
         value: "8013"
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: http://$(OTEL_COLLECTOR_NAME):4317
+      # cart is instrumented via the OTel Operator's injected .NET auto-
+      # instrumentation, which supplies its own OTEL_EXPORTER_OTLP_ENDPOINT
+      # from the cluster's Instrumentation CR. This chart's hardcoded value
+      # here was actually wrong (pointed at the gRPC port while the CR's
+      # collector endpoint is HTTP) - one more reason to defer to the
+      # operator rather than duplicate deployment-specific config in the
+      # chart.
       - name: DOTNET_GCHeapHardLimitPercent
         value: "60"
     resources:
@@ -457,7 +465,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.29-checkout"
+      tag: "0.11.30-checkout"
     useDefault:
       env: true
     service:
@@ -521,7 +529,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.29-currency"
+      tag: "0.11.30-currency"
     useDefault:
       env: true
     service:
@@ -537,7 +545,10 @@ components:
       - name: CURRENCY_HEALTH_PORT
         value: "8081"
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: http://$(OTEL_COLLECTOR_NAME):4317
+        # currency's OTLP exporters were switched from grpc to http (see
+        # WITH_OTLP_HTTP in the Dockerfile) as part of the org-wide move away
+        # from OTLP/grpc, so this now points at the collector's http port.
+        value: http://$(OTEL_COLLECTOR_NAME):4318
       - name: VERSION
         value: "{{ .Chart.AppVersion }}"
     resources:
@@ -564,7 +575,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.29-email"
+      tag: "0.11.30-email"
     useDefault:
       env: true
     service:
@@ -608,7 +619,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.29-fraud-detection"
+      tag: "0.11.30-fraud-detection"
     useDefault:
       env: true
     podAnnotations:
@@ -622,8 +633,9 @@ components:
         value: flagd
       - name: FLAGD_PORT
         value: "8013"
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: http://$(OTEL_COLLECTOR_NAME):4318
+      # fraud-detection is instrumented via the OTel Operator's injected Java
+      # auto-instrumentation, which supplies its own OTEL_EXPORTER_OTLP_ENDPOINT
+      # from the cluster's Instrumentation CR - see ad's component block above.
       - name: OTEL_INSTRUMENTATION_KAFKA_EXPERIMENTAL_SPAN_ATTRIBUTES
         value: "true"
       - name: OTEL_INSTRUMENTATION_MESSAGING_EXPERIMENTAL_RECEIVE_TELEMETRY_ENABLED
@@ -642,7 +654,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.29-frontend"
+      tag: "0.11.30-frontend"
     useDefault:
       env: true
     service:
@@ -678,8 +690,10 @@ components:
         value: kubernetes
       - name: OTEL_COLLECTOR_HOST
         value: $(OTEL_COLLECTOR_NAME)
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: http://$(OTEL_COLLECTOR_NAME):4317
+      # The frontend server process itself is instrumented via the OTel
+      # Operator's injected Node.js auto-instrumentation, which supplies its
+      # own OTEL_EXPORTER_OTLP_ENDPOINT from the cluster's Instrumentation CR
+      # - no server-side endpoint is set here for the same reason as cart.
       - name: WEB_OTEL_SERVICE_NAME
         value: frontend-web
       # The browser sends its own traces straight to the collector's otlp-http
@@ -721,7 +735,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.29-image-provider"
+      tag: "0.11.30-image-provider"
     useDefault:
       env: true
     service:
@@ -765,7 +779,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.29-load-generator"
+      tag: "0.11.30-load-generator"
     useDefault:
       env: true
     service:
@@ -798,7 +812,7 @@ components:
       - name: FLAGD_OFREP_PORT
         value: "8016"
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: http://$(OTEL_COLLECTOR_NAME):4317
+        value: http://$(OTEL_COLLECTOR_NAME):4318
     resources:
       requests:
         cpu: 100m
@@ -811,7 +825,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.29-payment"
+      tag: "0.11.30-payment"
     useDefault:
       env: true
     service:
@@ -830,8 +844,9 @@ components:
         value: flagd
       - name: FLAGD_PORT
         value: "8013"
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: http://$(OTEL_COLLECTOR_NAME):4317
+      # payment is instrumented via the OTel Operator's injected Node.js
+      # auto-instrumentation, which supplies its own OTEL_EXPORTER_OTLP_ENDPOINT
+      # from the cluster's Instrumentation CR - see cart's component block.
       - name: NODE_OPTIONS
         value: "--max-old-space-size=96"
     resources:
@@ -862,7 +877,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.29-product-catalog"
+      tag: "0.11.30-product-catalog"
     useDefault:
       env: true
     service:
@@ -916,7 +931,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.29-quote"
+      tag: "0.11.30-quote"
     useDefault:
       env: true
     service:
@@ -960,7 +975,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.29-recommendation"
+      tag: "0.11.30-recommendation"
     useDefault:
       env: true
     service:
@@ -1011,7 +1026,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.29-shipping"
+      tag: "0.11.30-shipping"
     useDefault:
       env: true
     service:
@@ -1051,7 +1066,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.29-telemetry-docs"
+      tag: "0.11.30-telemetry-docs"
     useDefault:
       env: true
     service:
@@ -1137,7 +1152,7 @@ components:
         # be deployed via this chart.
         imageOverride:
           repository: "ghcr.io/ryanfaircloth/demo"
-          tag: "0.11.29-flagd-ui"
+          tag: "0.11.30-flagd-ui"
         useDefault:
           env: true
         service:
@@ -1193,7 +1208,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.29-kafka"
+      tag: "0.11.30-kafka"
     useDefault:
       env: true
     replicas: 1

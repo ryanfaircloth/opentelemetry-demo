@@ -7,6 +7,47 @@ the release.
 
 ## Unreleased
 
+* [recommendation, load-generator, currency] `recommendation` was still
+  periodically SIGABRT'ing (`call_combiner.cc:144] Check failed: prev_size >=
+  1u`) after the previous two releases' `grpc.enable_retries=0` workarounds.
+  The actual root cause: `recommendation`'s log exporter was still the gRPC
+  variant (`opentelemetry.exporter.otlp.proto.grpc`), left over from before
+  this project moved off OTLP/gRPC for fragility reasons, while its chart env
+  points `OTEL_EXPORTER_OTLP_ENDPOINT` at the collector's HTTP port (4318).
+  A gRPC client talking to an HTTP listener endlessly retried from the log
+  processor's background thread, and that retry churn - not an unfixable
+  upstream grpcio bug - is what was tripping the call-combiner assertion.
+  Switched `recommendation` to `opentelemetry-exporter-otlp-proto-http`
+  instead of re-pointing it at the gRPC port, to stay consistent with that
+  policy. Auditing turned up two more components still hardcoded to
+  OTLP/gRPC: `load-generator` (same Python gRPC log exporter, same fix) and
+  `currency` (C++, all three signals via `OtlpGrpc*ExporterFactory`, plus
+  `-DWITH_OTLP_GRPC=ON` at build time) - both switched to their HTTP exporter
+  equivalents and moved to port 4318. Left the `grpc.enable_retries=0`
+  options in `recommendation` in place as a harmless no-op, but corrected the
+  code comments, since they no longer reflect the actual root cause and the
+  previously cited grpc/grpc#38251 was an unrelated issue (a different
+  check-failure signature entirely). Follow-up in the entry below covers the
+  `cart`/`frontend`/`payment`/`product-catalog` question this raised.
+* [chart] Components instrumented via the OTel Operator's injected auto-
+  instrumentation (`ad`, `fraud-detection`: Java; `cart`, `accounting`:
+  .NET; `frontend`, `payment`: Node.js - confirmed per-component by
+  inspecting live pods for the operator's `opentelemetry-auto-
+  instrumentation-*` init container, plus `accounting`'s total absence of
+  any OpenTelemetry package reference in its own `.csproj`) had this chart
+  hardcoding their `OTEL_EXPORTER_OTLP_ENDPOINT` anyway. That's a
+  deployment-specific value the injected Instrumentation CR already
+  supplies, and `cart` proved the duplication isn't just redundant but
+  actively wrong: this chart pointed it at the gRPC port (4317) while the
+  cluster's actual Instrumentation CR endpoint is HTTP (4318) - the same
+  class of silent-drop bug as the `recommendation`/`currency` fixes above,
+  just without a crash to surface it. Removed the hardcoded
+  `OTEL_EXPORTER_OTLP_ENDPOINT` (and `ad`'s `OTEL_LOGS_EXPORTER`) from all
+  six components so the operator's config applies cleanly. By contrast,
+  `checkout`, `product-catalog`, and `quote` build their own OTel SDK setup
+  in code (Go `otelconf.NewSDK`, PHP `open-telemetry/sdk` +
+  `exporter-otlp` with no gRPC transport package) with no injected agent,
+  so their explicit endpoints are genuinely required and were left as-is.
 * [recommendation] Extended the existing `grpc.enable_retries=0` call-combiner
   workaround (grpc/grpc#26537, grpc/grpc#38251) to the inbound gRPC server,
   not just the outbound product-catalog channel: confirmed in a live PR

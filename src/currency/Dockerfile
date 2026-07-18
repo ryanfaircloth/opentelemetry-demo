@@ -17,7 +17,7 @@
 FROM docker.io/library/alpine:3.24.1@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b AS base
 
 RUN apk update && \
-    apk add grpc-dev protobuf-dev
+    apk add grpc-dev protobuf-dev curl-dev
 
 FROM base AS builder
 
@@ -31,7 +31,7 @@ RUN git clone --depth 1 --branch v${OPENTELEMETRY_CPP_VERSION} https://github.co
     && cd build \
     && cmake .. -DCMAKE_CXX_STANDARD=17 -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
           -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF \
-          -DWITH_EXAMPLES=OFF -DWITH_OTLP_GRPC=ON -DWITH_ABSEIL=ON \
+          -DWITH_EXAMPLES=OFF -DWITH_OTLP_HTTP=ON -DWITH_ABSEIL=ON \
     && make -j$(nproc || sysctl -n hw.ncpu || echo 1) install && cd ../..
 
 WORKDIR /currency
