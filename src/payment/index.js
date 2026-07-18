@@ -22,10 +22,16 @@ async function chargeServiceHandler(call, callback) {
     callback(null, response)
 
   } catch (err) {
-    logger.warn({ err })
-
-    span?.setStatus({ code: opentelemetry.SpanStatusCode.ERROR, message: err.message })
-    const code = err instanceof charge.InvalidCardError ? grpc.status.INVALID_ARGUMENT : grpc.status.INTERNAL
+    const isInvalidCard = err instanceof charge.InvalidCardError
+    if (isInvalidCard) {
+      // Same reasoning as charge.js: a declined card is an expected
+      // checkout outcome, not a fault - don't mark this span an error too.
+      logger.info({ err })
+    } else {
+      logger.warn({ err })
+      span?.setStatus({ code: opentelemetry.SpanStatusCode.ERROR, message: err.message })
+    }
+    const code = isInvalidCard ? grpc.status.INVALID_ARGUMENT : grpc.status.INTERNAL
     callback({ code, message: err.message })
   }
 }

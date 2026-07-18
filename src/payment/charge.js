@@ -112,9 +112,19 @@ module.exports.charge = async request => {
 
     return { transactionId };
   } catch (err) {
-    span.recordException(err);
-    span.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
-    logger.warn({ err }, 'Charge request failed.');
+    if (err instanceof InvalidCardError) {
+      // A declined card is the single most common "expected" outcome in a
+      // checkout flow, not a system fault - mark it as a span event, not an
+      // error status, so it doesn't pollute error-rate dashboards/alerting.
+      // The gRPC INVALID_ARGUMENT status (set in index.js) already tells
+      // the caller what happened.
+      span.addEvent('card_validation_failed', { message: err.message });
+      logger.info({ err }, 'Charge request declined.');
+    } else {
+      span.recordException(err);
+      span.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
+      logger.warn({ err }, 'Charge request failed.');
+    }
 
     throw err;
   } finally {
