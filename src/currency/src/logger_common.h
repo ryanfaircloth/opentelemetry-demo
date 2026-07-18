@@ -34,8 +34,13 @@ namespace
     otlp::OtlpHttpLogRecordExporterOptions loggerOptions;
     auto otlp_exporter  = otlp::OtlpHttpLogRecordExporterFactory::Create(loggerOptions);
     auto otlp_processor = logs_sdk::BatchLogRecordProcessorFactory::Create(std::move(otlp_exporter), {});
-    auto otlp_context = logs_sdk::LoggerContextFactory::Create(
-        std::vector<std::unique_ptr<logs_sdk::LogRecordProcessor>>{std::move(otlp_processor)});
+    // push_back into a named vector rather than a brace-init temporary:
+    // std::vector<unique_ptr<T>>{std::move(x)} copy-constructs from the
+    // initializer_list's const backing array, which fails to compile for
+    // move-only types like LogRecordProcessor.
+    std::vector<std::unique_ptr<logs_sdk::LogRecordProcessor>> otlp_processors;
+    otlp_processors.push_back(std::move(otlp_processor));
+    auto otlp_context = logs_sdk::LoggerContextFactory::Create(std::move(otlp_processors));
     otlpLoggerProvider = logs_sdk::LoggerProviderFactory::Create(std::move(otlp_context));
     opentelemetry::logs::Provider::SetLoggerProvider(otlpLoggerProvider);
 
@@ -43,8 +48,9 @@ namespace
     // unreachable or misconfigured, in addition to the OTLP export above.
     auto console_exporter  = opentelemetry::exporter::logs::OStreamLogRecordExporterFactory::Create(std::cout);
     auto console_processor = logs_sdk::SimpleLogRecordProcessorFactory::Create(std::move(console_exporter));
-    auto console_context = logs_sdk::LoggerContextFactory::Create(
-        std::vector<std::unique_ptr<logs_sdk::LogRecordProcessor>>{std::move(console_processor)});
+    std::vector<std::unique_ptr<logs_sdk::LogRecordProcessor>> console_processors;
+    console_processors.push_back(std::move(console_processor));
+    auto console_context = logs_sdk::LoggerContextFactory::Create(std::move(console_processors));
     consoleLoggerProvider = logs_sdk::LoggerProviderFactory::Create(std::move(console_context));
   }
 
