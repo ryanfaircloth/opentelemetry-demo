@@ -7,8 +7,16 @@ on:
   push:
     branches:
       - fork/stable
+    # A version bump alone (Chart.yaml/values.yaml/.env) must also trigger
+    # this workflow: force_build always rebuilds every component regardless
+    # of what changed, so a chart-only release commit that only matched
+    # 'src/**' would bump the pinned image tags in values.yaml without ever
+    # building/pushing images under the new tag.
     paths:
       - 'src/**'
+      - '.env'
+      - 'charts/otel-demo-fork/Chart.yaml'
+      - 'charts/otel-demo-fork/values.yaml'
   workflow_dispatch:
 
 permissions:

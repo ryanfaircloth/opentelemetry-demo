@@ -7,6 +7,19 @@ the release.
 
 ## Unreleased
 
+* [chart] `0.11.25` never actually got published: the release commit
+  only touched `.env`/`Chart.yaml`/`values.yaml`, and `component-release.yml`
+  only triggered on `src/**` changes, so the workflow never ran and no
+  `0.11.25-*` image exists for any component in GHCR - yet `values.yaml` now
+  pins every component to that non-existent tag. Fixed the trigger to also
+  fire on `.env`/`Chart.yaml`/`values.yaml` changes. Separately, `cart` has
+  been failing to build since `0.11.23`: `Program.cs` calls
+  `builder.WebHost.ConfigureKestrel(...)` but only imported
+  `Microsoft.AspNetCore.Server.Kestrel.Core` (for `HttpProtocols`), not
+  `Microsoft.AspNetCore.Hosting` where the `ConfigureKestrel` extension
+  method itself lives, so the image silently never got pushed for
+  `0.11.23`/`0.11.24` either. Added the missing `using`. Skipping straight to
+  `0.11.26` rather than retroactively publishing `0.11.25`.
 * [chart] Sync every per-component `image.tag` pin in `values.yaml`
   (`ad`, `cart`, `checkout`, `currency`, `email`, `fraud-detection`,
   `frontend`, `image-provider`, `load-generator`, `payment`,
