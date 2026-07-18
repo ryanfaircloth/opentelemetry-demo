@@ -110,27 +110,32 @@ class CurrencyService final : public oteldemo::CurrencyService::Service
   	const Empty* request,
   	GetSupportedCurrenciesResponse* response) override
   {
-    StartSpanOptions options;
-    options.kind = SpanKind::kServer;
-    GrpcServerCarrier carrier(context);
-
-    auto prop        = context::propagation::GlobalTextMapPropagator::GetGlobalPropagator();
-    auto current_ctx = context::RuntimeContext::GetCurrent();
-    auto new_context = prop->Extract(carrier, current_ctx);
-    options.parent   = GetSpan(new_context)->GetContext();
-
-    std::string span_name = "Currency/GetSupportedCurrencies";
-    auto span =
-        get_tracer("currency")->StartSpan(span_name,
-                                      {{semconv::rpc::kRpcSystemName, semconv::rpc::RpcSystemNameValues::kGrpc},
-                                       {semconv::rpc::kRpcMethod, "oteldemo.CurrencyService/GetSupportedCurrencies"},
-                                       {semconv::rpc::kRpcResponseStatusCode, "0"}},
-                                      options);
-    auto scope = get_tracer("currency")->WithActiveSpan(span);
-
-    span->AddEvent("Processing supported currencies request");
-
+    // span is declared outside the try (and default-null) so the catch
+    // blocks can still record onto it if it was created, but survive a
+    // throw from the span-setup code itself (Extract/StartSpan), which
+    // previously ran unprotected before this try existed.
+    nostd::shared_ptr<Span> span;
     try {
+      StartSpanOptions options;
+      options.kind = SpanKind::kServer;
+      GrpcServerCarrier carrier(context);
+
+      auto prop        = context::propagation::GlobalTextMapPropagator::GetGlobalPropagator();
+      auto current_ctx = context::RuntimeContext::GetCurrent();
+      auto new_context = prop->Extract(carrier, current_ctx);
+      options.parent   = GetSpan(new_context)->GetContext();
+
+      std::string span_name = "Currency/GetSupportedCurrencies";
+      span =
+          get_tracer("currency")->StartSpan(span_name,
+                                        {{semconv::rpc::kRpcSystemName, semconv::rpc::RpcSystemNameValues::kGrpc},
+                                         {semconv::rpc::kRpcMethod, "oteldemo.CurrencyService/GetSupportedCurrencies"},
+                                         {semconv::rpc::kRpcResponseStatusCode, "0"}},
+                                        options);
+      auto scope = get_tracer("currency")->WithActiveSpan(span);
+
+      span->AddEvent("Processing supported currencies request");
+
       for (auto &code : currency_conversion) {
         response->add_currency_codes(code.first);
       }
@@ -147,19 +152,23 @@ class CurrencyService final : public oteldemo::CurrencyService::Service
       return Status::OK;
 
     } catch(const std::exception& e) {
-      span->AddEvent("GetSupportedCurrencies failed");
-      span->SetStatus(StatusCode::kError, e.what());
+      if (span) {
+        span->AddEvent("GetSupportedCurrencies failed");
+        span->SetStatus(StatusCode::kError, e.what());
+        span->End();
+      }
       logger->Error(eventName("currency.get_supported_currencies_failed"), e.what());
       console_logger->Error(eventName("currency.get_supported_currencies_failed"), e.what());
-      span->End();
       return Status::CANCELLED;
 
     } catch(...) {
-      span->AddEvent("GetSupportedCurrencies failed");
-      span->SetStatus(StatusCode::kError);
+      if (span) {
+        span->AddEvent("GetSupportedCurrencies failed");
+        span->SetStatus(StatusCode::kError);
+        span->End();
+      }
       logger->Error(eventName("currency.get_supported_currencies_failed"), "failed to fetch supported currencies");
       console_logger->Error(eventName("currency.get_supported_currencies_failed"), "failed to fetch supported currencies");
-      span->End();
       return Status::CANCELLED;
     }
   }
@@ -190,27 +199,32 @@ class CurrencyService final : public oteldemo::CurrencyService::Service
   	const CurrencyConversionRequest* request,
   	Money* response) override
   {
-    StartSpanOptions options;
-    options.kind = SpanKind::kServer;
-    GrpcServerCarrier carrier(context);
-
-    auto prop        = context::propagation::GlobalTextMapPropagator::GetGlobalPropagator();
-    auto current_ctx = context::RuntimeContext::GetCurrent();
-    auto new_context = prop->Extract(carrier, current_ctx);
-    options.parent   = GetSpan(new_context)->GetContext();
-
-    std::string span_name = "Currency/Convert";
-    auto span =
-        get_tracer("currency")->StartSpan(span_name,
-                                      {{semconv::rpc::kRpcSystemName, semconv::rpc::RpcSystemNameValues::kGrpc},
-                                       {semconv::rpc::kRpcMethod, "oteldemo.CurrencyService/Convert"},
-                                       {semconv::rpc::kRpcResponseStatusCode, "0"}},
-                                      options);
-    auto scope = get_tracer("currency")->WithActiveSpan(span);
-
-    span->AddEvent("Processing currency conversion request");
-
+    // span is declared outside the try (and default-null) so the catch
+    // blocks can still record onto it if it was created, but survive a
+    // throw from the span-setup code itself (Extract/StartSpan), which
+    // previously ran unprotected before this try existed.
+    nostd::shared_ptr<Span> span;
     try {
+      StartSpanOptions options;
+      options.kind = SpanKind::kServer;
+      GrpcServerCarrier carrier(context);
+
+      auto prop        = context::propagation::GlobalTextMapPropagator::GetGlobalPropagator();
+      auto current_ctx = context::RuntimeContext::GetCurrent();
+      auto new_context = prop->Extract(carrier, current_ctx);
+      options.parent   = GetSpan(new_context)->GetContext();
+
+      std::string span_name = "Currency/Convert";
+      span =
+          get_tracer("currency")->StartSpan(span_name,
+                                        {{semconv::rpc::kRpcSystemName, semconv::rpc::RpcSystemNameValues::kGrpc},
+                                         {semconv::rpc::kRpcMethod, "oteldemo.CurrencyService/Convert"},
+                                         {semconv::rpc::kRpcResponseStatusCode, "0"}},
+                                        options);
+      auto scope = get_tracer("currency")->WithActiveSpan(span);
+
+      span->AddEvent("Processing currency conversion request");
+
       // Do the conversion work
       Money from = request->from();
       string from_code = from.currency_code();
@@ -269,26 +283,29 @@ class CurrencyService final : public oteldemo::CurrencyService::Service
       return Status::OK;
 
     } catch(const std::exception& e) {
-      span->AddEvent("Conversion failed");
-      span->SetStatus(StatusCode::kError, e.what());
+      if (span) {
+        span->AddEvent("Conversion failed");
+        span->SetStatus(StatusCode::kError, e.what());
+        span->End();
+      }
 
       logger->Error(eventName("currency.conversion_failed"), e.what());
       console_logger->Error(eventName("currency.conversion_failed"), e.what());
 
-      span->End();
       return Status::CANCELLED;
 
     } catch(...) {
-      span->AddEvent("Conversion failed");
-      span->SetStatus(StatusCode::kError);
+      if (span) {
+        span->AddEvent("Conversion failed");
+        span->SetStatus(StatusCode::kError);
+        span->End();
+      }
 
       logger->Error(eventName("currency.conversion_failed"), "conversion failure");
       console_logger->Error(eventName("currency.conversion_failed"), "conversion failure");
 
-      span->End();
       return Status::CANCELLED;
     }
-    return Status::OK;
   }
 
   void CurrencyCounter(const std::string& to_code)

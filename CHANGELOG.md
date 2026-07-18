@@ -7,6 +7,17 @@ the release.
 
 ## Unreleased
 
+* [currency] Follow-up from the fifth re-review pass: the try/catch in both
+  `GetSupportedCurrencies` and `Convert` only wrapped the business-logic
+  portion of each method - the span-setup/context-extraction preamble
+  (`Extract`, `StartSpan`) ran unprotected before the try, so an exception
+  there would still crash the process, defeating the whole point of having
+  a catch-all boundary. Restructured both so the entire method body is
+  covered, with `span` declared outside the try (default-null) so the catch
+  blocks can still record onto it if it was created but won't dereference a
+  null span if setup itself failed. Also removed an unreachable trailing
+  `return Status::OK;` in `Convert` left over from an earlier refactor.
+
 * [product-catalog] Follow-up from the fifth re-review pass: a `fmt.Sprintf`
   was still being fed into `logger.LogAttrs` at the products-loaded log site
   (the exact anti-pattern already swept elsewhere in this file). The
