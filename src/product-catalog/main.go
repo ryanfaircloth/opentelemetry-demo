@@ -216,7 +216,7 @@ func main() {
 	}
 	defer func() {
 		if err := sdk.Shutdown(ctx); err != nil {
-			logger.Error(fmt.Sprintf("Error shutting down OpenTelemetry SDK: %v", err))
+			logger.Error("Error shutting down OpenTelemetry SDK", slog.Any("error", err))
 		}
 		logger.Info("Shutdown OpenTelemetry SDK")
 	}()
@@ -245,14 +245,13 @@ func main() {
 			w.WriteHeader(http.StatusOK)
 		})
 		if err := http.ListenAndServe(fmt.Sprintf(":%s", healthPort), mux); err != nil {
-			logger.Error(fmt.Sprintf("health check HTTP server failed: %v", err))
+			logger.Error("health check HTTP server failed", slog.Any("error", err))
 		}
 	}()
 
 	// Initialize database connection
 	if err := initDatabase(); err != nil {
 		bootLogger.Error("Error initializing database", slog.Any("error", err))
-		logger.Error(fmt.Sprintf("Error initializing database: %v", err))
 		if shutdownErr := sdk.Shutdown(ctx); shutdownErr != nil {
 			bootLogger.Error("Error shutting down OpenTelemetry SDK", slog.Any("error", shutdownErr))
 		}
@@ -261,14 +260,14 @@ func main() {
 	defer func() {
 		if db != nil {
 			if err := db.Close(); err != nil {
-				logger.Error(fmt.Sprintf("Error closing database connection: %v", err))
+				logger.Error("Error closing database connection", slog.Any("error", err))
 			} else {
 				logger.Info("Database connection closed")
 			}
 		}
 		if reg != nil {
 			if err := reg.Unregister(); err != nil {
-				logger.Error(fmt.Sprintf("Error unregistering database metrics: %v", err))
+				logger.Error("Error unregistering database metrics", slog.Any("error", err))
 			} else {
 				logger.Info("Database metrics unregistered")
 			}
@@ -289,18 +288,18 @@ func main() {
 
 	err = runtime.Start(runtime.WithMinimumReadMemStatsInterval(time.Second))
 	if err != nil {
-		logger.Error(err.Error())
+		logger.Error("Failed to start Go runtime metrics collection", slog.Any("error", err))
 	}
 
 	svc := &productCatalog{}
 	var port string
 	mustMapEnv(&port, "PRODUCT_CATALOG_PORT")
 
-	logger.Info(fmt.Sprintf("Product Catalog gRPC server started on port: %s", port))
+	logger.Info("Product Catalog gRPC server started", slog.String("port", port))
 
 	ln, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
 	if err != nil {
-		logger.Error(fmt.Sprintf("TCP Listen: %v", err))
+		logger.Error("TCP Listen failed", slog.String("port", port), slog.Any("error", err))
 		os.Exit(1)
 	}
 
@@ -319,7 +318,7 @@ func main() {
 
 	go func() {
 		if err := srv.Serve(ln); err != nil {
-			logger.Error(fmt.Sprintf("Failed to serve gRPC server, err: %v", err))
+			logger.Error("Failed to serve gRPC server", slog.Any("error", err))
 		}
 	}()
 
@@ -465,7 +464,7 @@ func parseProductRow(id, name, description, picture, currencyCode, categoriesStr
 func mustMapEnv(target *string, key string) {
 	value, present := os.LookupEnv(key)
 	if !present {
-		logger.Error(fmt.Sprintf("Environment Variable Not Set: %q", key))
+		logger.Error("Environment variable not set", slog.String("key", key))
 		os.Exit(1)
 	}
 	*target = value
@@ -508,7 +507,7 @@ func (p *productCatalog) GetProduct(ctx context.Context, req *pb.GetProductReque
 			span.AddEvent(msg)
 			return nil, status.Error(codes.NotFound, msg)
 		}
-		logger.Error(fmt.Sprintf("failed to get product %q: %v", req.Id, err))
+		logger.Error("failed to get product", slog.String("product_id", req.Id), slog.Any("error", err))
 		span.SetStatus(otelcodes.Error, err.Error())
 		span.RecordError(err)
 		return nil, status.Error(codes.Internal, "failed to get product")

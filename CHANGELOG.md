@@ -7,6 +7,14 @@ the release.
 
 ## Unreleased
 
+* [product-catalog] Follow-up from a re-review: this service was scoped as
+  "already best-in-class, just needs LOG_LEVEL," but the earlier
+  exception-handling audit had flagged mixed structured/stringified logging
+  throughout `main.go` that never actually got fixed. Swept every remaining
+  `logger.Error(fmt.Sprintf(...))`/bare `err.Error()` call to structured
+  `slog` calls with the error as an attribute, and removed a redundant
+  duplicate log line in the database-init failure path.
+
 * [currency] Follow-up from a re-review: `GetSupportedCurrencies` was still
   the one public gRPC handler with zero exception handling (the original
   audit flagged this; only `Convert` got a guard). Wrapped it in the same
