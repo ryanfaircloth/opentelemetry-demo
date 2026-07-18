@@ -6,12 +6,23 @@ SPDX-License-Identifier: Apache-2.0
 
 <Configuration status="WARN">
     <Appenders>
+        <!-- Console is for operators: WARN+ only. Kept as the framework's
+             default PatternLayout (not JSON) - this service demonstrates the
+             "default-but-structured" logging tier, with trace/span context
+             still present via the MDC keys below. -->
         <Console name="STDOUT" target="SYSTEM_OUT">
             <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} - %logger{36} - %msg trace_id=%X{trace_id} span_id=%X{span_id} trace_flags=%X{trace_flags} %n"/>
+            <Filters>
+                <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
+            </Filters>
         </Console>
     </Appenders>
     <Loggers>
-        <Root level="INFO">
+        <!-- Root level governs what the OTel Java agent's log4j2 bridge (if
+             attached via injected instrumentation) exports as OTLP - the
+             console appender's own ThresholdFilter above keeps stdout at
+             WARN+ independently of this. -->
+        <Root level="${env:LOG_LEVEL:-INFO}">
             <AppenderRef ref="STDOUT"/>
         </Root>
     </Loggers>

@@ -7,6 +7,17 @@ the release.
 
 ## Unreleased
 
+* [fraud-detection] Assigned Tier B ("default-but-structured") for this
+  pass: kept the existing `PatternLayout` (with trace/span MDC context) but
+  added a `ThresholdFilter` so stdout is WARN+ only, and Root level is now
+  `${env:LOG_LEVEL:-INFO}` instead of hardcoded. Also fixed two retry-path
+  logs passing `${e.message}` instead of the throwable (dropping the stack
+  trace), narrowed the protobuf-parse catch from `Exception` to the specific
+  `InvalidProtocolBufferException`, and added exception handling to
+  `getFeatureFlagValue` (an OpenFeature/flagd evaluation error would
+  previously propagate uncaught and crash the whole consumer loop over a
+  non-critical flag lookup).
+
 * [ad] Assigned Tier A ("modern JSON") for this pass: swapped the console
   appender's `PatternLayout` for `JsonTemplateLayout` (added the
   `log4j-layout-template-json` dependency) and added a `ThresholdFilter` so

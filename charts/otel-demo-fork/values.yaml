@@ -625,7 +625,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.32-fraud-detection"
+      tag: "0.11.42-fraud-detection"
     useDefault:
       env: true
     podAnnotations:
@@ -648,6 +648,10 @@ components:
         value: "true"
       - name: JAVA_TOOL_OPTIONS
         value: "-XX:MaxRAMPercentage=75.0"
+      # Governs the Root logger level (log4j2.xml); the console appender's own
+      # ThresholdFilter independently keeps stdout at WARN+ regardless.
+      - name: LOG_LEVEL
+        value: INFO
     resources:
       requests:
         cpu: 50m

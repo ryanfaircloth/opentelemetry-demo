@@ -53,7 +53,7 @@ fun main() {
             val records = try {
                 consumer.poll(ofMillis(100))
             } catch (e: org.apache.kafka.common.errors.RetriableException) {
-                logger.warn("Retriable error polling Kafka, will retry: ${e.message}")
+                logger.warn("Retriable error polling Kafka, will retry", e)
                 continue
             }
 
@@ -67,8 +67,8 @@ fun main() {
                     val newCount = accumulator + 1
                     logger.info("Consumed record with orderId: ${orders.orderId}, and updated total count to: $newCount")
                     newCount
-                } catch (e: Exception) {
-                    logger.error("Failed to process record at offset ${record.offset()}, skipping", e)
+                } catch (e: com.google.protobuf.InvalidProtocolBufferException) {
+                    logger.error("Failed to parse record at offset ${record.offset()}, skipping", e)
                     accumulator
                 }
             }
@@ -95,10 +95,10 @@ fun connectConsumerWithRetry(props: Properties): KafkaConsumer<String, ByteArray
         } catch (e: KafkaException) {
             val now = System.currentTimeMillis()
             if (now >= deadline) {
-                logger.error("Failed to connect to Kafka after retrying for ${totalBudgetMillis}ms, giving up: ${e.message}", e)
+                logger.error("Failed to connect to Kafka after retrying for ${totalBudgetMillis}ms, giving up", e)
                 exitProcess(1)
             }
-            logger.warn("Failed to connect to Kafka, retrying in ${delayMillis}ms: ${e.message}")
+            logger.warn("Failed to connect to Kafka, retrying in ${delayMillis}ms", e)
             Thread.sleep(delayMillis)
             delayMillis = minOf(delayMillis * 2, maxDelayMillis)
         }
@@ -149,13 +149,19 @@ fun buildConsumerProps(): Properties {
 * @return `true` if the feature flag is enabled, `false` otherwise or in case of errors.
 */
 fun getFeatureFlagValue(ff: String): Int {
-    val client = OpenFeatureAPI.getInstance().client
-    // TODO: Plumb the actual session ID from the frontend via baggage?
-    val uuid = UUID.randomUUID()
+    return try {
+        val client = OpenFeatureAPI.getInstance().client
+        // TODO: Plumb the actual session ID from the frontend via baggage?
+        val uuid = UUID.randomUUID()
 
-    val clientAttrs = mutableMapOf<String, Value>()
-    clientAttrs["session"] = Value(uuid.toString())
-    client.evaluationContext = ImmutableContext(clientAttrs)
-    val intValue = client.getIntegerValue(ff, 0)
-    return intValue
+        val clientAttrs = mutableMapOf<String, Value>()
+        clientAttrs["session"] = Value(uuid.toString())
+        client.evaluationContext = ImmutableContext(clientAttrs)
+        client.getIntegerValue(ff, 0)
+    } catch (e: Exception) {
+        // A flagd/OpenFeature evaluation error shouldn't take down the consumer
+        // loop over a non-critical feature flag lookup - fall back to disabled.
+        logger.warn("Failed to evaluate feature flag '$ff', defaulting to 0", e)
+        0
+    }
 }
