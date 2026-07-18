@@ -816,10 +816,6 @@ python-engineio==4.13.3 \
     # via
     #   locust
     #   python-socketio
-python-json-logger==4.1.0 \
-    --hash=sha256:132994765cf75bf44554be9aa49b06ef2345d23661a96720262716438141b6b2 \
-    --hash=sha256:b396b9e3ed782b09ff9d6e4f1683d46c83ad0d35d2e407c09a9ebbf038f88195
-    # via -r src/load-generator/requirements.in
 python-socketio[client]==5.16.3 \
     --hash=sha256:89b136f677ae65607a84cecda9b4d6c5377b40a97582c504c25df89af16d520e \
     --hash=sha256:e7ad14202a5e6448824c7c2f86161d04e13dec05992257df5c709e6a2798c041

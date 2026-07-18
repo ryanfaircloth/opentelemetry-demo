@@ -53,9 +53,16 @@ handler = LoggingHandler(level=logging.INFO, logger_provider=logger_provider)
 # Configure root logger. The locust entrypoint is invoked with
 # --skip-log-setup, so locust never installs its own console handler -
 # add one here so logs reach stdout regardless of collector reachability.
+# Console stays plain text (this service demonstrates the "default,
+# unstructured" logging tier) with its own WARN+ floor, configurable via
+# LOG_LEVEL, independent of the OTLP handler which always gets Info+.
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setLevel(
+    getattr(logging, os.environ.get('LOG_LEVEL', 'WARNING').upper(), logging.WARNING))
+
 root_logger = logging.getLogger()
 root_logger.addHandler(handler)
-root_logger.addHandler(logging.StreamHandler(sys.stdout))
+root_logger.addHandler(console_handler)
 root_logger.setLevel(logging.INFO)
 
 # Instrument logging to automatically inject trace context
@@ -235,8 +242,9 @@ if browser_traffic_enabled:
                     await page.select_option('[name="currency_code"]', 'CHF')
                     await page.wait_for_timeout(2000)  # giving the browser time to export the traces
                     logging.info("Currency changed to CHF")
-                except Exception as e:
-                    logging.error(f"Error in change currency task: {str(e)}")
+                except Exception:
+                    logging.exception("Error in change currency task")
+                    raise
 
         @task
         @pw
@@ -259,8 +267,9 @@ if browser_traffic_enabled:
                     await page.wait_for_load_state("domcontentloaded")
                     await page.wait_for_timeout(2000)  # giving the browser time to export the traces
                     logging.info("Product added to cart successfully")
-                except Exception as e:
-                    logging.error(f"Error in add to cart task: {str(e)}")
+                except Exception:
+                    logging.exception("Error in add to cart task")
+                    raise
 
 async def add_baggage_header(route: Route, request: Request):
     existing_baggage = request.headers.get('baggage', '')

@@ -7,6 +7,18 @@ the release.
 
 ## Unreleased
 
+* [load-generator] Assigned Tier C ("default, unstructured") for this pass:
+  the console `StreamHandler` now has its own WARN+ floor, configurable via
+  `LOG_LEVEL` (default `WARNING`), instead of sharing the root logger's
+  `INFO` level with the OTLP handler. Dropped the `python-json-logger`
+  dependency, which was declared but never actually used by this service
+  (recommendation now uses it instead, for its Tier A JSON console). Also
+  fixed both Playwright browser-task `except` blocks logging via
+  `str(e)`/`logging.error` (discarding the traceback) and silently
+  swallowing the failure - now `logging.exception` captures the traceback
+  and the exception is re-raised so Locust actually records the task as
+  failed instead of reporting a false success.
+
 * [recommendation] Assigned Tier A ("modern JSON") for this pass: added
   `python-json-logger` and switched the console handler's formatter to
   `JsonFormatter`, with its WARN+ floor now driven by `LOG_LEVEL` (default
