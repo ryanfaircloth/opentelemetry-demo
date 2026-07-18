@@ -7,6 +7,13 @@ the release.
 
 ## Unreleased
 
+* [shipping] Fixed `request_quote` calling `.expect("Invalid quote service
+  address")` on every `/get-quote` request instead of only at startup — a
+  bad `QUOTE_ADDR` value would panic per-request rather than once at boot
+  (in practice the `.expect()` was on a no-op `String -> String` parse, so it
+  could never actually fail, but it ran on the request path regardless).
+  `QUOTE_ADDR` is now resolved once into a `LazyLock` static at first use.
+
 * [currency] Fixed `Convert` silently producing a wrong (not an error)
   result for an unsupported currency code: `currency_conversion[code]` used
   `operator[]`, which inserts and returns `0.0` for a missing key instead of

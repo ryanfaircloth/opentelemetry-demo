@@ -1026,7 +1026,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.32-shipping"
+      tag: "0.11.38-shipping"
     useDefault:
       env: true
     service:

@@ -21,6 +21,11 @@ static ITEMS_SHIPPED_COUNTER: LazyLock<Counter<u64>> = LazyLock::new(|| {
         .build()
 });
 
+// Resolved once at startup rather than per request: QUOTE_ADDR is a fixed
+// deployment-time env var, not something that can change between requests.
+static QUOTE_SERVICE_BASE_ADDR: LazyLock<String> =
+    LazyLock::new(|| env::var("QUOTE_ADDR").unwrap_or_else(|_| "http://quote:8090".to_string()));
+
 pub async fn create_quote_from_count(count: u32) -> Result<Quote, tonic::Status> {
     let f = match request_quote(count).await {
         Ok(float) => float,
@@ -49,14 +54,7 @@ pub async fn create_quote_from_count(count: u32) -> Result<Quote, tonic::Status>
 
 async fn request_quote(count: u32) -> Result<f64, anyhow::Error> {
     let client = awc::Client::new();
-    let quote_service_addr: String = format!(
-        "{}{}",
-        env::var("QUOTE_ADDR")
-            .unwrap_or_else(|_| "http://quote:8090".to_string())
-            .parse::<String>()
-            .expect("Invalid quote service address"),
-        "/getquote"
-    );
+    let quote_service_addr: String = format!("{}/getquote", *QUOTE_SERVICE_BASE_ADDR);
 
     info!(
         name: "shipping.quote.requested",
