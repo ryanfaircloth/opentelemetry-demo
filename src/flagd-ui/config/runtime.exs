@@ -42,6 +42,17 @@ if config_env() == :prod do
       environment variable OTEL_EXPORTER_OTLP_ENDPOINT is missing.
       """
 
+  log_level =
+    case System.get_env("LOG_LEVEL", "info") |> String.downcase() do
+      "debug" -> :debug
+      "warn" -> :warning
+      "warning" -> :warning
+      "error" -> :error
+      _ -> :info
+    end
+
+  config :logger, level: log_level
+
   host = System.get_env("PHX_HOST") || "example.com"
   port = String.to_integer(System.get_env("FLAGD_UI_PORT") || "4000")
 

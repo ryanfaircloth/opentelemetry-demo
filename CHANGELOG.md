@@ -7,6 +7,12 @@ the release.
 
 ## Unreleased
 
+* [flagd-ui] This fork's flagd-ui is Elixir/Phoenix, not Node - the
+  logger level was hardcoded to `:info` in `config/prod.exs` with no
+  runtime override at all. Added `LOG_LEVEL` handling in
+  `config/runtime.exs` (debug/warn/error, default info) that sets
+  `config :logger, level: ...` at boot.
+
 * [frontend] `utils/Log.ts` unconditionally called `console.warn`/
   `console.error` with no level control at all. Added a `LOG_LEVEL` env
   var (default `warn`, matching current behavior) wired through
