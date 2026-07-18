@@ -6,6 +6,7 @@
 
 declare(strict_types=1);
 
+use App\Application\Settings\SettingsInterface;
 use DI\Bridge\Slim\Bridge;
 use DI\ContainerBuilder;
 use OpenTelemetry\API\Globals;
@@ -15,6 +16,7 @@ use OpenTelemetry\SDK\Logs\LoggerProviderInterface;
 use OpenTelemetry\SDK\Metrics\MeterProviderInterface;
 use OpenTelemetry\SDK\Trace\TracerProviderInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Log\LoggerInterface;
 use React\EventLoop\Loop;
 use React\Http\HttpServer;
 use React\Socket\SocketServer;
@@ -50,8 +52,17 @@ $routes($app);
 // Add Body Parsing Middleware
 $app->addBodyParsingMiddleware();
 
-// Add Error Middleware
-$errorMiddleware = $app->addErrorMiddleware(true, true, true);
+// Add Error Middleware, driven by the actual Settings/logger rather than
+// hardcoded booleans - previously this ignored displayErrorDetails/logError/
+// logErrorDetails entirely, so an unhandled Throwable never reached Monolog.
+$appSettings = $container->get(SettingsInterface::class);
+$appLogger = $container->get(LoggerInterface::class);
+$errorMiddleware = $app->addErrorMiddleware(
+    (bool) $appSettings->get('displayErrorDetails'),
+    (bool) $appSettings->get('logError'),
+    (bool) $appSettings->get('logErrorDetails'),
+    $appLogger,
+);
 Loop::get()->addSignal(SIGTERM, function() {
     exit;
 });
@@ -73,17 +84,15 @@ if (($meterProvider = Globals::meterProvider()) instanceof MeterProviderInterfac
     });
 }
 
-$server = new HttpServer(function (ServerRequestInterface $request) use ($app) {
+$server = new HttpServer(function (ServerRequestInterface $request) use ($app, $appLogger) {
     $response = $app->handle($request);
-    echo sprintf('[%s] "%s %s HTTP/%s" %d %d %s',
-        date('Y-m-d H:i:sP'),
+    $appLogger->info(sprintf('"%s %s HTTP/%s" %d %d',
         $request->getMethod(),
         $request->getUri()->getPath(),
         $request->getProtocolVersion(),
         $response->getStatusCode(),
         $response->getBody()->getSize(),
-        PHP_EOL,
-    );
+    ));
 
     return $response;
 });
@@ -94,4 +103,4 @@ $address = '[::]:' . getenv('QUOTE_PORT');
 $socket = new SocketServer($address);
 $server->listen($socket);
 
-echo "Listening on: {$address}" . PHP_EOL;
+$appLogger->info("Listening on: {$address}");

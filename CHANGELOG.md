@@ -7,6 +7,17 @@ the release.
 
 ## Unreleased
 
+* [quote] Follow-up from a re-review: `index.php` called
+  `addErrorMiddleware(true, true, true)` with hardcoded booleans, completely
+  ignoring the `displayErrorDetails`/`logError`/`logErrorDetails` values in
+  `Settings` (which were `false`/`false` and had no effect either way) and
+  never passing a logger - an unhandled `Throwable` never reached Monolog at
+  all. Now reads the actual settings and passes the DI-resolved logger. Also
+  found and fixed a second stray unstructured `echo`-based access log (the
+  same class of bug already fixed in `email`) that printed on every request
+  regardless of `LOG_LEVEL` - replaced with a real logger call, including
+  the startup "Listening on" banner.
+
 * [product-catalog] Follow-up from a re-review: this service was scoped as
   "already best-in-class, just needs LOG_LEVEL," but the earlier
   exception-handling audit had flagged mixed structured/stringified logging

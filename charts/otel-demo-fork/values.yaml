@@ -959,7 +959,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.49-quote"
+      tag: "0.11.58-quote"
     useDefault:
       env: true
     service:
