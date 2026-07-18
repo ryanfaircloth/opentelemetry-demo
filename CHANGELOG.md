@@ -7,6 +7,38 @@ the release.
 
 ## Unreleased
 
+* [flagd, recommendation] Found the actual trigger behind the recurring
+  `recommendation` call-combiner SIGABRT the previous three releases tried to
+  work around: `GRPC_TRACE=call_combiner` debug tracing showed the process
+  making ~140 failed gRPC client calls *per second*, continuously, for its
+  entire lifetime (50k+ in under 6 minutes) - `filter_stack_call.cc]
+  set_final_status CLI UNIMPLEMENTED:Received http2 header with status: 404`.
+  This wasn't request traffic (load-generator only runs 2 virtual users); it
+  was `openfeature-provider-flagd`'s EventStream, which flagd's own upstream
+  issue tracker (open-feature/flagd#1472) documents as reconnecting forever
+  with no real backoff whenever the stream fails. `flagd`'s image here had
+  been pinned at v0.12.9 since this fork's very first commit and never
+  bumped, while upstream open-telemetry/opentelemetry-demo is on v0.16.0 -
+  and tellingly, checkout/product-catalog's own Go client dependencies were
+  *already* transitively generated against the v0.16.0 schema (flagd's
+  EventStream RPC has since been deprecated/replaced), so every provider
+  client in this repo already expected the newer generation except the
+  server itself. That many failed/retried gRPC calls per second is a far
+  more plausible trigger for a rare C-core race than anything else examined
+  so far. Bumped flagd v0.12.9 -> v0.16.0 to match upstream exactly, and
+  `openfeature-provider-flagd` 0.5.0 -> 0.5.1 in recommendation (also
+  matching upstream), which pulled `opentelemetry-api`/`-sdk`/
+  `-exporter-otlp-proto-http` 1.42.0 -> 1.43.0 along for a `protobuf`
+  constraint (0.5.1 needs >=7.0, 1.42.0's `opentelemetry-proto` capped it
+  <7.0). Checked every other provider client in this repo (Java, Go, .NET,
+  Node, Ruby, Rust) against upstream's pins for this same flagd version -
+  all already match exactly, so no other component needed a version change.
+  Also checked flagd v0.16.0's one documented breaking change (disabled
+  flags now resolve with `reason=DISABLED` instead of an error) against
+  every flag in `demo.flagd.json` and all consuming code - nothing here
+  relies on the old behavior. Not yet proven this fully eliminates the
+  crash; the previous fixes narrowed real bugs without curing it, so this
+  needs a soak test in a live preview environment before calling it closed.
 * [recommendation, load-generator, currency] `recommendation` was still
   periodically SIGABRT'ing (`call_combiner.cc:144] Check failed: prev_size >=
   1u`) after the previous two releases' `grpc.enable_retries=0` workarounds.
