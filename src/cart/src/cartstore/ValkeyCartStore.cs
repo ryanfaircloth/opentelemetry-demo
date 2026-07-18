@@ -166,7 +166,8 @@ public class ValkeyCartStore : ICartStore
         }
         catch (Exception ex)
         {
-            throw new RpcException(new Status(StatusCode.FailedPrecondition, $"Can't access cart storage. {ex}"));
+            Log.RedisOperationFailed(_logger, userId, ex);
+            throw new RpcException(new Status(StatusCode.FailedPrecondition, "Can't access cart storage."));
         }
         finally
         {
@@ -188,7 +189,8 @@ public class ValkeyCartStore : ICartStore
         }
         catch (Exception ex)
         {
-            throw new RpcException(new Status(StatusCode.FailedPrecondition, $"Can't access cart storage. {ex}"));
+            Log.RedisOperationFailed(_logger, userId, ex);
+            throw new RpcException(new Status(StatusCode.FailedPrecondition, "Can't access cart storage."));
         }
     }
 
@@ -217,7 +219,8 @@ public class ValkeyCartStore : ICartStore
         }
         catch (Exception ex)
         {
-            throw new RpcException(new Status(StatusCode.FailedPrecondition, $"Can't access cart storage. {ex}"));
+            Log.RedisOperationFailed(_logger, userId, ex);
+            throw new RpcException(new Status(StatusCode.FailedPrecondition, "Can't access cart storage."));
         }
         finally
         {
@@ -233,8 +236,9 @@ public class ValkeyCartStore : ICartStore
             var res = cache.Ping();
             return res != TimeSpan.Zero;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Log.RedisPingFailed(_logger, ex);
             return false;
         }
     }

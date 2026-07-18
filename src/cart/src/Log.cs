@@ -49,4 +49,10 @@ internal static partial class Log
 
     [LoggerMessage(Level = LogLevel.Error, EventName = "cart.startup.failed", Message = "Failed to initialize cart store within the startup retry budget; exiting")]
     public static partial void CartStoreInitializationFailed(ILogger logger, Exception exception);
+
+    [LoggerMessage(Level = LogLevel.Error, EventName = "cart.redis.operation_failed", Message = "Redis operation failed for userId={userId}")]
+    public static partial void RedisOperationFailed(ILogger logger, string userId, Exception exception);
+
+    [LoggerMessage(Level = LogLevel.Warning, EventName = "cart.redis.ping_failed", Message = "Redis ping failed")]
+    public static partial void RedisPingFailed(ILogger logger, Exception exception);
 }

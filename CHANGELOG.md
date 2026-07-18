@@ -7,6 +7,14 @@ the release.
 
 ## Unreleased
 
+* [cart] Fixed `ValkeyCartStore.AddItemAsync`/`EmptyCartAsync`/`GetCartAsync`
+  leaking the full exception (including stack trace, via `$"...{ex}"` string
+  interpolation) into the `RpcException` message returned to gRPC clients,
+  while never logging it server-side via `ILogger`. Now the exception is
+  logged via a new `Log.RedisOperationFailed` and the client only receives a
+  generic "Can't access cart storage." message. Also fixed `Ping()` silently
+  swallowing Redis errors with no log at all.
+
 * [quote] Fixed `/getquote` silently returning a fake `$0.00` quote with an
   HTTP 200 when the request body was missing `numberOfItems`: the exception
   was only recorded on the OTel span, never logged, and the `finally` block
