@@ -7,6 +7,17 @@ the release.
 
 ## Unreleased
 
+* [currency] Fixed `Convert` silently producing a wrong (not an error)
+  result for an unsupported currency code: `currency_conversion[code]` used
+  `operator[]`, which inserts and returns `0.0` for a missing key instead of
+  failing, turning an invalid currency code into a division-by-zero/`inf`
+  conversion rather than a client error. Now both codes are validated before
+  lookup and an unknown code returns `INVALID_ARGUMENT` with a descriptive
+  message. Also split the bare `catch(...)` into a `catch(const
+  std::exception&)` first so the real error message (`e.what()`) is logged
+  and recorded on the span, falling back to the generic message only for
+  non-`std::exception` throws.
+
 * [product-catalog] Fixed `mustMapEnv`/startup `net.Listen` failures being
   logged but not fatal, letting the process limp forward broken (e.g.
   `mustMapEnv` left the target env var empty, feeding an invalid `:` address

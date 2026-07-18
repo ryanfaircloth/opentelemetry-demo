@@ -193,11 +193,28 @@ class CurrencyService final : public oteldemo::CurrencyService::Service
       // Do the conversion work
       Money from = request->from();
       string from_code = from.currency_code();
-      double rate = currency_conversion[from_code];
-      double one_euro = getDouble(from) / rate ;
-
       string to_code = request->to_code();
-      double to_rate = currency_conversion[to_code];
+
+      if (currency_conversion.find(from_code) == currency_conversion.end()) {
+        string msg = "unsupported currency code: " + from_code;
+        span->AddEvent("Conversion failed");
+        span->SetStatus(StatusCode::kError, msg);
+        logger->Error(eventName("currency.conversion_failed"), msg.c_str());
+        span->End();
+        return Status(grpc::StatusCode::INVALID_ARGUMENT, msg);
+      }
+      if (currency_conversion.find(to_code) == currency_conversion.end()) {
+        string msg = "unsupported currency code: " + to_code;
+        span->AddEvent("Conversion failed");
+        span->SetStatus(StatusCode::kError, msg);
+        logger->Error(eventName("currency.conversion_failed"), msg.c_str());
+        span->End();
+        return Status(grpc::StatusCode::INVALID_ARGUMENT, msg);
+      }
+
+      double rate = currency_conversion.at(from_code);
+      double one_euro = getDouble(from) / rate ;
+      double to_rate = currency_conversion.at(to_code);
 
       double final = one_euro * to_rate;
       getUnitsAndNanos(*response, final);
@@ -220,6 +237,15 @@ class CurrencyService final : public oteldemo::CurrencyService::Service
       // End the span
       span->End();
       return Status::OK;
+
+    } catch(const std::exception& e) {
+      span->AddEvent("Conversion failed");
+      span->SetStatus(StatusCode::kError, e.what());
+
+      logger->Error(eventName("currency.conversion_failed"), e.what());
+
+      span->End();
+      return Status::CANCELLED;
 
     } catch(...) {
       span->AddEvent("Conversion failed");
