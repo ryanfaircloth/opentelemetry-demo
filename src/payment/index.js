@@ -25,7 +25,8 @@ async function chargeServiceHandler(call, callback) {
     logger.warn({ err })
 
     span?.setStatus({ code: opentelemetry.SpanStatusCode.ERROR, message: err.message })
-    callback(err)
+    const code = err instanceof charge.InvalidCardError ? grpc.status.INVALID_ARGUMENT : grpc.status.INTERNAL
+    callback({ code, message: err.message })
   }
 }
 

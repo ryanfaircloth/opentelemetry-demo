@@ -15,6 +15,12 @@ const transactionsCounter = meter.createCounter('demo.payment.transactions');
 
 const LOYALTY_LEVEL = ['platinum', 'gold', 'silver', 'bronze'];
 
+// Marks the three "the request itself is bad" cases below so index.js can
+// map them to grpc.status.INVALID_ARGUMENT instead of the generic UNKNOWN/
+// INTERNAL used for unexpected failures (flagd errors, network issues).
+class InvalidCardError extends Error {}
+module.exports.InvalidCardError = InvalidCardError;
+
 // Comfortably longer than checkout's paymentChargeTimeout (src/checkout/main.go),
 // so the "paymentUnreachable" flag reproduces a client-side timeout rather than
 // an instant connection failure.
@@ -77,15 +83,15 @@ module.exports.charge = async request => {
     });
 
     if (!valid) {
-      throw new Error('Credit card info is invalid.');
+      throw new InvalidCardError('Credit card info is invalid.');
     }
 
     if (!['visa', 'mastercard'].includes(cardType)) {
-      throw new Error(`Sorry, we cannot process ${cardType} credit cards. Only VISA or MasterCard is accepted.`);
+      throw new InvalidCardError(`Sorry, we cannot process ${cardType} credit cards. Only VISA or MasterCard is accepted.`);
     }
 
     if ((currentYear * 12 + currentMonth) > (year * 12 + month)) {
-      throw new Error(`The credit card (ending ${lastFourDigits}) expired on ${month}/${year}.`);
+      throw new InvalidCardError(`The credit card (ending ${lastFourDigits}) expired on ${month}/${year}.`);
     }
 
     // Do not charge synthetic requests.
@@ -108,6 +114,7 @@ module.exports.charge = async request => {
   } catch (err) {
     span.recordException(err);
     span.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
+    logger.warn({ err }, 'Charge request failed.');
 
     throw err;
   } finally {

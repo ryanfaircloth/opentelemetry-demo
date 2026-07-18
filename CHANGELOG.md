@@ -7,6 +7,20 @@ the release.
 
 ## Unreleased
 
+* [payment] Already Tier A (pino JSON) - fixed the level split: console and
+  OTLP export previously shared a single unset pino level (defaulting to
+  `info`) via one combined record processor, so console got the exact same
+  INFO-level noise as the OTLP exporter. Split into two pino transport
+  targets - OTLP fixed at `info`, console driven by `LOG_LEVEL` (default
+  `warn`) - and dropped the transport's redundant second console record
+  processor now that `pino/file` handles stdout directly. Also added
+  `logger.warn({ err }, ...)` in `charge.js`, which previously only recorded
+  the exception on the span - charge failures were invisible in application
+  logs. `index.js` now maps a new `InvalidCardError` (thrown for the three
+  actual validation failures) to `grpc.status.INVALID_ARGUMENT`, and
+  everything else to `INTERNAL`, instead of every failure surfacing to
+  clients as the generic `UNKNOWN`.
+
 * [load-generator] Assigned Tier C ("default, unstructured") for this pass:
   the console `StreamHandler` now has its own WARN+ floor, configurable via
   `LOG_LEVEL` (default `WARNING`), instead of sharing the root logger's
