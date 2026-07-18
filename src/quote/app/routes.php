@@ -24,6 +24,13 @@ function calculateQuote($jsonObject, LoggerInterface $logger): float
         if (!array_key_exists('numberOfItems', $jsonObject)) {
             throw new \InvalidArgumentException('numberOfItems not provided');
         }
+        // array_key_exists only checks presence; intval() silently coerces
+        // any non-numeric value (a string, null, bool, array) to 0 or 1
+        // with no error, which previously produced a bogus "successful"
+        // quote instead of rejecting the request.
+        if (!is_numeric($jsonObject['numberOfItems'])) {
+            throw new \InvalidArgumentException('numberOfItems must be numeric');
+        }
         $numberOfItems = intval($jsonObject['numberOfItems']);
         $costPerItem = 8.99;
         $quote = round($costPerItem * $numberOfItems, 2);
@@ -42,8 +49,11 @@ function calculateQuote($jsonObject, LoggerInterface $logger): float
 
         return $quote;
     } catch (\InvalidArgumentException $exception) {
+        // Malformed request input is a normal client 400, not a system
+        // fault - warning, not error, matches severity conventions where
+        // "error" drives alerting/paging.
         $childSpan->recordException($exception);
-        $logger->error('Failed to calculate quote', ['exception' => $exception]);
+        $logger->warning('Failed to calculate quote', ['exception' => $exception]);
         throw $exception;
     } finally {
         $childSpan->end();
