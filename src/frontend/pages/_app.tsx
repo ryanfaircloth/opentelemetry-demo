@@ -61,19 +61,19 @@ const queryClient = new QueryClient();
 
 function MyApp({ Component, pageProps }: AppProps) {
   return (
-    <ThemeProvider theme={Theme}>
-      <OpenFeatureProvider>
-        <QueryClientProvider client={queryClient}>
-          <CurrencyProvider>
-            <CartProvider>
-              <ErrorBoundary>
+    <ErrorBoundary>
+      <ThemeProvider theme={Theme}>
+        <OpenFeatureProvider>
+          <QueryClientProvider client={queryClient}>
+            <CurrencyProvider>
+              <CartProvider>
                 <Component {...pageProps} />
-              </ErrorBoundary>
-            </CartProvider>
-          </CurrencyProvider>
-        </QueryClientProvider>
-      </OpenFeatureProvider>
-    </ThemeProvider>
+              </CartProvider>
+            </CurrencyProvider>
+          </QueryClientProvider>
+        </OpenFeatureProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 

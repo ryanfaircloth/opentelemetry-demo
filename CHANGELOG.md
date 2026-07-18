@@ -7,6 +7,26 @@ the release.
 
 ## Unreleased
 
+* [frontend] Follow-up from the fifth re-review pass, four fixes: (1)
+  `pages/api/healthz.ts` was the one API route not wrapped by
+  `InstrumentationMiddleware` - harmless today since the handler body can't
+  throw, but a live gap if it's ever extended. (2) `InstrumentationMiddleware`
+  force-cast `trace.getSpan(context.active())` to `Span`, so a request with
+  no active span would throw a `TypeError` from inside the very catch/finally
+  meant to guarantee a safe response; now typed as `Span | undefined` with
+  optional chaining throughout, and `runWithSpan` skips the `context.with`
+  wrapping entirely when there's no span. (3) Three routes'
+  method-not-allowed branches (`currency.ts`, `cart.ts`, `shipping.ts`)
+  called `res.status(405)` with no `.send()`/`.json()`/`.end()` -
+  `NextApiResponse.status()` only sets the code, it doesn't terminate the
+  response, so an unsupported-method request would hang instead of getting
+  a 405; all three other routes already correctly call `.send('')`, now
+  these three match. (4) The React error boundary in `_app.tsx` was nested
+  *inside* all five context providers (`ThemeProvider`, `OpenFeatureProvider`,
+  `QueryClientProvider`, `CurrencyProvider`, `CartProvider`), so a render-time
+  throw from within any of them would occur above the boundary and go
+  uncaught - moved the boundary to wrap everything, including the providers.
+
 * [telemetry-docs] Follow-up from the fifth re-review pass: same invalid
   `access_log on;` fix as image-provider's `/status` location. Also fixed
   the `url.path` log field, which used `$otel_route` (the low-cardinality
