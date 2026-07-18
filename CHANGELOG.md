@@ -7,6 +7,18 @@ the release.
 
 ## Unreleased
 
+* [checkout] Assigned Tier B ("default-but-structured") for this pass:
+  switched the console handler from JSON to `slog.TextHandler` and actually
+  applied the WARN floor its own code comment already claimed but never
+  wired up (`slog.NewJSONHandler(os.Stdout, nil)` had no `Level` option, so
+  it silently emitted everything the OTel handler did). Added a `LOG_LEVEL`
+  env var (default `WARN`) controlling that floor. Also swept every
+  `fmt.Errorf(...: %+v", err)` in this service to `%w` so `errors.Is`/`
+  errors.As` chains actually work, and converted the remaining
+  `logger.Error(fmt.Sprintf(...))`/`logger.Warn(fmt.Sprintf(...))`
+  call sites to structured `slog` calls with the error/values as attributes
+  instead of baked into the message string.
+
 * [logging] Kicking off a repo-wide logging consistency pass: every service
   gets a `LOG_LEVEL` env var, console output stays WARN+ while the injected/
   explicit OTel log export still captures INFO+, and the demo deliberately

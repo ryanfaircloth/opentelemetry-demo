@@ -118,7 +118,7 @@ func CreateKafkaProducer(brokers []string, logger *slog.Logger) (sarama.AsyncPro
 	// We will log to STDOUT if we're not able to produce messages.
 	go func() {
 		for err := range producer.Errors() {
-			logger.Error(fmt.Sprintf("Failed to write message: %+v", err))
+			logger.Error("failed to write message", slog.Any("error", err))
 
 		}
 	}()

@@ -15,6 +15,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -96,7 +97,7 @@ func initTracerProvider() *sdktrace.TracerProvider {
 
 	exporter, err := otlptracehttp.New(ctx)
 	if err != nil {
-		logger.Error(fmt.Sprintf("new otlp trace http exporter failed: %v", err))
+		logger.Error("new otlp trace http exporter failed", slog.Any("error", err))
 	}
 	tp := sdktrace.NewTracerProvider(
 		sdktrace.WithBatcher(exporter),
@@ -112,7 +113,7 @@ func initMeterProvider() *sdkmetric.MeterProvider {
 
 	exporter, err := otlpmetrichttp.New(ctx)
 	if err != nil {
-		logger.Error(fmt.Sprintf("new otlp metric http exporter failed: %v", err))
+		logger.Error("new otlp metric http exporter failed", slog.Any("error", err))
 	}
 
 	mp := sdkmetric.NewMeterProvider(
@@ -183,6 +184,24 @@ func (m *multiHandler) WithGroup(name string) slog.Handler {
 	return &multiHandler{handlers: newHandlers}
 }
 
+// consoleLogLevel returns the minimum level the stdout handler emits at,
+// defaulting to WARN (console is for operators; OTel carries INFO+) but
+// overridable via LOG_LEVEL for local troubleshooting.
+func consoleLogLevel() slog.Level {
+	switch strings.ToUpper(os.Getenv("LOG_LEVEL")) {
+	case "DEBUG":
+		return slog.LevelDebug
+	case "INFO":
+		return slog.LevelInfo
+	case "WARN", "WARNING":
+		return slog.LevelWarn
+	case "ERROR":
+		return slog.LevelError
+	default:
+		return slog.LevelWarn
+	}
+}
+
 type checkout struct {
 	productCatalogSvcAddr string
 	cartSvcAddr           string
@@ -207,21 +226,21 @@ func main() {
 	tp := initTracerProvider()
 	defer func() {
 		if err := tp.Shutdown(context.Background()); err != nil {
-			logger.Error(fmt.Sprintf("Error shutting down tracer provider: %v", err))
+			logger.Error("Error shutting down tracer provider", slog.Any("error", err))
 		}
 	}()
 
 	mp := initMeterProvider()
 	defer func() {
 		if err := mp.Shutdown(context.Background()); err != nil {
-			logger.Error(fmt.Sprintf("Error shutting down meter provider: %v", err))
+			logger.Error("Error shutting down meter provider", slog.Any("error", err))
 		}
 	}()
 
 	lp := initLoggerProvider()
 	defer func() {
 		if err := lp.Shutdown(context.Background()); err != nil {
-			logger.Error(fmt.Sprintf("Error shutting down logger provider: %v", err))
+			logger.Error("Error shutting down logger provider", slog.Any("error", err))
 		}
 	}()
 
@@ -233,7 +252,7 @@ func main() {
 	// (e.g. Kafka/gRPC connection retries) are still visible via
 	// `docker logs`/`kubectl logs` if the collector is unreachable.
 	otelHandler := otelslog.NewLogger("checkout").Handler()
-	stdoutHandler := slog.NewJSONHandler(os.Stdout, nil)
+	stdoutHandler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: consoleLogLevel()})
 	logger = slog.New(&multiHandler{handlers: []slog.Handler{otelHandler, stdoutHandler}})
 	slog.SetDefault(logger)
 
@@ -255,7 +274,7 @@ func main() {
 			w.WriteHeader(http.StatusOK)
 		})
 		if err := http.ListenAndServe(fmt.Sprintf(":%s", healthPort), mux); err != nil {
-			logger.Error(fmt.Sprintf("health check HTTP server failed: %v", err))
+			logger.Error("health check HTTP server failed", slog.Any("error", err))
 		}
 	}()
 
@@ -314,16 +333,16 @@ func main() {
 	if svc.kafkaBrokerSvcAddr != "" {
 		svc.KafkaProducerClient, err = createKafkaProducerWithRetry(svc.kafkaBrokerSvcAddr)
 		if err != nil {
-			logger.Error(fmt.Sprintf("Giving up connecting to Kafka: %v", err))
+			logger.Error("Giving up connecting to Kafka", slog.Any("error", err))
 			os.Exit(1)
 		}
 	}
 
-	logger.Info(fmt.Sprintf("service config: %+v", svc))
+	logger.Info("service config", slog.Any("config", svc))
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
 	if err != nil {
-		logger.Error(fmt.Sprintf("failed to listen on tcp port %s: %v", port, err))
+		logger.Error("failed to listen on tcp port", slog.String("port", port), slog.Any("error", err))
 		os.Exit(1)
 	}
 
@@ -337,10 +356,10 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGKILL)
 	defer cancel()
 
-	logger.Info(fmt.Sprintf("starting to listen on tcp: %q", lis.Addr().String()))
+	logger.Info("starting to listen on tcp", slog.String("addr", lis.Addr().String()))
 	go func() {
 		if err := srv.Serve(lis); err != nil {
-			logger.Error(fmt.Sprintf("gRPC server stopped serving: %v", err))
+			logger.Error("gRPC server stopped serving", slog.Any("error", err))
 		}
 	}()
 
@@ -500,7 +519,7 @@ func (cs *checkout) PlaceOrder(ctx context.Context, req *pb.PlaceOrderRequest) (
 	)
 
 	if err := cs.sendOrderConfirmation(ctx, req.Email, orderResult); err != nil {
-		logger.Warn(fmt.Sprintf("failed to send order confirmation: %+v", err))
+		logger.Warn("failed to send order confirmation", slog.Any("error", err))
 	} else {
 		logger.Info("order confirmation email sent")
 	}
@@ -528,19 +547,19 @@ func (cs *checkout) prepareOrderItemsAndShippingQuoteFromCart(ctx context.Contex
 	var out orderPrep
 	cartItems, err := cs.getUserCart(ctx, userID)
 	if err != nil {
-		return out, fmt.Errorf("cart failure: %+v", err)
+		return out, fmt.Errorf("cart failure: %w", err)
 	}
 	orderItems, err := cs.prepOrderItems(ctx, cartItems, userCurrency)
 	if err != nil {
-		return out, fmt.Errorf("failed to prepare order: %+v", err)
+		return out, fmt.Errorf("failed to prepare order: %w", err)
 	}
 	shippingUSD, err := cs.quoteShipping(ctx, address, cartItems)
 	if err != nil {
-		return out, fmt.Errorf("shipping quote failure: %+v", err)
+		return out, fmt.Errorf("shipping quote failure: %w", err)
 	}
 	shippingPrice, err := cs.convertCurrency(ctx, shippingUSD, userCurrency)
 	if err != nil {
-		return out, fmt.Errorf("failed to convert shipping cost to currency: %+v", err)
+		return out, fmt.Errorf("failed to convert shipping cost to currency: %w", err)
 	}
 
 	out.shippingCostLocalized = shippingPrice
@@ -574,12 +593,12 @@ func mustCreateClient(svcAddr string) *grpc.ClientConn {
 		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 	)
 	if err != nil {
-		logger.Error(fmt.Sprintf("could not create client for %s service, err: %+v", svcAddr, err))
+		logger.Error("could not create client for service", slog.String("service_addr", svcAddr), slog.Any("error", err))
 		os.Exit(1)
 	}
 
 	if err := waitForConnectionReady(c, svcAddr); err != nil {
-		logger.Error(fmt.Sprintf("giving up connecting to %s service: %v", svcAddr, err))
+		logger.Error("giving up connecting to service", slog.String("service_addr", svcAddr), slog.Any("error", err))
 		os.Exit(1)
 	}
 
@@ -629,17 +648,17 @@ func (cs *checkout) quoteShipping(ctx context.Context, address *pb.Address, item
 		"items":   items,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal ship order request: %+v", err)
+		return nil, fmt.Errorf("failed to marshal ship order request: %w", err)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "POST", cs.shippingSvcAddr+"/get-quote", bytes.NewBuffer(quotePayload))
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %+v", err)
+		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := cs.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed POST to shipping service: %+v", err)
+		return nil, fmt.Errorf("failed POST to shipping service: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -649,14 +668,14 @@ func (cs *checkout) quoteShipping(ctx context.Context, address *pb.Address, item
 
 	shippingQuoteBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read shipping quote response: %+v", err)
+		return nil, fmt.Errorf("failed to read shipping quote response: %w", err)
 	}
 
 	var quoteResp struct {
 		CostUsd *pb.Money `json:"cost_usd"`
 	}
 	if err := json.Unmarshal(shippingQuoteBytes, &quoteResp); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal shipping quote: %+v", err)
+		return nil, fmt.Errorf("failed to unmarshal shipping quote: %w", err)
 	}
 	if quoteResp.CostUsd == nil {
 		return nil, fmt.Errorf("shipping quote missing cost_usd field")
@@ -668,14 +687,14 @@ func (cs *checkout) quoteShipping(ctx context.Context, address *pb.Address, item
 func (cs *checkout) getUserCart(ctx context.Context, userID string) ([]*pb.CartItem, error) {
 	cart, err := cs.cartSvcClient.GetCart(ctx, &pb.GetCartRequest{UserId: userID})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get user cart during checkout: %+v", err)
+		return nil, fmt.Errorf("failed to get user cart during checkout: %w", err)
 	}
 	return cart.GetItems(), nil
 }
 
 func (cs *checkout) emptyUserCart(ctx context.Context, userID string) error {
 	if _, err := cs.cartSvcClient.EmptyCart(ctx, &pb.EmptyCartRequest{UserId: userID}); err != nil {
-		return fmt.Errorf("failed to empty user cart during checkout: %+v", err)
+		return fmt.Errorf("failed to empty user cart during checkout: %w", err)
 	}
 	return nil
 }
@@ -706,7 +725,7 @@ func (cs *checkout) convertCurrency(ctx context.Context, from *pb.Money, toCurre
 		ToCode: toCurrency,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to convert currency: %+v", err)
+		return nil, fmt.Errorf("failed to convert currency: %w", err)
 	}
 	return result, err
 }
@@ -727,7 +746,7 @@ func (cs *checkout) chargeCard(ctx context.Context, amount *pb.Money, paymentInf
 		CreditCard: paymentInfo,
 	})
 	if err != nil {
-		return "", fmt.Errorf("could not charge the card: %+v", err)
+		return "", fmt.Errorf("could not charge the card: %w", err)
 	}
 	return paymentResp.GetTransactionId(), nil
 }
@@ -738,17 +757,17 @@ func (cs *checkout) sendOrderConfirmation(ctx context.Context, email string, ord
 		"order": order,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to marshal order to JSON: %+v", err)
+		return fmt.Errorf("failed to marshal order to JSON: %w", err)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "POST", cs.emailSvcAddr+"/send_order_confirmation", bytes.NewBuffer(emailPayload))
 	if err != nil {
-		return fmt.Errorf("failed to create request: %+v", err)
+		return fmt.Errorf("failed to create request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := cs.httpClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("failed POST to email service: %+v", err)
+		return fmt.Errorf("failed POST to email service: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -765,17 +784,17 @@ func (cs *checkout) shipOrder(ctx context.Context, address *pb.Address, items []
 		"items":   items,
 	})
 	if err != nil {
-		return "", fmt.Errorf("failed to marshal ship order request: %+v", err)
+		return "", fmt.Errorf("failed to marshal ship order request: %w", err)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "POST", cs.shippingSvcAddr+"/ship-order", bytes.NewBuffer(shipPayload))
 	if err != nil {
-		return "", fmt.Errorf("failed to create request: %+v", err)
+		return "", fmt.Errorf("failed to create request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := cs.httpClient.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("failed POST to shipping service: %+v", err)
+		return "", fmt.Errorf("failed POST to shipping service: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -785,14 +804,14 @@ func (cs *checkout) shipOrder(ctx context.Context, address *pb.Address, items []
 
 	trackingRespBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", fmt.Errorf("failed to read ship order response: %+v", err)
+		return "", fmt.Errorf("failed to read ship order response: %w", err)
 	}
 
 	var shipResp struct {
 		TrackingID string `json:"tracking_id"`
 	}
 	if err := json.Unmarshal(trackingRespBytes, &shipResp); err != nil {
-		return "", fmt.Errorf("failed to unmarshal ship order response: %+v", err)
+		return "", fmt.Errorf("failed to unmarshal ship order response: %w", err)
 	}
 	if shipResp.TrackingID == "" {
 		return "", fmt.Errorf("ship order response missing tracking_id field")
@@ -804,7 +823,7 @@ func (cs *checkout) shipOrder(ctx context.Context, address *pb.Address, items []
 func (cs *checkout) sendToPostProcessor(ctx context.Context, result *pb.OrderResult) {
 	message, err := proto.Marshal(result)
 	if err != nil {
-		logger.Error(fmt.Sprintf("Failed to marshal message to protobuf: %+v", err))
+		logger.Error("failed to marshal message to protobuf", slog.Any("error", err))
 		return
 	}
 
@@ -828,21 +847,23 @@ func (cs *checkout) sendToPostProcessor(ctx context.Context, result *pb.OrderRes
 				attribute.Int("messaging.kafka.producer.duration_ms", int(time.Since(startTime).Milliseconds())),
 				attribute.KeyValue(semconv.MessagingKafkaMessageOffset(int(successMsg.Offset))),
 			)
-			logger.Info(fmt.Sprintf("Successful to write message. offset: %v, duration: %v", successMsg.Offset, time.Since(startTime)))
+			logger.Info("successfully wrote message",
+				slog.Int64("offset", successMsg.Offset),
+				slog.Duration("duration", time.Since(startTime)))
 		case errMsg := <-cs.KafkaProducerClient.Errors():
 			span.SetAttributes(
 				attribute.Bool("messaging.kafka.producer.success", false),
 				attribute.Int("messaging.kafka.producer.duration_ms", int(time.Since(startTime).Milliseconds())),
 			)
 			span.SetStatus(otelcodes.Error, errMsg.Err.Error())
-			logger.Error(fmt.Sprintf("Failed to write message: %v", errMsg.Err))
+			logger.Error("failed to write message", slog.Any("error", errMsg.Err))
 		case <-ctx.Done():
 			span.SetAttributes(
 				attribute.Bool("messaging.kafka.producer.success", false),
 				attribute.Int("messaging.kafka.producer.duration_ms", int(time.Since(startTime).Milliseconds())),
 			)
 			span.SetStatus(otelcodes.Error, "Context cancelled: "+ctx.Err().Error())
-			logger.Warn(fmt.Sprintf("Context canceled before success message received: %v", ctx.Err()))
+			logger.Warn("Context canceled before success message received", slog.Any("error", ctx.Err()))
 		}
 	case <-ctx.Done():
 		span.SetAttributes(
@@ -850,7 +871,7 @@ func (cs *checkout) sendToPostProcessor(ctx context.Context, result *pb.OrderRes
 			attribute.Int("messaging.kafka.producer.duration_ms", int(time.Since(startTime).Milliseconds())),
 		)
 		span.SetStatus(otelcodes.Error, "Failed to send: "+ctx.Err().Error())
-		logger.Error(fmt.Sprintf("Failed to send message to Kafka within context deadline: %v", ctx.Err()))
+		logger.Error("Failed to send message to Kafka within context deadline", slog.Any("error", ctx.Err()))
 		return
 	}
 
@@ -863,7 +884,7 @@ func (cs *checkout) sendToPostProcessor(ctx context.Context, result *pb.OrderRes
 				<-cs.KafkaProducerClient.Successes()
 			}(msg)
 		}
-		logger.Info(fmt.Sprintf("Done with #%d messages for overload simulation.", ffValue))
+		logger.Info("done with overload simulation messages", slog.Int64("message_count", ffValue))
 	}
 }
 

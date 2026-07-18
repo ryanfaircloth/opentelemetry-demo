@@ -465,7 +465,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.35-checkout"
+      tag: "0.11.40-checkout"
     useDefault:
       env: true
     service:
@@ -505,6 +505,8 @@ components:
         value: http/protobuf
       - name: GOMEMLIMIT
         value: 56MiB
+      - name: LOG_LEVEL
+        value: WARN
     resources:
       requests:
         cpu: 10m
