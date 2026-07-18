@@ -508,9 +508,15 @@ func (p *productCatalog) GetProduct(ctx context.Context, req *pb.GetProductReque
 	found, err := getProductFromDB(ctx, req.Id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
+			// A client searching for a product ID that doesn't exist is an
+			// expected outcome of a well-formed request, not a fault - don't
+			// mark the span (or a log line) as an error over it, which would
+			// pollute error-rate dashboards/alerting with normal "not found"
+			// traffic. The gRPC NotFound status communicates the result to
+			// the caller; the span event/attribute below keeps it traceable.
 			msg := fmt.Sprintf("Product Not Found: %s", req.Id)
-			span.SetStatus(otelcodes.Error, msg)
 			span.AddEvent(msg)
+			span.SetAttributes(attribute.Bool("demo.product.found", false))
 			return nil, status.Error(codes.NotFound, msg)
 		}
 		logger.Error("failed to get product", slog.String("product_id", req.Id), slog.Any("error", err))
