@@ -22,12 +22,21 @@ set :port, ENV["EMAIL_PORT"]
 # access-log line for every request at a level that bypasses $console_logger
 # entirely - disable it so console output is actually governed by LOG_LEVEL.
 set :logging, false
+# dump_errors defaults to true outside the :test environment, and writes a
+# raw, unformatted, un-leveled backtrace straight to stderr on every
+# unhandled exception - bypassing both $console_logger's level gate and the
+# OTel logger, in addition to (not instead of) the `error do` block below.
+set :dump_errors, false
 
 # Plain stdlib logger so WARN/ERROR always reach the console, independent of
 # whether the OTLP collector is reachable. Level configurable via LOG_LEVEL
 # (this service demonstrates the "default, unstructured" logging tier).
 $console_logger = Logger.new($stdout)
-$console_logger.level = Logger.const_get((ENV["LOG_LEVEL"] || "WARN").upcase)
+begin
+  $console_logger.level = Logger.const_get((ENV["LOG_LEVEL"] || "WARN").upcase)
+rescue NameError
+  $console_logger.level = Logger::WARN
+end
 
 # OTel logger is created before OpenTelemetry::SDK.configure runs (needed to
 # capture WARN/ERROR from the flagd retry loop below, which happens first) -

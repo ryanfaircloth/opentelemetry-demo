@@ -7,6 +7,17 @@ the release.
 
 ## Unreleased
 
+* [email] Follow-up from the fifth re-review pass: `set :logging, false`
+  correctly suppressed Sinatra's per-request access log, but Sinatra's
+  separate `dump_errors` setting (default `true` outside `:test`) still
+  wrote a raw, unformatted, un-leveled backtrace straight to stderr on
+  every unhandled exception - bypassing both `$console_logger`'s level gate
+  and the OTel logger, in addition to (not instead of) the `error do`
+  handler. Added `set :dump_errors, false`. Also made the `LOG_LEVEL`
+  parsing defensive: `Logger.const_get(...)` would raise `NameError` and
+  crash the process at startup on an invalid value (e.g. a typo or empty
+  string) - now falls back to `WARN`.
+
 * [accounting] Follow-up from the fifth re-review pass: the duplicate-order
   catch block (`Consumer.cs`) called `Log.DuplicateOrderSkipped(_logger)`
   with no `Exception` parameter at all - not even `.Message` - so the
