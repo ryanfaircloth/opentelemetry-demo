@@ -7,6 +7,17 @@ the release.
 
 ## Unreleased
 
+* [currency] Split the single shared `LoggerProvider`/processor-list into
+  two independent providers - one OTLP-only, one console-only - since this
+  SDK's `LogRecordProcessor` has no per-processor severity filter, making it
+  impossible to give one shared provider different minimum levels for
+  console vs. OTLP. `logger` (OTLP) receives every call site unconditionally
+  (Info+); `console_logger` receives every `Error` call unconditionally
+  (matching the WARN+ console floor, since this service has no `Warn` calls)
+  and `Info` calls only when `LOG_LEVEL` is `INFO` or `DEBUG` (default:
+  console gets Error only). Previously both sinks received identical
+  records at identical severity with no differentiation at all.
+
 * [email] Assigned Tier C ("default, unstructured") for this pass: kept the
   stdlib `Logger`, now with a `LOG_LEVEL`-driven level (default `WARN`)
   instead of hardcoded. Fixed several gaps: Sinatra's default

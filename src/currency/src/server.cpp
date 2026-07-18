@@ -102,6 +102,7 @@ namespace
 
   nostd::unique_ptr<metrics_api::Counter<uint64_t>> currency_counter;
   nostd::shared_ptr<opentelemetry::logs::Logger> logger;
+  nostd::shared_ptr<opentelemetry::logs::Logger> console_logger;
 
 class CurrencyService final : public oteldemo::CurrencyService::Service
 {
@@ -137,6 +138,9 @@ class CurrencyService final : public oteldemo::CurrencyService::Service
     span->SetStatus(StatusCode::kOk);
 
     logger->Info(eventName("currency.get_supported_currencies"), "GetSupportedCurrencies successful");
+    if (consoleShouldLogInfo()) {
+      console_logger->Info(eventName("currency.get_supported_currencies"), "GetSupportedCurrencies successful");
+    }
 
     // Make sure to end your spans!
     span->End();
@@ -200,6 +204,7 @@ class CurrencyService final : public oteldemo::CurrencyService::Service
         span->AddEvent("Conversion failed");
         span->SetStatus(StatusCode::kError, msg);
         logger->Error(eventName("currency.conversion_failed"), msg.c_str());
+        console_logger->Error(eventName("currency.conversion_failed"), msg.c_str());
         span->End();
         return Status(grpc::StatusCode::INVALID_ARGUMENT, msg);
       }
@@ -208,6 +213,7 @@ class CurrencyService final : public oteldemo::CurrencyService::Service
         span->AddEvent("Conversion failed");
         span->SetStatus(StatusCode::kError, msg);
         logger->Error(eventName("currency.conversion_failed"), msg.c_str());
+        console_logger->Error(eventName("currency.conversion_failed"), msg.c_str());
         span->End();
         return Status(grpc::StatusCode::INVALID_ARGUMENT, msg);
       }
@@ -233,7 +239,14 @@ class CurrencyService final : public oteldemo::CurrencyService::Service
                    opentelemetry::common::MakeAttributes(
                        {{"currency.from", from_code.c_str()},
                         {"currency.to", to_code.c_str()}}));
-      
+      if (consoleShouldLogInfo()) {
+        console_logger->Info(eventName("currency.conversion"),
+                     "conversion successful",
+                     opentelemetry::common::MakeAttributes(
+                         {{"currency.from", from_code.c_str()},
+                          {"currency.to", to_code.c_str()}}));
+      }
+
       // End the span
       span->End();
       return Status::OK;
@@ -243,6 +256,7 @@ class CurrencyService final : public oteldemo::CurrencyService::Service
       span->SetStatus(StatusCode::kError, e.what());
 
       logger->Error(eventName("currency.conversion_failed"), e.what());
+      console_logger->Error(eventName("currency.conversion_failed"), e.what());
 
       span->End();
       return Status::CANCELLED;
@@ -252,6 +266,7 @@ class CurrencyService final : public oteldemo::CurrencyService::Service
       span->SetStatus(StatusCode::kError);
 
       logger->Error(eventName("currency.conversion_failed"), "conversion failure");
+      console_logger->Error(eventName("currency.conversion_failed"), "conversion failure");
 
       span->End();
       return Status::CANCELLED;
@@ -281,6 +296,7 @@ void RunHealthHttpServer(uint16_t port)
   int server_fd = socket(AF_INET6, SOCK_STREAM, 0);
   if (server_fd < 0) {
     logger->Error(eventName("currency.health.socket_failed"), "failed to create health check socket");
+    console_logger->Error(eventName("currency.health.socket_failed"), "failed to create health check socket");
     return;
   }
 
@@ -298,11 +314,15 @@ void RunHealthHttpServer(uint16_t port)
   if (bind(server_fd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) < 0 ||
       listen(server_fd, 16) < 0) {
     logger->Error(eventName("currency.health.listen_failed"), "failed to bind/listen health check socket");
+    console_logger->Error(eventName("currency.health.listen_failed"), "failed to bind/listen health check socket");
     close(server_fd);
     return;
   }
 
   logger->Info(eventName("currency.health.started"), "Currency HTTP health endpoint started");
+  if (consoleShouldLogInfo()) {
+    console_logger->Info(eventName("currency.health.started"), "Currency HTTP health endpoint started");
+  }
 
   static const char response[] =
       "HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
@@ -337,6 +357,11 @@ void RunServer(uint16_t port)
   logger->Info(eventName("currency.server.started"),
                "Currency Server started",
                opentelemetry::common::MakeAttributes({{"server.address", address.c_str()}}));
+  if (consoleShouldLogInfo()) {
+    console_logger->Info(eventName("currency.server.started"),
+                 "Currency Server started",
+                 opentelemetry::common::MakeAttributes({{"server.address", address.c_str()}}));
+  }
 
   const char* health_port_env = std::getenv("CURRENCY_HEALTH_PORT");
   uint16_t health_port = health_port_env != nullptr ? static_cast<uint16_t>(atoi(health_port_env)) : 8081;
@@ -367,6 +392,7 @@ int main(int argc, char **argv) {
   initLogger();
   currency_counter = initIntCounter("demo.exchange.conversions", version);
   logger = getLogger(name);
+  console_logger = getConsoleLogger(name);
   RunServer(port);
 
   return 0;

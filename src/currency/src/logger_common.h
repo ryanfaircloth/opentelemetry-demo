@@ -1,6 +1,8 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
+#include <algorithm>
+#include <cstdlib>
 #include <iostream>
 
 #include "opentelemetry/logs/provider.h"
@@ -20,26 +22,48 @@ namespace logs_sdk  = opentelemetry::sdk::logs;
 
 namespace
 {
+  // Two independent LoggerProviders rather than one shared processor list:
+  // this SDK's LogRecordProcessor has no per-processor severity filter, so a
+  // shared provider can't give console and OTLP different minimum levels.
+  // Splitting into two providers lets call sites decide which severities go
+  // to which sink (see consoleShouldLogInfo below).
+  std::shared_ptr<logs::LoggerProvider> otlpLoggerProvider;
+  std::shared_ptr<logs::LoggerProvider> consoleLoggerProvider;
+
   void initLogger() {
     otlp::OtlpHttpLogRecordExporterOptions loggerOptions;
     auto otlp_exporter  = otlp::OtlpHttpLogRecordExporterFactory::Create(loggerOptions);
     auto otlp_processor = logs_sdk::BatchLogRecordProcessorFactory::Create(std::move(otlp_exporter), {});
+    auto otlp_context = logs_sdk::LoggerContextFactory::Create(
+        std::vector<std::unique_ptr<logs_sdk::LogRecordProcessor>>{std::move(otlp_processor)});
+    otlpLoggerProvider = logs_sdk::LoggerProviderFactory::Create(std::move(otlp_context));
+    opentelemetry::logs::Provider::SetLoggerProvider(otlpLoggerProvider);
 
     // Console exporter so logs are still visible when the OTel collector is
     // unreachable or misconfigured, in addition to the OTLP export above.
     auto console_exporter  = opentelemetry::exporter::logs::OStreamLogRecordExporterFactory::Create(std::cout);
     auto console_processor = logs_sdk::SimpleLogRecordProcessorFactory::Create(std::move(console_exporter));
-
-    std::vector<std::unique_ptr<logs_sdk::LogRecordProcessor>> processors;
-    processors.push_back(std::move(otlp_processor));
-    processors.push_back(std::move(console_processor));
-    auto context = logs_sdk::LoggerContextFactory::Create(std::move(processors));
-    std::shared_ptr<logs::LoggerProvider> provider = logs_sdk::LoggerProviderFactory::Create(std::move(context));
-    opentelemetry::logs::Provider::SetLoggerProvider(provider);
+    auto console_context = logs_sdk::LoggerContextFactory::Create(
+        std::vector<std::unique_ptr<logs_sdk::LogRecordProcessor>>{std::move(console_processor)});
+    consoleLoggerProvider = logs_sdk::LoggerProviderFactory::Create(std::move(console_context));
   }
 
   nostd::shared_ptr<opentelemetry::logs::Logger> getLogger(std::string name){
-    auto provider = logs::Provider::GetLoggerProvider();
-    return provider->GetLogger(name + "_logger", name, OPENTELEMETRY_SDK_VERSION);
+    return otlpLoggerProvider->GetLogger(name + "_logger", name, OPENTELEMETRY_SDK_VERSION);
+  }
+
+  nostd::shared_ptr<opentelemetry::logs::Logger> getConsoleLogger(std::string name){
+    return consoleLoggerProvider->GetLogger(name + "_console_logger", name, OPENTELEMETRY_SDK_VERSION);
+  }
+
+  // Console is WARN+ by default; Error calls always go there. LOG_LEVEL=INFO
+  // or DEBUG additionally sends Info-level calls to console, for local
+  // troubleshooting.
+  bool consoleShouldLogInfo() {
+    const char *level = std::getenv("LOG_LEVEL");
+    if (level == nullptr) return false;
+    std::string upper(level);
+    std::transform(upper.begin(), upper.end(), upper.begin(), ::toupper);
+    return upper == "INFO" || upper == "DEBUG";
   }
 }

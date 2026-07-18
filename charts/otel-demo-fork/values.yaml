@@ -543,7 +543,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.37-currency"
+      tag: "0.11.51-currency"
     useDefault:
       env: true
     service:
@@ -565,6 +565,8 @@ components:
         value: http://$(OTEL_COLLECTOR_NAME):4318
       - name: VERSION
         value: "{{ .Chart.AppVersion }}"
+      - name: LOG_LEVEL
+        value: WARN
     resources:
       requests:
         cpu: 10m
