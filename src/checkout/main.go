@@ -323,7 +323,8 @@ func main() {
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
 	if err != nil {
-		logger.Error(err.Error())
+		logger.Error(fmt.Sprintf("failed to listen on tcp port %s: %v", port, err))
+		os.Exit(1)
 	}
 
 	srv := grpc.NewServer(
@@ -333,16 +334,13 @@ func main() {
 	)
 	pb.RegisterCheckoutServiceServer(srv, svc)
 
-	logger.Info(fmt.Sprintf("starting to listen on tcp: %q", lis.Addr().String()))
-	err = srv.Serve(lis)
-	logger.Error(err.Error())
-
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGKILL)
 	defer cancel()
 
+	logger.Info(fmt.Sprintf("starting to listen on tcp: %q", lis.Addr().String()))
 	go func() {
 		if err := srv.Serve(lis); err != nil {
-			logger.Error(err.Error())
+			logger.Error(fmt.Sprintf("gRPC server stopped serving: %v", err))
 		}
 	}()
 
@@ -434,10 +432,16 @@ func (cs *checkout) PlaceOrder(ctx context.Context, req *pb.PlaceOrderRequest) (
 		Units:        0,
 		Nanos:        0,
 	}
-	total = money.Must(money.Sum(total, prep.shippingCostLocalized))
+	total, err = money.Sum(total, prep.shippingCostLocalized)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to total order: %v", err)
+	}
 	for _, it := range prep.orderItems {
 		multPrice := money.MultiplySlow(it.Cost, uint32(it.GetItem().GetQuantity()))
-		total = money.Must(money.Sum(total, multPrice))
+		total, err = money.Sum(total, multPrice)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to total order: %v", err)
+		}
 	}
 
 	txID, err := cs.chargeCard(ctx, total, req.CreditCard)
@@ -460,7 +464,12 @@ func (cs *checkout) PlaceOrder(ctx context.Context, req *pb.PlaceOrderRequest) (
 	shippingTrackingAttribute := attribute.String("demo.shipping.tracking.id", shippingTrackingID)
 	span.AddEvent("shipped", trace.WithAttributes(shippingTrackingAttribute))
 
-	_ = cs.emptyUserCart(ctx, req.UserId)
+	if err := cs.emptyUserCart(ctx, req.UserId); err != nil {
+		// The order itself already succeeded (charged and shipped); a failure to
+		// empty the cart shouldn't fail the response back to the user.
+		logger.LogAttrs(ctx, slog.LevelWarn, "failed to empty user cart after order placement",
+			slog.String("error", err.Error()))
+	}
 
 	orderResult := &pb.OrderResult{
 		OrderId:            orderID.String(),

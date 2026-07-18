@@ -7,6 +7,19 @@ the release.
 
 ## Unreleased
 
+* [checkout] Fixed three request-handling bugs in `PlaceOrder`/`main`: (1) a
+  failure to empty the cart after a successful order was silently discarded
+  (`_ = cs.emptyUserCart(...)`) instead of logged; (2) `net.Listen` failures
+  were logged but the server tried to `Serve` on the resulting `nil`
+  listener anyway instead of exiting, and a duplicate/unreachable
+  `srv.Serve` + graceful-shutdown block after it never actually ran; (3)
+  `money.Must(money.Sum(...))` could panic mid-request on a currency
+  mismatch with no `recover()` anywhere, taking down the whole process for
+  one bad order. Listener failures now exit immediately, the money totaling
+  now returns a proper `codes.Internal` error instead of panicking, and the
+  cart-empty failure is logged at `WARN` without failing the (already
+  successful) order response.
+
 * [cart] Fixed `ValkeyCartStore.AddItemAsync`/`EmptyCartAsync`/`GetCartAsync`
   leaking the full exception (including stack trace, via `$"...{ex}"` string
   interpolation) into the `RpcException` message returned to gRPC clients,

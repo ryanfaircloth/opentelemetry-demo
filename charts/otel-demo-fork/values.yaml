@@ -465,7 +465,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.32-checkout"
+      tag: "0.11.35-checkout"
     useDefault:
       env: true
     service:
