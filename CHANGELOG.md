@@ -7,6 +7,16 @@ the release.
 
 ## Unreleased
 
+* [agent] Same audit as the `tools.py` fix below: `agents.py`'s `run_agent`
+  turned an unexpected failure inside `agent.ainvoke(...)` into
+  `HTTPException(detail=str(e))` with no server-side log at all, so the
+  only record of the failure was the raw internal exception text forwarded
+  to `chatbot` (and from there into the chat UI). Now logs via
+  `logging.exception` and returns a generic detail message. Also fixed
+  `mcp_client.py`'s retry/give-up/cleanup logging, which interpolated `{e}`
+  into an f-string instead of preserving the exception object - switched
+  to `exc_info=True` so stack traces actually survive in the logs.
+
 * [shared] Extending this release's "all helm-deployed components" logging
   review to the newer `agent`/`chatbot`/`mcp` services turned up the same
   leak pattern seen elsewhere, at larger scale: `tools.py` (built into both

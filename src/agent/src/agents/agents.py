@@ -96,7 +96,10 @@ class Agent:
             )
             return {"response": result}
         except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e)) from e
+            logging.exception("Agent invocation failed")
+            raise HTTPException(
+                status_code=500, detail="Agent failed to process the request."
+            ) from e
 
     async def launch(self):
         agent_port = int(os.getenv("AGENT_PORT", "8010"))

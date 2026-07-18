@@ -34,7 +34,7 @@ class MCPClient:
                 self.session = await self.exit_stack.enter_async_context(session_context)
                 await self.session.initialize()
                 return
-            except Exception as e:
+            except Exception:
                 # Discard any partially-entered contexts from this attempt before retrying.
                 await self.exit_stack.aclose()
                 self.exit_stack = AsyncExitStack()
@@ -43,14 +43,15 @@ class MCPClient:
                 remaining = deadline - time.monotonic()
                 if remaining <= 0:
                     logging.error(
-                        f"Giving up connecting to MCP server at {url} after {attempt} attempts: {e}"
+                        "Giving up connecting to MCP server at %s after %d attempts",
+                        url, attempt, exc_info=True,
                     )
                     raise
 
                 sleep_for = min(delay, MAX_RETRY_DELAY_SECONDS, remaining)
                 logging.warning(
-                    f"Attempt {attempt} to connect to MCP server at {url} failed: {e}. "
-                    f"Retrying in {sleep_for:.1f}s"
+                    "Attempt %d to connect to MCP server at %s failed, retrying in %.1fs",
+                    attempt, url, sleep_for, exc_info=True,
                 )
                 await asyncio.sleep(sleep_for)
                 delay = min(delay * 2, MAX_RETRY_DELAY_SECONDS)
@@ -58,5 +59,5 @@ class MCPClient:
     async def cleanup(self):
         try:
             await self.exit_stack.aclose()
-        except Exception as e:
-            logging.error(f"Error closing connection : {e}")
+        except Exception:
+            logging.exception("Error closing MCP client connection")
