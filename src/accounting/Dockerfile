@@ -5,9 +5,11 @@ FROM --platform=${BUILDPLATFORM} mcr.microsoft.com/dotnet/sdk:10.0.301@sha256:ea
 ARG TARGETARCH
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
+COPY ["/src/accounting/Accounting.csproj", "/src/accounting/Directory.Build.props", "/src/accounting/Directory.Packages.props", "Accounting/"]
+RUN dotnet restore "./Accounting/Accounting.csproj" -r linux-$TARGETARCH
+
 COPY ["/src/accounting/", "Accounting/"]
 COPY ["/pb/demo.proto", "Accounting/src/protos/demo.proto"]
-RUN dotnet restore "./Accounting/Accounting.csproj" -r linux-$TARGETARCH
 WORKDIR "/src/Accounting"
 
 RUN dotnet build "./Accounting.csproj" -r linux-$TARGETARCH -c $BUILD_CONFIGURATION -o /app/build

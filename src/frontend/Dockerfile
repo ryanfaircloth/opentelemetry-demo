@@ -57,6 +57,7 @@ COPY --from=deps /app/node_modules/ node_modules/
 
 COPY ./src/frontend/public/ public/
 
+ARG FRONTEND_PORT=8080
 EXPOSE ${FRONTEND_PORT}
 
 CMD ["server.js"]

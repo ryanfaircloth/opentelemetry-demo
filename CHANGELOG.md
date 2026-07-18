@@ -7,6 +7,21 @@ the release.
 
 ## Unreleased
 
+* [docker] Fixed a latent `EXPOSE ${VAR}` build failure present in 18
+  services' Dockerfiles (accounting, ad, agent, cart, chatbot, checkout,
+  currency, email, flagd-ui, frontend, frontend-proxy, image-provider, mcp,
+  payment, product-catalog, quote, recommendation, shipping,
+  telemetry-docs): the port variables referenced in `EXPOSE` were never
+  declared as `ARG`s (or were declared without a default), so builds without
+  an explicit `--build-arg` for every port literal failed with `EXPOSE
+  requires at least one argument`. Declared each as an `ARG` with the same
+  default already used elsewhere in the repo (`.env`, or the service's own
+  fallback default in code). Also reordered the dependency-manifest copy/
+  restore/fetch steps ahead of full source copies in cart, accounting,
+  shipping, and fraud-detection's Dockerfiles so source-only changes reuse
+  the cached dependency-resolution layer instead of busting it on every
+  build.
+
 * [flagd, recommendation] Found the actual trigger behind the recurring
   `recommendation` call-combiner SIGABRT the previous three releases tried to
   work around: `GRPC_TRACE=call_combiner` debug tracing showed the process

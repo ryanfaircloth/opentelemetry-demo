@@ -20,10 +20,13 @@ ARG TARGETARCH
 
 WORKDIR /usr/src/app/
 
-COPY ./src/cart/ ./
-COPY ./pb/ ./pb/
+COPY ./src/cart/Directory.Build.props ./src/cart/Directory.Packages.props ./src/cart/NuGet.config ./
+COPY ./src/cart/src/cart.csproj ./src/
 
 RUN dotnet restore ./src/cart.csproj -r linux-$TARGETARCH
+
+COPY ./src/cart/ ./
+COPY ./pb/ ./pb/
 
 RUN dotnet publish ./src/cart.csproj -r linux-$TARGETARCH --no-restore -o /cart /p:UseAppHost=false
 
@@ -32,6 +35,9 @@ RUN dotnet publish ./src/cart.csproj -r linux-$TARGETARCH --no-restore -o /cart 
 # glibc runtime required: the OTel Operator's .NET auto-instrumentation
 # profiler is a glibc-linked native library and won't load on musl/Alpine.
 FROM mcr.microsoft.com/dotnet/aspnet:10.0.9@sha256:7644f992230d35cf230017189d4038c0ae0f7388b13f4f7ae1900a155bafb597
+
+ARG CART_PORT=7070
+ARG CART_HEALTH_PORT=8081
 
 WORKDIR /usr/src/app/
 COPY --from=builder /cart/ ./

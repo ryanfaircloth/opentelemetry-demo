@@ -28,5 +28,6 @@ WORKDIR /usr/src/app/
 COPY --from=builder /usr/src/app/checkout/ ./
 COPY --from=builder /usr/src/app/healthcheck /usr/src/app/healthcheck
 
+ARG CHECKOUT_PORT=5050
 EXPOSE ${CHECKOUT_PORT}
 ENTRYPOINT [ "./checkout" ]

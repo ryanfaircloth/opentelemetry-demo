@@ -24,6 +24,8 @@ COPY ./src/email/Gemfile Gemfile
 COPY ./src/email/Gemfile.lock Gemfile.lock
 COPY ./src/email/email_server.rb email_server.rb
 
+ARG EMAIL_PORT=6060
+ARG EMAIL_HEALTH_PORT=8081
 EXPOSE ${EMAIL_PORT}
 EXPOSE ${EMAIL_HEALTH_PORT}
 ENTRYPOINT ["bundle", "exec", "ruby", "email_server.rb"]

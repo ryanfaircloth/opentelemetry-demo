@@ -20,6 +20,14 @@ RUN apt-get update && \
 
 WORKDIR /app/
 
+COPY /src/shipping/Cargo.toml /src/shipping/Cargo.lock /app/
+
+RUN if [ "${TARGETPLATFORM}" = "linux/arm64" ] && [ "${BUILDPLATFORM}" != "linux/arm64" ] ; then \
+        cargo fetch --target aarch64-unknown-linux-gnu; \
+    else \
+        cargo fetch; \
+    fi
+
 COPY /src/shipping/ /app/
 
 # Build - cross-compile for ARM64 or native build
@@ -42,6 +50,8 @@ WORKDIR /app
 COPY --from=builder /app/target/release/shipping shipping
 COPY --from=builder /app/target/release/healthcheck healthcheck
 
+ARG SHIPPING_PORT=50050
+ARG SHIPPING_HEALTH_PORT=8081
 EXPOSE ${SHIPPING_PORT}
 EXPOSE ${SHIPPING_HEALTH_PORT}
 

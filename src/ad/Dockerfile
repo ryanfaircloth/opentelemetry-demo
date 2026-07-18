@@ -26,6 +26,8 @@ WORKDIR /usr/src/app/
 COPY --from=builder /usr/src/app/ ./
 ENV JAVA_TOOL_OPTIONS="-Xmx200m"
 
+ARG AD_PORT=9555
+ARG AD_PROMETHEUS_PORT=9465
 EXPOSE ${AD_PORT}
 EXPOSE ${AD_PROMETHEUS_PORT}
 ENTRYPOINT [ "./build/install/opentelemetry-demo-ad/bin/Ad" ]

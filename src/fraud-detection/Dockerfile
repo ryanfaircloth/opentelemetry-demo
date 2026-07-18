@@ -6,6 +6,10 @@ FROM --platform=${BUILDPLATFORM} docker.io/library/gradle:9.6.1-jdk17@sha256:685
 
 WORKDIR /usr/src/app/
 
+COPY ./src/fraud-detection/settings.gradle.kts ./src/fraud-detection/build.gradle.kts ./src/fraud-detection/gradle.properties ./
+
+RUN gradle dependencies
+
 COPY ./src/fraud-detection/ ./
 COPY ./pb/ ./src/main/proto/
 

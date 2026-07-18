@@ -26,5 +26,6 @@ WORKDIR /usr/src/app/
 COPY --from=builder /usr/src/app/product-catalog/ ./
 COPY --from=builder /usr/src/app/healthcheck /usr/src/app/healthcheck
 
+ARG PRODUCT_CATALOG_PORT=3550
 EXPOSE ${PRODUCT_CATALOG_PORT}
 ENTRYPOINT [ "./product-catalog" ]
