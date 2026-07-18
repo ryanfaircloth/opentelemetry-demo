@@ -16,6 +16,12 @@ namespace Accounting
 
         [LoggerMessage(
             Level = LogLevel.Information,
+            EventName = "accounting.startup.env",
+            Message = "startup env: {key}={value}")]
+        public static partial void StartupEnvVar(ILogger logger, object key, object? value);
+
+        [LoggerMessage(
+            Level = LogLevel.Information,
             EventName = "accounting.kafka.connecting",
             Message = "Connecting to Kafka: {servers}")]
         public static partial void KafkaConnecting(ILogger logger, string servers);

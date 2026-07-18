@@ -7,6 +7,31 @@ the release.
 
 ## Unreleased
 
+* [accounting] Fixed the CI build failure blocking this and every prior
+  release: `Helpers.cs`'s `OutputInOrder` called `logger.LogInformation`
+  directly with interpolated arguments, which the `CA1873` analyzer flags
+  as a build error (expensive argument evaluation when logging is
+  disabled). Added a `StartupEnvVar` `[LoggerMessage]` entry, matching the
+  rest of this file's pattern, and switched the call site to use it.
+
+* [cart] Fixed the CI build failure blocking this and every prior release:
+  `Log.cs`'s `ParseLogLevel(string? value)` used nullable annotations
+  (`CS8632`) in a file with no `#nullable` context - unlike accounting,
+  cart's `.csproj` has no project-wide `<Nullable>enable</Nullable>`.
+  Added a file-scoped `#nullable enable` rather than flipping the whole
+  project, to keep the blast radius to this one file.
+
+* [currency] Fixed the CI build failure blocking this and every prior
+  release: `logger_common.h`'s `initLogger()` built each `LogRecordProcessor`
+  list via `std::vector<std::unique_ptr<T>>{std::move(x)}` - a brace-init
+  list, whose backing array is `const T[]`, forces a copy-construct from
+  each element, which fails outright for `LogRecordProcessor` (explicitly
+  non-copyable and non-movable, per the OTel C++ SDK). Confirmed via a
+  standalone repro against the real SDK headers that this exact pattern
+  fails with the same "deleted copy constructor" error seen in CI, and
+  that building the vector via `push_back` then moving it compiles clean.
+  Switched both processor lists (OTLP and console) to that pattern.
+
 * [accounting] `Log.cs`'s `OrderReceivedMessage` template used
   `{@OrderResult}` - Serilog's destructuring syntax, which the
   `[LoggerMessage]` source generator doesn't support; it's just a

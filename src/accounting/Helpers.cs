@@ -28,7 +28,7 @@ namespace Accounting
         {
             foreach (var env in envs.OrderBy(x => x.Key))
             {
-                logger.LogInformation("startup env: {Key}={Value}", env.Key, env.Value);
+                Log.StartupEnvVar(logger, env.Key, env.Value);
             }
         }
 
