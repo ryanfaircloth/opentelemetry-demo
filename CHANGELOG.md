@@ -7,6 +7,12 @@ the release.
 
 ## Unreleased
 
+* [product-catalog] Follow-up from a second re-review pass: `ListProducts`
+  and `SearchProducts` only set span status on a DB error, unlike
+  `GetProduct` (fixed in the prior commit), which also logs. Added the
+  matching `logger.Error` + `span.RecordError` calls to both for
+  consistency across all three handlers.
+
 * [shipping] Follow-up from a re-review: `OtelGuard::shutdown` used
   `eprintln!` for provider-shutdown failures instead of `tracing::error!`,
   bypassing the console formatting/level work done elsewhere in this pass.

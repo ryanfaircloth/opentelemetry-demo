@@ -903,7 +903,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.57-product-catalog"
+      tag: "0.11.60-product-catalog"
     useDefault:
       env: true
     service:

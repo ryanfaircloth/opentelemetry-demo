@@ -475,7 +475,9 @@ func (p *productCatalog) ListProducts(ctx context.Context, req *pb.Empty) (*pb.L
 
 	products, err := loadProductsFromDB(ctx)
 	if err != nil {
+		logger.Error("failed to load products", slog.Any("error", err))
 		span.SetStatus(otelcodes.Error, err.Error())
+		span.RecordError(err)
 		return nil, status.Errorf(codes.Internal, "failed to load products: %v", err)
 	}
 
@@ -534,7 +536,9 @@ func (p *productCatalog) SearchProducts(ctx context.Context, req *pb.SearchProdu
 
 	result, err := searchProductsFromDB(ctx, req.Query)
 	if err != nil {
+		logger.Error("failed to search products", slog.String("query", req.Query), slog.Any("error", err))
 		span.SetStatus(otelcodes.Error, err.Error())
+		span.RecordError(err)
 		return nil, status.Errorf(codes.Internal, "failed to search products: %v", err)
 	}
 
