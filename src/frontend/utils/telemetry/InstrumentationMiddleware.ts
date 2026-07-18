@@ -4,6 +4,7 @@
 import { NextApiHandler } from 'next';
 import {context, Exception, Span, SpanStatusCode, trace} from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import Log from '../Log';
 
 const InstrumentationMiddleware = (handler: NextApiHandler): NextApiHandler => {
   return async (request, response) => {
@@ -17,7 +18,10 @@ const InstrumentationMiddleware = (handler: NextApiHandler): NextApiHandler => {
       span.recordException(error as Exception);
       span.setStatus({ code: SpanStatusCode.ERROR });
       httpStatus = 500;
-      throw error;
+      Log.error(`API route ${request.url} failed`, error);
+      if (!response.headersSent) {
+        response.status(500).json({ error: 'Internal server error' });
+      }
     } finally {
       span.setAttribute(SemanticAttributes.HTTP_STATUS_CODE, httpStatus);
     }

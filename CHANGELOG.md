@@ -7,6 +7,19 @@ the release.
 
 ## Unreleased
 
+* [frontend] Fixed `InstrumentationMiddleware` (which wraps every Next.js
+  API route) only recording the exception on the OTel span and rethrowing
+  raw - added a `Log.error` call so failures actually show up in
+  application logs, and it now returns a generic `{ error: "Internal
+  server error" }` 500 response instead of letting the raw error propagate
+  through Next's default handling. Since every API route already goes
+  through this middleware, this single change covers `cart`, `checkout`,
+  `currency`, `data`, `products`, `recommendations`, and `shipping` rather
+  than needing a per-route try/catch. Also added a React error boundary
+  (`components/ErrorBoundary`, wrapped around `<Component />` in `_app.tsx`)
+  so a render-time throw shows a minimal fallback and gets logged, instead
+  of crashing the whole page with no logging at all.
+
 * [currency] Split the single shared `LoggerProvider`/processor-list into
   two independent providers - one OTLP-only, one console-only - since this
   SDK's `LogRecordProcessor` has no per-processor severity filter, making it
