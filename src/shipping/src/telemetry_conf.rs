@@ -3,6 +3,7 @@
 
 use anyhow::Result;
 use opentelemetry::global;
+use tracing::error;
 use opentelemetry_appender_tracing::layer::OpenTelemetryTracingBridge;
 use opentelemetry_otlp::{Protocol, WithExportConfig};
 use opentelemetry_sdk::logs::SdkLoggerProvider;
@@ -114,13 +115,13 @@ impl OtelGuard {
     /// may emit self-diagnostic metrics during its shutdown).
     pub fn shutdown(self) {
         if let Err(e) = self.tracer_provider.shutdown() {
-            eprintln!("Failed to shutdown TracerProvider: {e}");
+            error!(error = %e, "Failed to shutdown TracerProvider");
         }
         if let Err(e) = self.logger_provider.shutdown() {
-            eprintln!("Failed to shutdown LoggerProvider: {e}");
+            error!(error = %e, "Failed to shutdown LoggerProvider");
         }
         if let Err(e) = self.meter_provider.shutdown() {
-            eprintln!("Failed to shutdown MeterProvider: {e}");
+            error!(error = %e, "Failed to shutdown MeterProvider");
         }
     }
 }

@@ -7,6 +7,12 @@ the release.
 
 ## Unreleased
 
+* [shipping] Follow-up from a re-review: `OtelGuard::shutdown` used
+  `eprintln!` for provider-shutdown failures instead of `tracing::error!`,
+  bypassing the console formatting/level work done elsewhere in this pass.
+  Switched to structured `error!(error = %e, ...)`, consistent with the
+  rest of the service.
+
 * [quote] Follow-up from a re-review: `index.php` called
   `addErrorMiddleware(true, true, true)` with hardcoded booleans, completely
   ignoring the `displayErrorDetails`/`logError`/`logErrorDetails` values in
