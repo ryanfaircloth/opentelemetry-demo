@@ -304,7 +304,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.55-accounting"
+      tag: "0.11.63-accounting"
     useDefault:
       env: true
     podAnnotations:
@@ -477,7 +477,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.62-checkout"
+      tag: "0.11.63-checkout"
     useDefault:
       env: true
     service:
@@ -543,7 +543,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.56-currency"
+      tag: "0.11.63-currency"
     useDefault:
       env: true
     service:
@@ -591,7 +591,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.50-email"
+      tag: "0.11.63-email"
     useDefault:
       env: true
     service:
@@ -637,7 +637,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.42-fraud-detection"
+      tag: "0.11.63-fraud-detection"
     useDefault:
       env: true
     podAnnotations:
@@ -676,7 +676,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.52-frontend"
+      tag: "0.11.63-frontend"
     useDefault:
       env: true
     service:
@@ -757,7 +757,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.53-image-provider"
+      tag: "0.11.63-image-provider"
     useDefault:
       env: true
     service:
@@ -849,7 +849,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.47-payment"
+      tag: "0.11.63-payment"
     useDefault:
       env: true
     service:
@@ -903,7 +903,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.60-product-catalog"
+      tag: "0.11.63-product-catalog"
     useDefault:
       env: true
     service:
@@ -1005,7 +1005,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.45-recommendation"
+      tag: "0.11.63-recommendation"
     useDefault:
       env: true
     service:
@@ -1100,7 +1100,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.11.54-telemetry-docs"
+      tag: "0.11.63-telemetry-docs"
     useDefault:
       env: true
     service:
