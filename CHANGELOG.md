@@ -7,6 +7,15 @@ the release.
 
 ## Unreleased
 
+* [quote] Assigned Tier B ("default-but-structured") for this pass: kept
+  Monolog's default `LineFormatter`, but replaced the hardcoded
+  `LogLevel::DEBUG` setting (which only happened to produce a WARN-only
+  console today because of a special-cased DEBUG→WARNING ternary in
+  `dependencies.php`) with a real `LOG_LEVEL` env var (default `WARNING`)
+  read directly in `settings.php`, and removed the now-unnecessary ternary.
+  The OTel Monolog handler remains fixed at `LogLevel::INFO` independent of
+  this setting.
+
 * [shipping] Assigned Tier B ("default-but-structured") for this pass: kept
   `tracing_subscriber`'s default `fmt` layer (not `.json()`) but split its
   filter from the OTel layer's - console is now `LOG_LEVEL`-driven (default

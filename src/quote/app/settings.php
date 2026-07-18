@@ -22,7 +22,10 @@ return function (ContainerBuilder $containerBuilder) {
                 'logger' => [
                     'name' => 'slim-app',
                     'path' => 'php://stdout',
-                    'level' => LogLevel::DEBUG,
+                    // Console-only floor; the OTel Monolog handler
+                    // (dependencies.php) is fixed at LogLevel::INFO
+                    // regardless of this.
+                    'level' => getenv('LOG_LEVEL') ?: LogLevel::WARNING,
                 ],
             ]);
         }

@@ -25,10 +25,7 @@ return function (ContainerBuilder $containerBuilder) {
                 Globals::loggerProvider(),
                 LogLevel::INFO,
             );
-            $consoleLevel = $loggerSettings['level'] === LogLevel::DEBUG
-                ? LogLevel::WARNING
-                : $loggerSettings['level'];
-            $consoleHandler = new StreamHandler('php://stdout', $consoleLevel);
+            $consoleHandler = new StreamHandler('php://stdout', $loggerSettings['level']);
             return new Logger($loggerSettings['name'], [$otelHandler, $consoleHandler]);
         },
     ]);
