@@ -464,14 +464,23 @@ components:
       httpGet:
         path: /healthz
         port: 8081
-      initialDelaySeconds: 5
+      # The .NET auto-instrumentation profiler this service is annotated for
+      # (see the Instrumentation CR note above) adds real cold-start overhead
+      # on top of this container's tight CPU limit, and can blow past the
+      # default 1s probe timeout / 3-failure threshold before Kestrel ever
+      # finishes binding - which kills and restarts the container mid-startup,
+      # so it never gets a chance to finish. Give it enough runway to start.
+      initialDelaySeconds: 15
       periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 6
     readinessProbe:
       httpGet:
         path: /healthz
         port: 8081
-      initialDelaySeconds: 5
+      initialDelaySeconds: 10
       periodSeconds: 10
+      timeoutSeconds: 5
 
   checkout:
     enabled: true
@@ -744,14 +753,24 @@ components:
       httpGet:
         path: /api/healthz
         port: 8080
-      initialDelaySeconds: 5
+      # The Node.js auto-instrumentation this service is annotated for (see
+      # the Instrumentation CR note above) is loaded via NODE_OPTIONS --require
+      # before server.js runs at all, adding real cold-start overhead on top
+      # of this container's tight CPU limit. That can blow past the default
+      # 1s probe timeout / 3-failure threshold before the server ever finishes
+      # starting - which kills and restarts the container mid-startup, so it
+      # never gets a chance to finish. Give it enough runway to start.
+      initialDelaySeconds: 15
       periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 6
     readinessProbe:
       httpGet:
         path: /api/healthz
         port: 8080
-      initialDelaySeconds: 5
+      initialDelaySeconds: 10
       periodSeconds: 10
+      timeoutSeconds: 5
 
   image-provider:
     enabled: true
