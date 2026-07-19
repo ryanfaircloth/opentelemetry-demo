@@ -1396,16 +1396,53 @@ opentelemetry-collector:
     metrics:
       enabled: true
   config:
+    # The opentelemetry-collector subchart's default receiver/extension endpoints
+    # are all `${env:MY_POD_IP}:<port>`, i.e. the single address from the pod's
+    # status.podIP. On an IPv6-only pod network that env var is a bare IPv6
+    # literal, and `${env:MY_POD_IP}:4317` collapses to something like
+    # `2001:db8::1:4317` - not valid host:port syntax (needs `[...]` around the
+    # address), so every one of these listeners fails to bind and the collector
+    # crash-loops. `[::]` is the dual-stack wildcard (binds v4 and v6 alike via
+    # the default net.ipv6.bindv6only=0), so rebind everything here instead of
+    # relying on the pod's own address family.
+    extensions:
+      health_check:
+        endpoint: "[::]:13133"
     receivers:
       otlp:
         protocols:
+          grpc:
+            endpoint: "[::]:4317"
           http:
+            endpoint: "[::]:4318"
             # Since this collector needs to receive data from the web, enable cors for all origins
             # `allowed_origins` can be refined for your deployment domain
             cors:
               allowed_origins:
                 - "http://*"
                 - "https://*"
+      jaeger:
+        protocols:
+          grpc:
+            endpoint: "[::]:14250"
+          thrift_http:
+            endpoint: "[::]:14268"
+          thrift_compact:
+            endpoint: "[::]:6831"
+      zipkin:
+        endpoint: "[::]:9411"
+      # This is the collector's own self-scrape of its internal metrics
+      # (exposed below via service.telemetry.metrics.readers) - always
+      # local to the pod, so target it via localhost rather than an
+      # address whose family depends on the cluster's pod network.
+      prometheus:
+        config:
+          scrape_configs:
+            - job_name: opentelemetry-collector
+              scrape_interval: 10s
+              static_configs:
+                - targets:
+                    - localhost:8888
       kafkametrics:
         scrapers:
           - brokers
