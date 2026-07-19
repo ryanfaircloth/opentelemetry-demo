@@ -42,10 +42,13 @@
       "$ref": "#/definitions/PostgresAccess"
     },
     "opentelemetry-collector": {
-      "type": "object"
+      "$ref": "#/definitions/OpenTelemetryCollectorSubchart"
     },
     "otelCollectorHTTPRoute": {
       "$ref": "#/definitions/HTTPRoute"
+    },
+    "otelCollectorOperatorCR": {
+      "$ref": "#/definitions/OperatorCR"
     }
   },
   "required": [
@@ -1067,6 +1070,62 @@
         "name",
         "mountPath"
       ]
+    },
+    "OperatorCR": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Render an OpenTelemetryCollector custom resource instead of relying on the opentelemetry-collector sub-chart's Deployment/DaemonSet. Requires the OpenTelemetry Operator to already be installed in-cluster."
+        }
+      },
+      "required": [
+        "enabled"
+      ],
+      "title": "OperatorCR"
+    },
+    "OpenTelemetryCollectorSubchart": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "config": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "exporters": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "otlp/observability-backend": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "endpoint": {
+                      "type": "string",
+                      "minLength": 1,
+                      "description": "Required: OTLP endpoint of your own traces/metrics/logs backend. This chart ships no default - see examples/bring-your-own-observability."
+                    }
+                  },
+                  "required": [
+                    "endpoint"
+                  ]
+                }
+              },
+              "required": [
+                "otlp/observability-backend"
+              ]
+            }
+          },
+          "required": [
+            "exporters"
+          ]
+        }
+      },
+      "required": [
+        "config"
+      ],
+      "title": "OpenTelemetryCollectorSubchart"
     }
   }
 }

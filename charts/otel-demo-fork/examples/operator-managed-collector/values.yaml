@@ -1,0 +1,20 @@
+# Lets the OpenTelemetry Operator (already required in-cluster for the
+# Instrumentation CR used by ad/cart/fraud-detection's auto-instrumentation)
+# reconcile the collector workload from an OpenTelemetryCollector custom
+# resource, instead of the opentelemetry-collector sub-chart's own
+# Deployment/DaemonSet template. Pipeline/exporter config is still set under
+# opentelemetry-collector.config - only the deployment mechanism changes.
+#
+# Note: the sub-chart's presets (hostMetrics, kubernetesAttributes,
+# kubeletMetrics, clusterMetrics, annotationDiscovery) have no CRD
+# equivalent, so any receivers/RBAC they provided must be configured by hand
+# if you need them in this mode.
+opentelemetry-collector:
+  enabled: false
+  config:
+    exporters:
+      otlp/observability-backend:
+        endpoint: "my-observability-endpoint:4317"
+
+otelCollectorOperatorCR:
+  enabled: true

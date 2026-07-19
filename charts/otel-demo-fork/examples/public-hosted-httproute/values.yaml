@@ -5,6 +5,12 @@
 # Requires a Gateway API controller and a Gateway named "otel-demo-gateway"
 # to already exist in the cluster.
 
+opentelemetry-collector:
+  config:
+    exporters:
+      otlp/observability-backend:
+        endpoint: "my-observability-endpoint:4317"
+
 components:
   frontend:
     envOverrides:

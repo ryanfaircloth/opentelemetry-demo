@@ -5,6 +5,12 @@
 # Kafka cluster named/namespaced in kafkaAccess.cluster - no per-app
 # hand-authoring required (contrast with ../kafka-access-unmanaged). Each
 # KafkaAccess produces a Secret named "<component>-kafka-access".
+opentelemetry-collector:
+  config:
+    exporters:
+      otlp/observability-backend:
+        endpoint: "my-observability-endpoint:4317"
+
 kafkaAccess:
   mode: kafkaAccess
   cluster:

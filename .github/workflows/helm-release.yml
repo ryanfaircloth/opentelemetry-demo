@@ -33,7 +33,10 @@ jobs:
       - name: Update chart dependencies
         run: helm dependency update "$CHART_PATH"
       - name: Lint chart
-        run: helm lint "$CHART_PATH"
+        # The chart ships no default observability-backend endpoint (it's a
+        # required override - see values.schema.json), so lint against an
+        # example values file that supplies one instead of the bare chart.
+        run: helm lint "$CHART_PATH" -f "$CHART_PATH/examples/bring-your-own-observability/values.yaml"
       - name: Package chart
         run: helm package "$CHART_PATH" --destination dist
       - name: Log in to GHCR

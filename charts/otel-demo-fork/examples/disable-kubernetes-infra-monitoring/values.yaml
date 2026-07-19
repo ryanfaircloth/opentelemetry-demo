@@ -1,4 +1,8 @@
 opentelemetry-collector:
+  config:
+    exporters:
+      otlp/observability-backend:
+        endpoint: "my-observability-endpoint:4317"
   presets:
     logsCollection:
       enabled: false

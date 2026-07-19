@@ -24,3 +24,20 @@ from the root folder.
 It will start all of the required backend services
 and within the container simply run `npm run dev`.
 After that the app should be available at <http://localhost:8080/>.
+
+## Browser telemetry
+
+The client bundle is instrumented independently of the API layer's own
+OpenTelemetry SDK. `utils/telemetry/FrontendTracer.ts` sets up a
+`WebTracerProvider` (`@opentelemetry/sdk-trace-web`) with
+`getWebAutoInstrumentations` (document-load, fetch, XHR, user-interaction)
+and a `BatchSpanProcessor` exporting via OTLP/HTTP
+(`NEXT_PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`); it's registered from
+`pages/_app.tsx`. W3C trace-context and baggage propagators keep browser
+spans correlated with backend traces, and `SessionIdProcessor.ts` tags every
+span with `session.id`/`enduser.id`.
+
+To avoid CORS, the browser doesn't call the collector cross-origin directly:
+`pages/_document.tsx` points the exporter at a same-origin path
+(`/otlp-http/v1/traces`), which the reverse proxy in front of the app forwards
+to the collector's OTLP/HTTP receiver.

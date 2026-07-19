@@ -1,0 +1,21 @@
+{{- $collector := index .Values "opentelemetry-collector" }}
+{{- if .Values.otelCollectorOperatorCR.enabled }}
+{{- if $collector.enabled }}
+{{- fail "otelCollectorOperatorCR.enabled and opentelemetry-collector.enabled are mutually exclusive ways of running the collector - set opentelemetry-collector.enabled: false to use the Operator CR." }}
+{{- end }}
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: {{ $collector.fullnameOverride | default "otel-collector" }}
+  labels:
+    {{- include "otel-demo.labels" $ | nindent 4 }}
+spec:
+  mode: {{ $collector.mode }}
+  image: "{{ $collector.image.repository }}:{{ $collector.image.tag }}"
+  {{- with $collector.resources }}
+  resources:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  config:
+    {{- toYaml $collector.config | nindent 4 }}
+{{- end }}

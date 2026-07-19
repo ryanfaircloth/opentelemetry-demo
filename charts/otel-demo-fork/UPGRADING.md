@@ -5,6 +5,24 @@
 > another. If you need to upgrade the chart, you must first delete the existing
 > release and then install the new version.
 
+## To 0.12.0
+
+`opentelemetry-collector.config.exporters."otlp/observability-backend".endpoint`
+no longer has a default value (it was previously a non-functional placeholder,
+`otel-gateway:4317`) and is now enforced as required by `values.schema.json`.
+`helm lint`/`template`/`install` now fail fast with a schema error if it's
+left unset, instead of silently deploying a collector that sends telemetry
+nowhere. If you already override this endpoint (per
+[examples/bring-your-own-observability](examples/bring-your-own-observability)),
+no action is needed.
+
+Adds an alternative way to deploy the collector: setting
+`otelCollectorOperatorCR.enabled: true` renders an `OpenTelemetryCollector`
+custom resource for the OpenTelemetry Operator to reconcile, instead of using
+the `opentelemetry-collector` sub-chart's own Deployment/DaemonSet. This is
+opt-in and does not affect existing installs; see
+[examples/operator-managed-collector](examples/operator-managed-collector).
+
 ## To 0.11.21
 
 `appVersion` and the `.env` `IMAGE_VERSION` no longer track the upstream

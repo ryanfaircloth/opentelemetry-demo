@@ -4,6 +4,12 @@
 # strimzi-resources.yaml in this folder) targeting the Strimzi Kafka cluster
 # and its topic(s) in their own namespace. Each KafkaAccess produces a Secret
 # with the name referenced below.
+opentelemetry-collector:
+  config:
+    exporters:
+      otlp/observability-backend:
+        endpoint: "my-observability-endpoint:4317"
+
 kafkaAccess:
   mode: kafkaAccess
   manageResources: false

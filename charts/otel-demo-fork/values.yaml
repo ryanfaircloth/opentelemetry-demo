@@ -1367,6 +1367,8 @@ opentelemetry-collector:
   enabled: true
   image:
     repository: "otel/opentelemetry-collector-contrib"
+    # Keep in sync with the demo's own COLLECTOR_CONTRIB_IMAGE pin in .env.
+    tag: "0.155.0"
   fullnameOverride: otel-collector
   mode: daemonset
   presets:
@@ -1413,12 +1415,14 @@ opentelemetry-collector:
           - kafka:9092
         collection_interval: 10s
     exporters:
-      # Placeholder observability backend. This chart deploys the app and its
-      # own instrumentation agent only; point this at whatever traces/metrics/logs
-      # backend your platform already runs (e.g. via config override, matching
-      # the pattern in examples/bring-your-own-observability).
+      # REQUIRED: this chart deploys the app and its own instrumentation agent
+      # only - it ships no default observability backend. You must override
+      # this endpoint to point at whatever traces/metrics/logs backend your
+      # platform runs (see examples/bring-your-own-observability). Left blank,
+      # values.schema.json fails helm lint/template/install with a clear error
+      # instead of silently sending telemetry nowhere.
       otlp/observability-backend:
-        endpoint: otel-gateway:4317
+        endpoint: ""
         tls:
           insecure: true
         sending_queue:
@@ -1506,3 +1510,20 @@ opentelemetry-collector:
 #             value: /otlp-http
 #       rewritePath: /
 #       port: 4318
+
+## Alternative to the opentelemetry-collector sub-chart's own Deployment/
+## DaemonSet: when enabled, this chart instead renders an OpenTelemetryCollector
+## custom resource (templates/opentelemetrycollector-cr.yaml) and lets the
+## OpenTelemetry Operator (which must already be installed in-cluster, the
+## same operator this chart already assumes for the Instrumentation CR used
+## by ad/cart/fraud-detection's auto-instrumentation) reconcile the actual
+## collector workload from it. It reuses opentelemetry-collector.config,
+## .image and .mode as the CR's spec, so pipeline/exporter overrides work the
+## same regardless of which mode is active - only the deployment mechanism
+## changes. The sub-chart's presets (hostMetrics, kubernetesAttributes, etc.)
+## are helm-templated convenience the CRD has no equivalent for, so switching
+## to this mode means configuring any receivers/RBAC they provided yourself.
+## Set opentelemetry-collector.enabled: false when turning this on - the two
+## are mutually exclusive ways of running the same collector.
+otelCollectorOperatorCR:
+  enabled: false

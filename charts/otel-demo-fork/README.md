@@ -184,9 +184,11 @@ parameters are specified below.
 | `config`       | OpenTelemetry Collector configuration           | Configuration required for demo |
 
 This chart intentionally does not bundle an observability backend (tracing,
-metrics, or log storage/UI) — only the app and its own collector agent. Point
-`opentelemetry-collector.config.exporters."otlp/observability-backend"` at
-your platform's existing backend; see
+metrics, or log storage/UI) — only the app and its own collector agent.
+`opentelemetry-collector.config.exporters."otlp/observability-backend".endpoint`
+has no default and is **required** — `values.schema.json` fails
+`helm lint`/`template`/`install` if it's left blank. Point it at your
+platform's existing backend; see
 [examples/bring-your-own-observability](examples/bring-your-own-observability).
 
 #### OpenTelemetry Collector HTTPRoute
@@ -198,3 +200,23 @@ shape as `components.[NAME].httpRoute`, including `rewritePath`). This is how
 a browser reaches the collector's `otlp-http` receiver directly for the
 frontend's client-side trace export; see
 [examples/public-hosted-httproute](examples/public-hosted-httproute).
+
+#### OpenTelemetry Collector via the Operator
+
+As an alternative to the sub-chart's own Deployment/DaemonSet, setting
+`otelCollectorOperatorCR.enabled: true` (and `opentelemetry-collector.enabled:
+false`, since the two are mutually exclusive - the chart fails fast if both
+are on) renders an `OpenTelemetryCollector` custom resource instead
+(`templates/opentelemetrycollector-cr.yaml`) and lets the
+[OpenTelemetry Operator](https://github.com/open-telemetry/opentelemetry-operator)
+reconcile the actual collector workload from it. This requires the Operator
+(and its CRDs) to already be installed in the cluster - the same one this
+chart already assumes provides the `Instrumentation` CR used by
+ad/cart/fraud-detection's auto-instrumentation. The CR reuses
+`opentelemetry-collector.config`, `.image`, `.mode` and `.resources`, so
+pipeline/exporter overrides work identically in either mode; only the
+deployment mechanism changes. The sub-chart's presets (`hostMetrics`,
+`kubernetesAttributes`, `kubeletMetrics`, `clusterMetrics`,
+`annotationDiscovery`) have no CRD equivalent, so switching to this mode means
+configuring any receivers/RBAC they provided yourself. See
+[examples/operator-managed-collector](examples/operator-managed-collector).

@@ -7,6 +7,30 @@ the release.
 
 ## Unreleased
 
+* [chart] `opentelemetry-collector.config.exporters."otlp/observability-backend".endpoint`
+  no longer has a placeholder default (`otel-gateway:4317`, which pointed
+  nowhere real) - it's now enforced as required by `values.schema.json`, so
+  `helm lint`/`template`/`install` fail fast with a clear error instead of
+  silently deploying a collector that exports telemetry into the void. See
+  UPGRADING.md.
+
+* [chart] Added an alternative way to deploy the collector: setting
+  `otelCollectorOperatorCR.enabled: true` renders an `OpenTelemetryCollector`
+  custom resource (`templates/opentelemetrycollector-cr.yaml`) for the
+  OpenTelemetry Operator to reconcile, instead of relying on the
+  `opentelemetry-collector` sub-chart's own Deployment/DaemonSet. It reuses
+  the sub-chart's `config`/`image`/`mode`/`resources` values, so pipeline and
+  exporter overrides work the same regardless of which mode is active. Opt-in
+  and mutually exclusive with `opentelemetry-collector.enabled` (the chart
+  fails fast if both are set); see
+  examples/operator-managed-collector.
+
+* [frontend] Reviewed the browser client's OpenTelemetry setup (auto
+  instrumentations, W3C trace-context/baggage propagation, OTLP/HTTP export
+  routed same-origin through the proxy to avoid CORS) - implementation was
+  already correct, it just had no documentation. Added a "Browser telemetry"
+  section to `src/frontend/README.md` describing how it's wired.
+
 * [accounting] Fixed the CI build failure blocking this and every prior
   release: `Helpers.cs`'s `OutputInOrder` called `logger.LogInformation`
   directly with interpolated arguments, which the `CA1873` analyzer flags

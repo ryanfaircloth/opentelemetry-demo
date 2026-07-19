@@ -1,1 +1,8 @@
-
+# The chart ships no default observability-backend endpoint, so even the
+# "default" configuration needs this override - see
+# ../bring-your-own-observability for more on why.
+opentelemetry-collector:
+  config:
+    exporters:
+      otlp/observability-backend:
+        endpoint: "my-observability-endpoint:4317"
