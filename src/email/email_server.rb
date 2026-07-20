@@ -42,10 +42,21 @@ rescue NameError
   $console_logger.level = Logger::WARN
 end
 
-# OTel logger is created before OpenTelemetry::SDK.configure runs (needed to
-# capture WARN/ERROR from the flagd retry loop below, which happens first) -
-# emitting through the pre-configure no-op provider is harmless, it just
-# drops those records until the real provider is active.
+# Configure the SDK before requesting any logger from the global proxy.
+# opentelemetry-logs-api's ProxyLoggerProvider#delegate= replays each
+# proxy logger created pre-configure against the real provider using
+# positional args (provider.logger(name, version)), but
+# opentelemetry-logs-sdk's LoggerProvider#logger has always been
+# keyword-only (name:, version: nil) - a real, currently-unfixed
+# upstream mismatch (open-telemetry/opentelemetry-ruby, logs_api vs
+# logs_sdk) that raises an ArgumentError SDK.configure silently
+# swallows, aborting configuration before instrumentation ever installs.
+# Configuring first means there's no proxy logger to replay, sidestepping
+# the bug entirely.
+OpenTelemetry::SDK.configure do |c|
+  c.use "OpenTelemetry::Instrumentation::Sinatra"
+end
+
 $logger = OpenTelemetry.logger_provider.logger(name: 'email')
 
 # Logs both to the console (with backtrace, if any) and to the OTel logger
@@ -115,10 +126,6 @@ end
 
 OpenFeature::SDK.configure do |config|
   config.set_provider(flagd_client)
-end
-
-OpenTelemetry::SDK.configure do |c|
-  c.use "OpenTelemetry::Instrumentation::Sinatra"
 end
 
 otlp_metric_exporter = OpenTelemetry::Exporter::OTLP::Metrics::MetricsExporter.new

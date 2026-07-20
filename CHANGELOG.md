@@ -7,6 +7,24 @@ the release.
 
 ## Unreleased
 
+* [email] Root-caused the `OpenTelemetry::SDK::ConfigurationError` seen on
+  every pod start. Reproduced against the exact locked gem versions: the
+  service fetched `$logger` from the global proxy before calling
+  `OpenTelemetry::SDK.configure`, which creates a proxy logger that gets
+  replayed against the real provider once configure runs -
+  `opentelemetry-logs-api`'s `ProxyLoggerProvider#delegate=` replays that
+  call with positional args, but `opentelemetry-logs-sdk`'s
+  `LoggerProvider#logger` has always been keyword-only - a real,
+  currently-unfixed mismatch between those two gems (confirmed still
+  present as of their latest released versions, 0.4.1 and 0.6.1). Worse
+  than just losing logs: because `Configurator#configure` runs
+  `logs_configuration_hook` before `install_instrumentation`, the
+  swallowed exception also skipped Sinatra's auto-instrumentation
+  entirely - no automatic request spans either. Reordered so
+  `OpenTelemetry::SDK.configure` runs first, before any logger is
+  requested from the global proxy, sidestepping the bug entirely.
+  Verified against the real file, not just a reduced repro.
+
 * [email] Live-pod console review turned up a real, continuous bug: checkout
   logged a `WARN "failed to send order confirmation" ... connection refused`
   every single attempt, ~13 times in a 10-minute window. Root cause -
