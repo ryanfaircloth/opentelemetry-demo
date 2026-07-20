@@ -15,6 +15,12 @@ pub struct Address {
     #[serde(alias = "streetAddress")]
     pub street_address: String,
     pub city: String,
+    // Most countries have no state/province concept. The Go side's
+    // protobuf-generated struct tags omitempty this field when blank, so
+    // the key is often absent entirely rather than present as "" -
+    // default to empty instead of requiring the key, or every
+    // international address fails to deserialize with a 400.
+    #[serde(default)]
     pub state: String,
     pub country: String,
     #[serde(alias = "zipCode")]

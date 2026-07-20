@@ -7,6 +7,25 @@ the release.
 
 ## Unreleased
 
+* [shipping] Live-pod review of the email fixes above turned up an
+  unrelated, genuine bug: checkout's `PlaceOrder` was failing continuously
+  (dozens of times an hour in this environment) with `shipping quote
+  failure: ... expected 200, got 400`. Root cause: `shipping_types.rs`'s
+  `Address.state` had no default, but the Go side's protobuf-generated
+  struct tags `omitempty` the `State` field when blank - and most
+  countries have no state/province concept, so the `state` key is simply
+  absent from the JSON for any international address, not present as an
+  empty string. Confirmed with a standalone deserialization test against
+  the exact JSON shape checkout sends: the original struct fails with
+  `missing field 'state'`, the fixed one (`#[serde(default)]`) succeeds.
+
+* [checkout] Same investigation: `quoteShipping` and `shipOrder`'s
+  non-200-response error branches both said `"failed POST to email
+  service"` - copy-pasted from the actual email-sending code elsewhere in
+  this file - when they're POSTing to the shipping service. Harmless but
+  actively misleading anyone reading these logs. Fixed both messages to
+  say "shipping service".
+
 * [email] Fixed a second, independent bug the previous ConfigurationError
   fix exposed: every `/send_order_confirmation` request started returning
   500, and the error handler's own response also 500'd. Root cause:
