@@ -27,6 +27,7 @@ COPY ./src/frontend/utils/telemetry/ utils/telemetry/
 COPY ./src/frontend/utils/imageLoader.js utils/imageLoader.js
 COPY ./src/frontend/utils/Request.ts utils/Request.ts
 COPY ./src/frontend/utils/Log.ts utils/Log.ts
+COPY ./src/frontend/utils/backendProxy.ts utils/backendProxy.ts
 
 COPY ./src/frontend/next.config.js next.config.js
 COPY ./src/frontend/tsconfig.json tsconfig.json
