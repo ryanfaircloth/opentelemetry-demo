@@ -7,6 +7,25 @@ the release.
 
 ## Unreleased
 
+* [image-provider] `/images/...` is now the canonical path end-to-end:
+  nginx serves it natively (`location /images/ { alias /static/; }`,
+  nothing at the bare root) instead of expecting every proxy and gateway
+  to strip the prefix before forwarding — the mismatch that forced
+  URLRewrite workarounds in downstream HTTPRoutes. The frontend's
+  `/images` proxy, the compose frontend-proxy route, and the chart's
+  example HTTPRoute all forward the path unrewritten now; deployments
+  can drop their `/images` rewrite filters.
+
+* [chart] `values.schema.json` no longer demands the
+  `otlp/observability-backend` exporter endpoint when the collector
+  config is never consumed. Helm validates dependency schemas against
+  merged values unconditionally — the `condition:` gate only skips
+  rendering — so `opentelemetry-collector.enabled: false` previously
+  still failed template/install without a placeholder endpoint. The
+  requirement is now conditional: enforced when the sub-chart is enabled
+  or when `otelCollectorOperatorCR` (which reuses the config) is, and
+  waived when both are off.
+
 * [frontend/chart] The app now works fully — product images, feature
   flags, and browser trace export — the moment the frontend is reachable,
   with zero routing wiring. The frontend serves its browser-facing

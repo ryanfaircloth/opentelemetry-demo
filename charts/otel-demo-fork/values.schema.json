@@ -1103,28 +1103,15 @@
                   "properties": {
                     "endpoint": {
                       "type": "string",
-                      "minLength": 1,
-                      "description": "Required: OTLP endpoint of your own traces/metrics/logs backend. This chart ships no default - see examples/bring-your-own-observability."
+                      "description": "OTLP endpoint of your own traces/metrics/logs backend. Required whenever the collector config is actually used (opentelemetry-collector.enabled, or otelCollectorOperatorCR.enabled which reuses it); may be omitted when both are disabled. See examples/bring-your-own-observability."
                     }
-                  },
-                  "required": [
-                    "endpoint"
-                  ]
+                  }
                 }
-              },
-              "required": [
-                "otlp/observability-backend"
-              ]
+              }
             }
-          },
-          "required": [
-            "exporters"
-          ]
+          }
         }
       },
-      "required": [
-        "config"
-      ],
       "title": "OpenTelemetryCollectorSubchart"
     },
     "CollectorHTTPRoute": {
@@ -1397,5 +1384,81 @@
         "enabled"
       ]
     }
-  }
+  },
+  "allOf": [
+    {
+      "$comment": "The observability-backend exporter endpoint is only consumed when the collector sub-chart renders or the operator CR reuses its config; a fully disabled collector must not demand a placeholder value.",
+      "if": {
+        "anyOf": [
+          {
+            "properties": {
+              "opentelemetry-collector": {
+                "properties": {
+                  "enabled": {
+                    "not": {
+                      "const": false
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "required": [
+              "otelCollectorOperatorCR"
+            ],
+            "properties": {
+              "otelCollectorOperatorCR": {
+                "type": "object",
+                "required": [
+                  "enabled"
+                ],
+                "properties": {
+                  "enabled": {
+                    "const": true
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "then": {
+        "properties": {
+          "opentelemetry-collector": {
+            "required": [
+              "config"
+            ],
+            "properties": {
+              "config": {
+                "required": [
+                  "exporters"
+                ],
+                "properties": {
+                  "exporters": {
+                    "required": [
+                      "otlp/observability-backend"
+                    ],
+                    "properties": {
+                      "otlp/observability-backend": {
+                        "required": [
+                          "endpoint"
+                        ],
+                        "properties": {
+                          "endpoint": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
 }
