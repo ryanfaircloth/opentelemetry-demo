@@ -7,6 +7,25 @@ the release.
 
 ## Unreleased
 
+* [email] Fixed a second, independent bug the previous ConfigurationError
+  fix exposed: every `/send_order_confirmation` request started returning
+  500, and the error handler's own response also 500'd. Root cause:
+  `LoggerProvider#on_emit`'s last statement is
+  `@log_record_processors.each { ... }`, and `Array#each` returns its
+  receiver - so `on_emit` leaks the processor list as its return value.
+  Both `log_warn_or_error` (used by the `error do` handler and the flagd
+  retry loop) and the confirmation route ended with a call to `on_emit`
+  (directly or via `send_email`) as their last statement, so Sinatra used
+  that leaked array as the response body, and `Response#finish` crashed
+  calling `.bytesize` on a `LogRecordProcessor` while computing
+  Content-Length. Confirmed via a monkeypatch on the exact method to
+  capture the real caller, against the real file and a live Sinatra
+  request cycle - the crash only reproduces through an actual HTTP
+  request, not a direct method call, because it's the Rack response body
+  construction that trips over the leaked value. Added an explicit
+  `status 200` to the route (matching `/healthz`'s existing pattern) and
+  an explicit `nil` return to `log_warn_or_error`.
+
 * [email] Root-caused the `OpenTelemetry::SDK::ConfigurationError` seen on
   every pod start. Reproduced against the exact locked gem versions: the
   service fetched `$logger` from the global proxy before calling

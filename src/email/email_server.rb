@@ -73,6 +73,14 @@ def log_warn_or_error(severity, message, exception: nil)
     body: message,
     attributes: attributes,
   )
+  # LoggerProvider#on_emit's last statement is
+  # @log_record_processors.each { ... }, which Array#each returns as its
+  # receiver - so on_emit leaks the processor list as its return value.
+  # Callers that use this method's result as their own implicit return
+  # (e.g. Sinatra's `error do` block) would otherwise leak that array as
+  # a response body, and Response#finish crashes calling .bytesize on a
+  # LogRecordProcessor. Return nil explicitly instead.
+  nil
 end
 
 # A plain HTTP health endpoint on its own port, started immediately and
@@ -149,6 +157,15 @@ post "/send_order_confirmation" do
   $confirmation_counter.add(1)
   send_email(data)
 
+  # send_email's return value is whatever its last statement evaluates to
+  # (currently $logger.on_emit(...), which returns
+  # LoggerProvider#on_emit's @log_record_processors.each result - the
+  # processor list itself, since Array#each returns its receiver). Since
+  # this route has no explicit body, Sinatra uses the block's last
+  # expression as the response body, and Response#finish calls .bytesize
+  # on each chunk - crashing on a LogRecordProcessor. Matches /healthz's
+  # existing pattern of ending routes with an explicit status.
+  status 200
 end
 
 error do
