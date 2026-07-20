@@ -90,16 +90,9 @@ components:
           rewritePath: /
           port: 8000
 
+# Routes /otlp-http (the frontend's browser trace export) to the collector.
+# The paths, parentRefs, and hostnames all come from the chart: rules default
+# to /otlp-http -> collector:4318 with the prefix stripped, and parentRefs/
+# hostnames are inherited from the frontend httpRoute above.
 otelCollectorHTTPRoute:
   enabled: true
-  parentRefs:
-    - name: otel-demo-gateway
-  hostnames:
-    - otel-demo.example.com
-  rules:
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /otlp-http
-      rewritePath: /
-      port: 4318

@@ -208,6 +208,15 @@ overriding the endpoint to an absolute URL) fails at template time rather
 than silently dropping browser traces; see
 [examples/public-hosted-httproute](examples/public-hosted-httproute).
 
+The route's paths are the chart's responsibility, not the consumer's: with
+no `rules` configured it serves the canonical `/otlp-http` →
+collector:4318 (prefix stripped) wiring the browser export posts to, and
+`parentRefs`/`hostnames` default to the frontend httpRoute's when that is
+enabled — so alongside a published frontend, `otelCollectorHTTPRoute.enabled:
+true` is a complete configuration. When the frontend is published outside the
+chart, set `parentRefs`/`hostnames` explicitly (rendering fails fast when
+neither is available rather than emitting a pathless route).
+
 The route targets the sub-chart's own in-namespace `otel-collector` Service
 by default. Deployments that bring their own collector (sub-chart disabled,
 collector running elsewhere) set `otelCollectorHTTPRoute.backendRef.name`/

@@ -1554,6 +1554,14 @@ opentelemetry-collector:
 ## browser can reach it directly for frontend's client-side trace export.
 ## Same shape as components[].httpRoute; disabled by default.
 ##
+## The paths are the chart's responsibility: with no rules configured, the
+## route serves the canonical /otlp-http -> collector:4318 (prefix stripped)
+## wiring the frontend's browser export posts to. parentRefs/hostnames
+## default to the frontend httpRoute's when that is enabled (the two routes
+## merge onto one virtual host); otherwise set them explicitly - rendering
+## fails fast when neither is available. So alongside an enabled frontend
+## httpRoute, `enabled: true` is a complete configuration.
+##
 ## The route targets the sub-chart's own in-namespace otel-collector Service
 ## by default. Bring-your-own-collector deployments (sub-chart disabled,
 ## collector running elsewhere) point backendRef at it instead; when the
@@ -1566,18 +1574,20 @@ opentelemetry-collector:
 #     - name: my-gateway
 #   hostnames:
 #     - demo.example.com
-#   rules:
-#     - matches:
-#         - path:
-#             type: PathPrefix
-#             value: /otlp-http
-#       rewritePath: /
-#       port: 4318
 #   backendRef:
 #     name: my-collector
 #     namespace: my-collector-namespace
 #   referenceGrant:
 #     enabled: true
+#   ## rules default to the canonical browser-export wiring; override only
+#   ## for a non-standard path or port:
+#   # rules:
+#   #   - matches:
+#   #       - path:
+#   #           type: PathPrefix
+#   #           value: /otlp-http
+#   #     rewritePath: /
+#   #     port: 4318
 
 ## Alternative to the opentelemetry-collector sub-chart's own Deployment/
 ## DaemonSet: when enabled, this chart instead renders an OpenTelemetryCollector

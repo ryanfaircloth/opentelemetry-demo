@@ -7,6 +7,18 @@ the release.
 
 ## Unreleased
 
+* [chart] The collector HTTPRoute's paths are now the chart's
+  responsibility instead of the consumer's: enabling
+  `otelCollectorHTTPRoute` without `rules` previously rendered a route
+  with no paths at all, silently dropping the browser trace export it
+  exists to serve. Rules now default to the canonical
+  `/otlp-http` → collector:4318 (prefix stripped) wiring, and
+  `parentRefs`/`hostnames` are inherited from the frontend's httpRoute
+  when that is enabled — so `enabled: true` is a complete configuration
+  alongside a published frontend. Enabling the route with no parentRefs
+  and nothing to inherit fails at template time instead of emitting a
+  pathless route.
+
 * [chart] `otelCollectorHTTPRoute` could only target the sub-chart's own
   in-namespace `otel-collector` Service, making it useless for
   bring-your-own-collector deployments (sub-chart disabled, collector in

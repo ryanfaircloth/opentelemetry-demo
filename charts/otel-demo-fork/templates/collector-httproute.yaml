@@ -34,12 +34,34 @@ when that namespace's owner manages grants itself).
 {{-   $backendNamespace = $httpRoute.backendRef.namespace | default "" }}
 {{- end }}
 {{- $crossNamespace := and $backendNamespace (ne $backendNamespace .Release.Namespace) }}
+{{/*
+The paths are this chart's responsibility, not the consumer's: a route with
+no rules configured serves the canonical /otlp-http -> collector:4318 (path
+prefix stripped) wiring that the frontend's browser export posts to.
+parentRefs/hostnames are deployment facts the chart cannot invent, but when
+the frontend is published via this chart's own httpRoute they default to the
+frontend's, so the two routes merge onto the same virtual host; otherwise
+they must be set explicitly, and rendering fails fast if none are available.
+*/}}
+{{- $defaultRules := list (dict "matches" (list (dict "path" (dict "type" "PathPrefix" "value" "/otlp-http"))) "rewritePath" "/" "port" 4318) }}
+{{- $frontendParentRefs := list }}
+{{- $frontendHostnames := list }}
+{{- if and $frontend $frontend.httpRoute $frontend.httpRoute.enabled }}
+{{-   $frontendParentRefs = $frontend.httpRoute.parentRefs | default list }}
+{{-   $frontendHostnames = $frontend.httpRoute.hostnames | default list }}
+{{- end }}
 {{- if and $httpRoute $httpRoute.enabled }}
 {{- $httpRoutes := list $httpRoute }}
 {{- if $httpRoute.additionalHTTPRoutes }}
 {{-   $httpRoutes = concat $httpRoutes $httpRoute.additionalHTTPRoutes -}}
 {{- end }}
 {{- range $httpRoutes }}
+{{- $parentRefs := .parentRefs | default $frontendParentRefs }}
+{{- $hostnames := .hostnames | default $frontendHostnames }}
+{{- $rules := .rules | default $defaultRules }}
+{{- if not $parentRefs }}
+{{-   fail "otelCollectorHTTPRoute is enabled but has no parentRefs and there is no enabled components.frontend.httpRoute to inherit them from - set otelCollectorHTTPRoute.parentRefs to your Gateway." }}
+{{- end }}
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -57,7 +79,7 @@ metadata:
   {{- end }}
 spec:
   parentRefs:
-    {{- range .parentRefs }}
+    {{- range $parentRefs }}
     - name: {{ .name }}
       {{- with .namespace }}
       namespace: {{ . }}
@@ -66,14 +88,14 @@ spec:
       sectionName: {{ . }}
       {{- end }}
     {{- end }}
-  {{- if .hostnames }}
+  {{- if $hostnames }}
   hostnames:
-    {{- range .hostnames }}
+    {{- range $hostnames }}
     - {{ . | quote }}
     {{- end }}
   {{- end }}
   rules:
-    {{- range .rules }}
+    {{- range $rules }}
     - matches:
         {{- range .matches }}
         - path:
