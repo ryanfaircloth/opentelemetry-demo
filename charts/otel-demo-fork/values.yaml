@@ -1553,6 +1553,13 @@ opentelemetry-collector:
 ## for exposing the collector's otlp-http receiver (port 4318), e.g. so a
 ## browser can reach it directly for frontend's client-side trace export.
 ## Same shape as components[].httpRoute; disabled by default.
+##
+## The route targets the sub-chart's own in-namespace otel-collector Service
+## by default. Bring-your-own-collector deployments (sub-chart disabled,
+## collector running elsewhere) point backendRef at it instead; when the
+## backend is in another namespace, the chart also renders the ReferenceGrant
+## that Gateway API requires there (set referenceGrant.enabled: false if that
+## namespace's owner manages grants itself).
 # otelCollectorHTTPRoute:
 #   enabled: false
 #   parentRefs:
@@ -1566,6 +1573,11 @@ opentelemetry-collector:
 #             value: /otlp-http
 #       rewritePath: /
 #       port: 4318
+#   backendRef:
+#     name: my-collector
+#     namespace: my-collector-namespace
+#   referenceGrant:
+#     enabled: true
 
 ## Alternative to the opentelemetry-collector sub-chart's own Deployment/
 ## DaemonSet: when enabled, this chart instead renders an OpenTelemetryCollector

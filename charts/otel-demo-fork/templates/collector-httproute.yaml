@@ -19,6 +19,21 @@ HTTPRoute. Fail fast instead.
 {{-     fail "components.frontend.httpRoute is enabled but otelCollectorHTTPRoute is not: browser trace export posts to the relative PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT (default /otlp-http/v1/traces), which must be routed to the collector on the same hostname. Enable otelCollectorHTTPRoute (see examples/public-hosted-httproute), or set an absolute URL via components.frontend.envOverrides." }}
 {{-   end }}
 {{- end }}
+{{/*
+The route's backend defaults to the sub-chart's own in-namespace
+otel-collector Service. Deployments that bring their own collector (the
+sub-chart disabled, collector running elsewhere) override backendRef.name/
+namespace; a cross-namespace backend renders the ReferenceGrant Gateway API
+requires in the collector's namespace (disable via referenceGrant.enabled
+when that namespace's owner manages grants itself).
+*/}}
+{{- $backendName := "otel-collector" }}
+{{- $backendNamespace := "" }}
+{{- if and $httpRoute $httpRoute.backendRef }}
+{{-   $backendName = $httpRoute.backendRef.name | default "otel-collector" }}
+{{-   $backendNamespace = $httpRoute.backendRef.namespace | default "" }}
+{{- end }}
+{{- $crossNamespace := and $backendNamespace (ne $backendNamespace .Release.Namespace) }}
 {{- if and $httpRoute $httpRoute.enabled }}
 {{- $httpRoutes := list $httpRoute }}
 {{- if $httpRoute.additionalHTTPRoutes }}
@@ -74,8 +89,34 @@ spec:
               replacePrefixMatch: {{ .rewritePath }}
       {{- end }}
       backendRefs:
-        - name: otel-collector
+        - name: {{ $backendName }}
+          {{- if $crossNamespace }}
+          namespace: {{ $backendNamespace }}
+          {{- end }}
           port: {{ .port }}
     {{- end }}
 {{- end}}
+{{- $grantEnabled := true }}
+{{- if and $httpRoute.referenceGrant (hasKey $httpRoute.referenceGrant "enabled") }}
+{{-   $grantEnabled = $httpRoute.referenceGrant.enabled }}
+{{- end }}
+{{- if and $crossNamespace $grantEnabled }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: ReferenceGrant
+metadata:
+  name: otel-collector-httproute-{{ .Release.Namespace }}
+  namespace: {{ $backendNamespace }}
+  labels:
+    {{- include "otel-demo.labels" $ | nindent 4 }}
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      namespace: {{ .Release.Namespace }}
+  to:
+    - group: ""
+      kind: Service
+      name: {{ $backendName }}
+{{- end }}
 {{- end}}

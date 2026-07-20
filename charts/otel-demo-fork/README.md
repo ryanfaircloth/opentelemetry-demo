@@ -208,6 +208,14 @@ overriding the endpoint to an absolute URL) fails at template time rather
 than silently dropping browser traces; see
 [examples/public-hosted-httproute](examples/public-hosted-httproute).
 
+The route targets the sub-chart's own in-namespace `otel-collector` Service
+by default. Deployments that bring their own collector (sub-chart disabled,
+collector running elsewhere) set `otelCollectorHTTPRoute.backendRef.name`/
+`.namespace` to point the same `/otlp-http` path at it; for a cross-namespace
+backend the chart also renders the `ReferenceGrant` Gateway API requires in
+the collector's namespace (`referenceGrant.enabled: false` opts out when that
+namespace's owner manages grants itself).
+
 #### OpenTelemetry Collector via the Operator
 
 As an alternative to the sub-chart's own Deployment/DaemonSet, setting

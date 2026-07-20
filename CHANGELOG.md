@@ -7,6 +7,16 @@ the release.
 
 ## Unreleased
 
+* [chart] `otelCollectorHTTPRoute` could only target the sub-chart's own
+  in-namespace `otel-collector` Service, making it useless for
+  bring-your-own-collector deployments (sub-chart disabled, collector in
+  another namespace) — exactly where the browser's same-origin
+  `/otlp-http/v1/traces` export still needs a route. New
+  `otelCollectorHTTPRoute.backendRef.name`/`.namespace` overrides point the
+  route at an external collector Service, and a cross-namespace backend also
+  renders the `ReferenceGrant` Gateway API requires in that namespace
+  (`referenceGrant.enabled: false` opts out).
+
 * [frontend/chart] Browser trace export was posting spans to
   `http://localhost:4318/v1/traces` on every visitor's own machine: the
   chart's default `PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` was an
