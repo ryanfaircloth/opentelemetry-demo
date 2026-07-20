@@ -5,11 +5,11 @@ kind: Service
 metadata:
   name: ad
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.67
+    helm.sh/chart: otel-demo-fork-0.12.5
     app.kubernetes.io/name: ad
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
     
-    app.kubernetes.io/version: "0.11.67"
+    app.kubernetes.io/version: "0.12.5"
     app.kubernetes.io/component: ad
     app.kubernetes.io/part-of: opentelemetry-demo
     app.kubernetes.io/managed-by: Helm
@@ -25,7 +25,7 @@ spec:
   selector:
     
     app.kubernetes.io/name: ad
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
 ---
 # Source: otel-demo-fork/templates/component.yaml
 apiVersion: v1
@@ -33,11 +33,11 @@ kind: Service
 metadata:
   name: cart
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.67
+    helm.sh/chart: otel-demo-fork-0.12.5
     app.kubernetes.io/name: cart
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
     
-    app.kubernetes.io/version: "0.11.67"
+    app.kubernetes.io/version: "0.12.5"
     app.kubernetes.io/component: cart
     app.kubernetes.io/part-of: opentelemetry-demo
     app.kubernetes.io/managed-by: Helm
@@ -50,7 +50,7 @@ spec:
   selector:
     
     app.kubernetes.io/name: cart
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
 ---
 # Source: otel-demo-fork/templates/component.yaml
 apiVersion: v1
@@ -58,11 +58,11 @@ kind: Service
 metadata:
   name: checkout
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.67
+    helm.sh/chart: otel-demo-fork-0.12.5
     app.kubernetes.io/name: checkout
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
     
-    app.kubernetes.io/version: "0.11.67"
+    app.kubernetes.io/version: "0.12.5"
     app.kubernetes.io/component: checkout
     app.kubernetes.io/part-of: opentelemetry-demo
     app.kubernetes.io/managed-by: Helm
@@ -78,7 +78,7 @@ spec:
   selector:
     
     app.kubernetes.io/name: checkout
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
 ---
 # Source: otel-demo-fork/templates/component.yaml
 apiVersion: v1
@@ -86,11 +86,11 @@ kind: Service
 metadata:
   name: currency
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.67
+    helm.sh/chart: otel-demo-fork-0.12.5
     app.kubernetes.io/name: currency
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
     
-    app.kubernetes.io/version: "0.11.67"
+    app.kubernetes.io/version: "0.12.5"
     app.kubernetes.io/component: currency
     app.kubernetes.io/part-of: opentelemetry-demo
     app.kubernetes.io/managed-by: Helm
@@ -106,7 +106,7 @@ spec:
   selector:
     
     app.kubernetes.io/name: currency
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
 ---
 # Source: otel-demo-fork/templates/component.yaml
 apiVersion: v1
@@ -114,11 +114,11 @@ kind: Service
 metadata:
   name: email
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.67
+    helm.sh/chart: otel-demo-fork-0.12.5
     app.kubernetes.io/name: email
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
     
-    app.kubernetes.io/version: "0.11.67"
+    app.kubernetes.io/version: "0.12.5"
     app.kubernetes.io/component: email
     app.kubernetes.io/part-of: opentelemetry-demo
     app.kubernetes.io/managed-by: Helm
@@ -131,7 +131,7 @@ spec:
   selector:
     
     app.kubernetes.io/name: email
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
 ---
 # Source: otel-demo-fork/templates/component.yaml
 apiVersion: v1
@@ -139,11 +139,11 @@ kind: Service
 metadata:
   name: flagd
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.67
+    helm.sh/chart: otel-demo-fork-0.12.5
     app.kubernetes.io/name: flagd
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
     
-    app.kubernetes.io/version: "0.11.67"
+    app.kubernetes.io/version: "0.12.5"
     app.kubernetes.io/component: flagd
     app.kubernetes.io/part-of: opentelemetry-demo
     app.kubernetes.io/managed-by: Helm
@@ -162,7 +162,7 @@ spec:
   selector:
     
     app.kubernetes.io/name: flagd
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
 ---
 # Source: otel-demo-fork/templates/component.yaml
 apiVersion: v1
@@ -170,11 +170,11 @@ kind: Service
 metadata:
   name: frontend
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.67
+    helm.sh/chart: otel-demo-fork-0.12.5
     app.kubernetes.io/name: frontend
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
     
-    app.kubernetes.io/version: "0.11.67"
+    app.kubernetes.io/version: "0.12.5"
     app.kubernetes.io/component: frontend
     app.kubernetes.io/part-of: opentelemetry-demo
     app.kubernetes.io/managed-by: Helm
@@ -187,7 +187,7 @@ spec:
   selector:
     
     app.kubernetes.io/name: frontend
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
 ---
 # Source: otel-demo-fork/templates/component.yaml
 apiVersion: v1
@@ -195,11 +195,11 @@ kind: Service
 metadata:
   name: image-provider
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.67
+    helm.sh/chart: otel-demo-fork-0.12.5
     app.kubernetes.io/name: image-provider
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
     
-    app.kubernetes.io/version: "0.11.67"
+    app.kubernetes.io/version: "0.12.5"
     app.kubernetes.io/component: image-provider
     app.kubernetes.io/part-of: opentelemetry-demo
     app.kubernetes.io/managed-by: Helm
@@ -212,7 +212,7 @@ spec:
   selector:
     
     app.kubernetes.io/name: image-provider
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
 ---
 # Source: otel-demo-fork/templates/component.yaml
 apiVersion: v1
@@ -220,11 +220,11 @@ kind: Service
 metadata:
   name: load-generator
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.67
+    helm.sh/chart: otel-demo-fork-0.12.5
     app.kubernetes.io/name: load-generator
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
     
-    app.kubernetes.io/version: "0.11.67"
+    app.kubernetes.io/version: "0.12.5"
     app.kubernetes.io/component: load-generator
     app.kubernetes.io/part-of: opentelemetry-demo
     app.kubernetes.io/managed-by: Helm
@@ -237,7 +237,7 @@ spec:
   selector:
     
     app.kubernetes.io/name: load-generator
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
 ---
 # Source: otel-demo-fork/templates/component.yaml
 apiVersion: v1
@@ -245,11 +245,11 @@ kind: Service
 metadata:
   name: payment
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.67
+    helm.sh/chart: otel-demo-fork-0.12.5
     app.kubernetes.io/name: payment
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
     
-    app.kubernetes.io/version: "0.11.67"
+    app.kubernetes.io/version: "0.12.5"
     app.kubernetes.io/component: payment
     app.kubernetes.io/part-of: opentelemetry-demo
     app.kubernetes.io/managed-by: Helm
@@ -265,7 +265,7 @@ spec:
   selector:
     
     app.kubernetes.io/name: payment
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
 ---
 # Source: otel-demo-fork/templates/component.yaml
 apiVersion: v1
@@ -273,11 +273,11 @@ kind: Service
 metadata:
   name: product-catalog
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.67
+    helm.sh/chart: otel-demo-fork-0.12.5
     app.kubernetes.io/name: product-catalog
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
     
-    app.kubernetes.io/version: "0.11.67"
+    app.kubernetes.io/version: "0.12.5"
     app.kubernetes.io/component: product-catalog
     app.kubernetes.io/part-of: opentelemetry-demo
     app.kubernetes.io/managed-by: Helm
@@ -293,7 +293,7 @@ spec:
   selector:
     
     app.kubernetes.io/name: product-catalog
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
 ---
 # Source: otel-demo-fork/templates/component.yaml
 apiVersion: v1
@@ -301,11 +301,11 @@ kind: Service
 metadata:
   name: quote
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.67
+    helm.sh/chart: otel-demo-fork-0.12.5
     app.kubernetes.io/name: quote
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
     
-    app.kubernetes.io/version: "0.11.67"
+    app.kubernetes.io/version: "0.12.5"
     app.kubernetes.io/component: quote
     app.kubernetes.io/part-of: opentelemetry-demo
     app.kubernetes.io/managed-by: Helm
@@ -318,7 +318,7 @@ spec:
   selector:
     
     app.kubernetes.io/name: quote
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
 ---
 # Source: otel-demo-fork/templates/component.yaml
 apiVersion: v1
@@ -326,11 +326,11 @@ kind: Service
 metadata:
   name: recommendation
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.67
+    helm.sh/chart: otel-demo-fork-0.12.5
     app.kubernetes.io/name: recommendation
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
     
-    app.kubernetes.io/version: "0.11.67"
+    app.kubernetes.io/version: "0.12.5"
     app.kubernetes.io/component: recommendation
     app.kubernetes.io/part-of: opentelemetry-demo
     app.kubernetes.io/managed-by: Helm
@@ -346,7 +346,7 @@ spec:
   selector:
     
     app.kubernetes.io/name: recommendation
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
 ---
 # Source: otel-demo-fork/templates/component.yaml
 apiVersion: v1
@@ -354,11 +354,11 @@ kind: Service
 metadata:
   name: shipping
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.67
+    helm.sh/chart: otel-demo-fork-0.12.5
     app.kubernetes.io/name: shipping
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
     
-    app.kubernetes.io/version: "0.11.67"
+    app.kubernetes.io/version: "0.12.5"
     app.kubernetes.io/component: shipping
     app.kubernetes.io/part-of: opentelemetry-demo
     app.kubernetes.io/managed-by: Helm
@@ -371,7 +371,7 @@ spec:
   selector:
     
     app.kubernetes.io/name: shipping
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
 ---
 # Source: otel-demo-fork/templates/component.yaml
 apiVersion: v1
@@ -379,11 +379,11 @@ kind: Service
 metadata:
   name: telemetry-docs
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.67
+    helm.sh/chart: otel-demo-fork-0.12.5
     app.kubernetes.io/name: telemetry-docs
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
     
-    app.kubernetes.io/version: "0.11.67"
+    app.kubernetes.io/version: "0.12.5"
     app.kubernetes.io/component: telemetry-docs
     app.kubernetes.io/part-of: opentelemetry-demo
     app.kubernetes.io/managed-by: Helm
@@ -396,7 +396,7 @@ spec:
   selector:
     
     app.kubernetes.io/name: telemetry-docs
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
 ---
 # Source: otel-demo-fork/templates/component.yaml
 apiVersion: v1
@@ -404,11 +404,11 @@ kind: Service
 metadata:
   name: valkey-cart
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.67
+    helm.sh/chart: otel-demo-fork-0.12.5
     app.kubernetes.io/name: valkey-cart
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
     
-    app.kubernetes.io/version: "0.11.67"
+    app.kubernetes.io/version: "0.12.5"
     app.kubernetes.io/component: valkey-cart
     app.kubernetes.io/part-of: opentelemetry-demo
     app.kubernetes.io/managed-by: Helm
@@ -421,7 +421,7 @@ spec:
   selector:
     
     app.kubernetes.io/name: valkey-cart
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
 ---
 # Source: otel-demo-fork/templates/component.yaml
 apiVersion: apps/v1
@@ -429,11 +429,11 @@ kind: Deployment
 metadata:
   name: accounting
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.67
+    helm.sh/chart: otel-demo-fork-0.12.5
     app.kubernetes.io/name: accounting
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
     
-    app.kubernetes.io/version: "0.11.67"
+    app.kubernetes.io/version: "0.12.5"
     app.kubernetes.io/component: accounting
     app.kubernetes.io/part-of: opentelemetry-demo
     app.kubernetes.io/managed-by: Helm
@@ -444,23 +444,23 @@ spec:
     matchLabels:
       
       app.kubernetes.io/name: accounting
-      app.kubernetes.io/instance: test
+      app.kubernetes.io/instance: example
   template:
     metadata:
       labels:
         
         app.kubernetes.io/name: accounting
-        app.kubernetes.io/instance: test
+        app.kubernetes.io/instance: example
         
-        app.kubernetes.io/version: "0.11.67"
+        app.kubernetes.io/version: "0.12.5"
         app.kubernetes.io/component: accounting
       annotations:
         resource.opentelemetry.io/service.name: accounting
     spec:
-      serviceAccountName: test
+      serviceAccountName: example
       containers:
         - name: accounting
-          image: 'ghcr.io/ryanfaircloth/demo:0.11.67-accounting'
+          image: 'ghcr.io/ryanfaircloth/demo:0.12.5-accounting'
           imagePullPolicy: IfNotPresent
           env:
             - name: OTEL_SERVICE_NAME
@@ -566,11 +566,11 @@ kind: Deployment
 metadata:
   name: ad
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.67
+    helm.sh/chart: otel-demo-fork-0.12.5
     app.kubernetes.io/name: ad
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
     
-    app.kubernetes.io/version: "0.11.67"
+    app.kubernetes.io/version: "0.12.5"
     app.kubernetes.io/component: ad
     app.kubernetes.io/part-of: opentelemetry-demo
     app.kubernetes.io/managed-by: Helm
@@ -581,23 +581,23 @@ spec:
     matchLabels:
       
       app.kubernetes.io/name: ad
-      app.kubernetes.io/instance: test
+      app.kubernetes.io/instance: example
   template:
     metadata:
       labels:
         
         app.kubernetes.io/name: ad
-        app.kubernetes.io/instance: test
+        app.kubernetes.io/instance: example
         
-        app.kubernetes.io/version: "0.11.67"
+        app.kubernetes.io/version: "0.12.5"
         app.kubernetes.io/component: ad
       annotations:
         resource.opentelemetry.io/service.name: ad
     spec:
-      serviceAccountName: test
+      serviceAccountName: example
       containers:
         - name: ad
-          image: 'ghcr.io/ryanfaircloth/demo:0.11.67-ad'
+          image: 'ghcr.io/ryanfaircloth/demo:0.12.5-ad'
           imagePullPolicy: IfNotPresent
           ports:
             
@@ -659,11 +659,11 @@ kind: Deployment
 metadata:
   name: cart
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.67
+    helm.sh/chart: otel-demo-fork-0.12.5
     app.kubernetes.io/name: cart
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
     
-    app.kubernetes.io/version: "0.11.67"
+    app.kubernetes.io/version: "0.12.5"
     app.kubernetes.io/component: cart
     app.kubernetes.io/part-of: opentelemetry-demo
     app.kubernetes.io/managed-by: Helm
@@ -674,23 +674,23 @@ spec:
     matchLabels:
       
       app.kubernetes.io/name: cart
-      app.kubernetes.io/instance: test
+      app.kubernetes.io/instance: example
   template:
     metadata:
       labels:
         
         app.kubernetes.io/name: cart
-        app.kubernetes.io/instance: test
+        app.kubernetes.io/instance: example
         
-        app.kubernetes.io/version: "0.11.67"
+        app.kubernetes.io/version: "0.12.5"
         app.kubernetes.io/component: cart
       annotations:
         resource.opentelemetry.io/service.name: cart
     spec:
-      serviceAccountName: test
+      serviceAccountName: example
       containers:
         - name: cart
-          image: 'ghcr.io/ryanfaircloth/demo:0.11.67-cart'
+          image: 'ghcr.io/ryanfaircloth/demo:0.12.5-cart'
           imagePullPolicy: IfNotPresent
           ports:
             
@@ -730,17 +730,20 @@ spec:
               cpu: 20m
               memory: 80Mi
           livenessProbe:
+            failureThreshold: 6
             httpGet:
               path: /healthz
               port: 8081
-            initialDelaySeconds: 5
+            initialDelaySeconds: 15
             periodSeconds: 10
+            timeoutSeconds: 5
           readinessProbe:
             httpGet:
               path: /healthz
               port: 8081
-            initialDelaySeconds: 5
+            initialDelaySeconds: 10
             periodSeconds: 10
+            timeoutSeconds: 5
           volumeMounts:
       initContainers:
         - command:
@@ -758,11 +761,11 @@ kind: Deployment
 metadata:
   name: checkout
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.67
+    helm.sh/chart: otel-demo-fork-0.12.5
     app.kubernetes.io/name: checkout
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
     
-    app.kubernetes.io/version: "0.11.67"
+    app.kubernetes.io/version: "0.12.5"
     app.kubernetes.io/component: checkout
     app.kubernetes.io/part-of: opentelemetry-demo
     app.kubernetes.io/managed-by: Helm
@@ -773,23 +776,23 @@ spec:
     matchLabels:
       
       app.kubernetes.io/name: checkout
-      app.kubernetes.io/instance: test
+      app.kubernetes.io/instance: example
   template:
     metadata:
       labels:
         
         app.kubernetes.io/name: checkout
-        app.kubernetes.io/instance: test
+        app.kubernetes.io/instance: example
         
-        app.kubernetes.io/version: "0.11.67"
+        app.kubernetes.io/version: "0.12.5"
         app.kubernetes.io/component: checkout
       annotations:
         resource.opentelemetry.io/service.namespace: otel-demo
     spec:
-      serviceAccountName: test
+      serviceAccountName: example
       containers:
         - name: checkout
-          image: 'ghcr.io/ryanfaircloth/demo:0.11.67-checkout'
+          image: 'ghcr.io/ryanfaircloth/demo:0.12.5-checkout'
           imagePullPolicy: IfNotPresent
           ports:
             
@@ -908,11 +911,11 @@ kind: Deployment
 metadata:
   name: currency
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.67
+    helm.sh/chart: otel-demo-fork-0.12.5
     app.kubernetes.io/name: currency
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
     
-    app.kubernetes.io/version: "0.11.67"
+    app.kubernetes.io/version: "0.12.5"
     app.kubernetes.io/component: currency
     app.kubernetes.io/part-of: opentelemetry-demo
     app.kubernetes.io/managed-by: Helm
@@ -923,23 +926,23 @@ spec:
     matchLabels:
       
       app.kubernetes.io/name: currency
-      app.kubernetes.io/instance: test
+      app.kubernetes.io/instance: example
   template:
     metadata:
       labels:
         
         app.kubernetes.io/name: currency
-        app.kubernetes.io/instance: test
+        app.kubernetes.io/instance: example
         
-        app.kubernetes.io/version: "0.11.67"
+        app.kubernetes.io/version: "0.12.5"
         app.kubernetes.io/component: currency
       annotations:
         resource.opentelemetry.io/service.namespace: otel-demo
     spec:
-      serviceAccountName: test
+      serviceAccountName: example
       containers:
         - name: currency
-          image: 'ghcr.io/ryanfaircloth/demo:0.11.67-currency'
+          image: 'ghcr.io/ryanfaircloth/demo:0.12.5-currency'
           imagePullPolicy: IfNotPresent
           ports:
             
@@ -964,7 +967,7 @@ spec:
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
               value: http://$(OTEL_COLLECTOR_NAME):4318
             - name: VERSION
-              value: '0.11.67'
+              value: '0.12.5'
             - name: LOG_LEVEL
               value: WARN
             
@@ -997,11 +1000,11 @@ kind: Deployment
 metadata:
   name: email
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.67
+    helm.sh/chart: otel-demo-fork-0.12.5
     app.kubernetes.io/name: email
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
     
-    app.kubernetes.io/version: "0.11.67"
+    app.kubernetes.io/version: "0.12.5"
     app.kubernetes.io/component: email
     app.kubernetes.io/part-of: opentelemetry-demo
     app.kubernetes.io/managed-by: Helm
@@ -1012,23 +1015,23 @@ spec:
     matchLabels:
       
       app.kubernetes.io/name: email
-      app.kubernetes.io/instance: test
+      app.kubernetes.io/instance: example
   template:
     metadata:
       labels:
         
         app.kubernetes.io/name: email
-        app.kubernetes.io/instance: test
+        app.kubernetes.io/instance: example
         
-        app.kubernetes.io/version: "0.11.67"
+        app.kubernetes.io/version: "0.12.5"
         app.kubernetes.io/component: email
       annotations:
         resource.opentelemetry.io/service.namespace: otel-demo
     spec:
-      serviceAccountName: test
+      serviceAccountName: example
       containers:
         - name: email
-          image: 'ghcr.io/ryanfaircloth/demo:0.11.67-email'
+          image: 'ghcr.io/ryanfaircloth/demo:0.12.5-email'
           imagePullPolicy: IfNotPresent
           ports:
             
@@ -1088,11 +1091,11 @@ kind: Deployment
 metadata:
   name: flagd
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.67
+    helm.sh/chart: otel-demo-fork-0.12.5
     app.kubernetes.io/name: flagd
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
     
-    app.kubernetes.io/version: "0.11.67"
+    app.kubernetes.io/version: "0.12.5"
     app.kubernetes.io/component: flagd
     app.kubernetes.io/part-of: opentelemetry-demo
     app.kubernetes.io/managed-by: Helm
@@ -1103,20 +1106,20 @@ spec:
     matchLabels:
       
       app.kubernetes.io/name: flagd
-      app.kubernetes.io/instance: test
+      app.kubernetes.io/instance: example
   template:
     metadata:
       labels:
         
         app.kubernetes.io/name: flagd
-        app.kubernetes.io/instance: test
+        app.kubernetes.io/instance: example
         
-        app.kubernetes.io/version: "0.11.67"
+        app.kubernetes.io/version: "0.12.5"
         app.kubernetes.io/component: flagd
       annotations:
         resource.opentelemetry.io/service.namespace: otel-demo
     spec:
-      serviceAccountName: test
+      serviceAccountName: example
       containers:
         - name: flagd
           image: 'ghcr.io/open-feature/flagd:v0.16.0'
@@ -1165,7 +1168,7 @@ spec:
             - name: config-rw
               mountPath: /etc/flagd
         - name: flagd-ui
-          image: 'ghcr.io/ryanfaircloth/demo:0.11.67-flagd-ui'
+          image: 'ghcr.io/ryanfaircloth/demo:0.12.5-flagd-ui'
           imagePullPolicy: IfNotPresent
           ports:
             
@@ -1238,11 +1241,11 @@ kind: Deployment
 metadata:
   name: fraud-detection
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.67
+    helm.sh/chart: otel-demo-fork-0.12.5
     app.kubernetes.io/name: fraud-detection
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
     
-    app.kubernetes.io/version: "0.11.67"
+    app.kubernetes.io/version: "0.12.5"
     app.kubernetes.io/component: fraud-detection
     app.kubernetes.io/part-of: opentelemetry-demo
     app.kubernetes.io/managed-by: Helm
@@ -1253,23 +1256,23 @@ spec:
     matchLabels:
       
       app.kubernetes.io/name: fraud-detection
-      app.kubernetes.io/instance: test
+      app.kubernetes.io/instance: example
   template:
     metadata:
       labels:
         
         app.kubernetes.io/name: fraud-detection
-        app.kubernetes.io/instance: test
+        app.kubernetes.io/instance: example
         
-        app.kubernetes.io/version: "0.11.67"
+        app.kubernetes.io/version: "0.12.5"
         app.kubernetes.io/component: fraud-detection
       annotations:
         resource.opentelemetry.io/service.name: fraud-detection
     spec:
-      serviceAccountName: test
+      serviceAccountName: example
       containers:
         - name: fraud-detection
-          image: 'ghcr.io/ryanfaircloth/demo:0.11.67-fraud-detection'
+          image: 'ghcr.io/ryanfaircloth/demo:0.12.5-fraud-detection'
           imagePullPolicy: IfNotPresent
           env:
             - name: OTEL_SERVICE_NAME
@@ -1354,11 +1357,11 @@ kind: Deployment
 metadata:
   name: frontend
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.67
+    helm.sh/chart: otel-demo-fork-0.12.5
     app.kubernetes.io/name: frontend
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
     
-    app.kubernetes.io/version: "0.11.67"
+    app.kubernetes.io/version: "0.12.5"
     app.kubernetes.io/component: frontend
     app.kubernetes.io/part-of: opentelemetry-demo
     app.kubernetes.io/managed-by: Helm
@@ -1369,23 +1372,23 @@ spec:
     matchLabels:
       
       app.kubernetes.io/name: frontend
-      app.kubernetes.io/instance: test
+      app.kubernetes.io/instance: example
   template:
     metadata:
       labels:
         
         app.kubernetes.io/name: frontend
-        app.kubernetes.io/instance: test
+        app.kubernetes.io/instance: example
         
-        app.kubernetes.io/version: "0.11.67"
+        app.kubernetes.io/version: "0.12.5"
         app.kubernetes.io/component: frontend
       annotations:
         resource.opentelemetry.io/service.name: frontend
     spec:
-      serviceAccountName: test
+      serviceAccountName: example
       containers:
         - name: frontend
-          image: 'ghcr.io/ryanfaircloth/demo:0.11.67-frontend'
+          image: 'ghcr.io/ryanfaircloth/demo:0.12.5-frontend'
           imagePullPolicy: IfNotPresent
           ports:
             
@@ -1432,7 +1435,7 @@ spec:
             - name: WEB_OTEL_SERVICE_NAME
               value: frontend-web
             - name: PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
-              value: http://localhost:4318/v1/traces
+              value: /otlp-http/v1/traces
             - name: NODE_OPTIONS
               value: --max-old-space-size=176
             
@@ -1449,17 +1452,20 @@ spec:
             runAsNonRoot: true
             runAsUser: 1001
           livenessProbe:
+            failureThreshold: 6
             httpGet:
               path: /api/healthz
               port: 8080
-            initialDelaySeconds: 5
+            initialDelaySeconds: 15
             periodSeconds: 10
+            timeoutSeconds: 5
           readinessProbe:
             httpGet:
               path: /api/healthz
               port: 8080
-            initialDelaySeconds: 5
+            initialDelaySeconds: 10
             periodSeconds: 10
+            timeoutSeconds: 5
           volumeMounts:
       volumes:
 ---
@@ -1469,11 +1475,11 @@ kind: Deployment
 metadata:
   name: image-provider
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.67
+    helm.sh/chart: otel-demo-fork-0.12.5
     app.kubernetes.io/name: image-provider
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
     
-    app.kubernetes.io/version: "0.11.67"
+    app.kubernetes.io/version: "0.12.5"
     app.kubernetes.io/component: image-provider
     app.kubernetes.io/part-of: opentelemetry-demo
     app.kubernetes.io/managed-by: Helm
@@ -1484,15 +1490,15 @@ spec:
     matchLabels:
       
       app.kubernetes.io/name: image-provider
-      app.kubernetes.io/instance: test
+      app.kubernetes.io/instance: example
   template:
     metadata:
       labels:
         
         app.kubernetes.io/name: image-provider
-        app.kubernetes.io/instance: test
+        app.kubernetes.io/instance: example
         
-        app.kubernetes.io/version: "0.11.67"
+        app.kubernetes.io/version: "0.12.5"
         app.kubernetes.io/component: image-provider
       annotations:
         io.opentelemetry.discovery.metrics/config: |
@@ -1503,10 +1509,10 @@ spec:
         io.opentelemetry.discovery.metrics/scraper: nginx
         resource.opentelemetry.io/service.namespace: otel-demo
     spec:
-      serviceAccountName: test
+      serviceAccountName: example
       containers:
         - name: image-provider
-          image: 'ghcr.io/ryanfaircloth/demo:0.11.67-image-provider'
+          image: 'ghcr.io/ryanfaircloth/demo:0.12.5-image-provider'
           imagePullPolicy: IfNotPresent
           ports:
             
@@ -1558,11 +1564,11 @@ kind: Deployment
 metadata:
   name: load-generator
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.67
+    helm.sh/chart: otel-demo-fork-0.12.5
     app.kubernetes.io/name: load-generator
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
     
-    app.kubernetes.io/version: "0.11.67"
+    app.kubernetes.io/version: "0.12.5"
     app.kubernetes.io/component: load-generator
     app.kubernetes.io/part-of: opentelemetry-demo
     app.kubernetes.io/managed-by: Helm
@@ -1573,23 +1579,23 @@ spec:
     matchLabels:
       
       app.kubernetes.io/name: load-generator
-      app.kubernetes.io/instance: test
+      app.kubernetes.io/instance: example
   template:
     metadata:
       labels:
         
         app.kubernetes.io/name: load-generator
-        app.kubernetes.io/instance: test
+        app.kubernetes.io/instance: example
         
-        app.kubernetes.io/version: "0.11.67"
+        app.kubernetes.io/version: "0.12.5"
         app.kubernetes.io/component: load-generator
       annotations:
         resource.opentelemetry.io/service.namespace: otel-demo
     spec:
-      serviceAccountName: test
+      serviceAccountName: example
       containers:
         - name: load-generator
-          image: 'ghcr.io/ryanfaircloth/demo:0.11.67-load-generator'
+          image: 'ghcr.io/ryanfaircloth/demo:0.12.5-load-generator'
           imagePullPolicy: IfNotPresent
           ports:
             
@@ -1651,11 +1657,11 @@ kind: Deployment
 metadata:
   name: payment
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.67
+    helm.sh/chart: otel-demo-fork-0.12.5
     app.kubernetes.io/name: payment
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
     
-    app.kubernetes.io/version: "0.11.67"
+    app.kubernetes.io/version: "0.12.5"
     app.kubernetes.io/component: payment
     app.kubernetes.io/part-of: opentelemetry-demo
     app.kubernetes.io/managed-by: Helm
@@ -1666,23 +1672,23 @@ spec:
     matchLabels:
       
       app.kubernetes.io/name: payment
-      app.kubernetes.io/instance: test
+      app.kubernetes.io/instance: example
   template:
     metadata:
       labels:
         
         app.kubernetes.io/name: payment
-        app.kubernetes.io/instance: test
+        app.kubernetes.io/instance: example
         
-        app.kubernetes.io/version: "0.11.67"
+        app.kubernetes.io/version: "0.12.5"
         app.kubernetes.io/component: payment
       annotations:
         resource.opentelemetry.io/service.name: payment
     spec:
-      serviceAccountName: test
+      serviceAccountName: example
       containers:
         - name: payment
-          image: 'ghcr.io/ryanfaircloth/demo:0.11.67-payment'
+          image: 'ghcr.io/ryanfaircloth/demo:0.12.5-payment'
           imagePullPolicy: IfNotPresent
           ports:
             
@@ -1746,11 +1752,11 @@ kind: Deployment
 metadata:
   name: product-catalog
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.67
+    helm.sh/chart: otel-demo-fork-0.12.5
     app.kubernetes.io/name: product-catalog
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
     
-    app.kubernetes.io/version: "0.11.67"
+    app.kubernetes.io/version: "0.12.5"
     app.kubernetes.io/component: product-catalog
     app.kubernetes.io/part-of: opentelemetry-demo
     app.kubernetes.io/managed-by: Helm
@@ -1761,23 +1767,23 @@ spec:
     matchLabels:
       
       app.kubernetes.io/name: product-catalog
-      app.kubernetes.io/instance: test
+      app.kubernetes.io/instance: example
   template:
     metadata:
       labels:
         
         app.kubernetes.io/name: product-catalog
-        app.kubernetes.io/instance: test
+        app.kubernetes.io/instance: example
         
-        app.kubernetes.io/version: "0.11.67"
+        app.kubernetes.io/version: "0.12.5"
         app.kubernetes.io/component: product-catalog
       annotations:
         resource.opentelemetry.io/service.namespace: otel-demo
     spec:
-      serviceAccountName: test
+      serviceAccountName: example
       containers:
         - name: product-catalog
-          image: 'ghcr.io/ryanfaircloth/demo:0.11.67-product-catalog'
+          image: 'ghcr.io/ryanfaircloth/demo:0.12.5-product-catalog'
           imagePullPolicy: IfNotPresent
           ports:
             
@@ -1868,11 +1874,11 @@ kind: Deployment
 metadata:
   name: quote
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.67
+    helm.sh/chart: otel-demo-fork-0.12.5
     app.kubernetes.io/name: quote
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
     
-    app.kubernetes.io/version: "0.11.67"
+    app.kubernetes.io/version: "0.12.5"
     app.kubernetes.io/component: quote
     app.kubernetes.io/part-of: opentelemetry-demo
     app.kubernetes.io/managed-by: Helm
@@ -1883,23 +1889,23 @@ spec:
     matchLabels:
       
       app.kubernetes.io/name: quote
-      app.kubernetes.io/instance: test
+      app.kubernetes.io/instance: example
   template:
     metadata:
       labels:
         
         app.kubernetes.io/name: quote
-        app.kubernetes.io/instance: test
+        app.kubernetes.io/instance: example
         
-        app.kubernetes.io/version: "0.11.67"
+        app.kubernetes.io/version: "0.12.5"
         app.kubernetes.io/component: quote
       annotations:
         resource.opentelemetry.io/service.namespace: otel-demo
     spec:
-      serviceAccountName: test
+      serviceAccountName: example
       containers:
         - name: quote
-          image: 'ghcr.io/ryanfaircloth/demo:0.11.67-quote'
+          image: 'ghcr.io/ryanfaircloth/demo:0.12.5-quote'
           imagePullPolicy: IfNotPresent
           ports:
             
@@ -1959,11 +1965,11 @@ kind: Deployment
 metadata:
   name: recommendation
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.67
+    helm.sh/chart: otel-demo-fork-0.12.5
     app.kubernetes.io/name: recommendation
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
     
-    app.kubernetes.io/version: "0.11.67"
+    app.kubernetes.io/version: "0.12.5"
     app.kubernetes.io/component: recommendation
     app.kubernetes.io/part-of: opentelemetry-demo
     app.kubernetes.io/managed-by: Helm
@@ -1974,23 +1980,23 @@ spec:
     matchLabels:
       
       app.kubernetes.io/name: recommendation
-      app.kubernetes.io/instance: test
+      app.kubernetes.io/instance: example
   template:
     metadata:
       labels:
         
         app.kubernetes.io/name: recommendation
-        app.kubernetes.io/instance: test
+        app.kubernetes.io/instance: example
         
-        app.kubernetes.io/version: "0.11.67"
+        app.kubernetes.io/version: "0.12.5"
         app.kubernetes.io/component: recommendation
       annotations:
         resource.opentelemetry.io/service.name: recommendation
     spec:
-      serviceAccountName: test
+      serviceAccountName: example
       containers:
         - name: recommendation
-          image: 'ghcr.io/ryanfaircloth/demo:0.11.67-recommendation'
+          image: 'ghcr.io/ryanfaircloth/demo:0.12.5-recommendation'
           imagePullPolicy: IfNotPresent
           ports:
             
@@ -2056,11 +2062,11 @@ kind: Deployment
 metadata:
   name: shipping
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.67
+    helm.sh/chart: otel-demo-fork-0.12.5
     app.kubernetes.io/name: shipping
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
     
-    app.kubernetes.io/version: "0.11.67"
+    app.kubernetes.io/version: "0.12.5"
     app.kubernetes.io/component: shipping
     app.kubernetes.io/part-of: opentelemetry-demo
     app.kubernetes.io/managed-by: Helm
@@ -2071,23 +2077,23 @@ spec:
     matchLabels:
       
       app.kubernetes.io/name: shipping
-      app.kubernetes.io/instance: test
+      app.kubernetes.io/instance: example
   template:
     metadata:
       labels:
         
         app.kubernetes.io/name: shipping
-        app.kubernetes.io/instance: test
+        app.kubernetes.io/instance: example
         
-        app.kubernetes.io/version: "0.11.67"
+        app.kubernetes.io/version: "0.12.5"
         app.kubernetes.io/component: shipping
       annotations:
         resource.opentelemetry.io/service.namespace: otel-demo
     spec:
-      serviceAccountName: test
+      serviceAccountName: example
       containers:
         - name: shipping
-          image: 'ghcr.io/ryanfaircloth/demo:0.11.67-shipping'
+          image: 'ghcr.io/ryanfaircloth/demo:0.12.5-shipping'
           imagePullPolicy: IfNotPresent
           ports:
             
@@ -2143,11 +2149,11 @@ kind: Deployment
 metadata:
   name: telemetry-docs
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.67
+    helm.sh/chart: otel-demo-fork-0.12.5
     app.kubernetes.io/name: telemetry-docs
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
     
-    app.kubernetes.io/version: "0.11.67"
+    app.kubernetes.io/version: "0.12.5"
     app.kubernetes.io/component: telemetry-docs
     app.kubernetes.io/part-of: opentelemetry-demo
     app.kubernetes.io/managed-by: Helm
@@ -2158,23 +2164,23 @@ spec:
     matchLabels:
       
       app.kubernetes.io/name: telemetry-docs
-      app.kubernetes.io/instance: test
+      app.kubernetes.io/instance: example
   template:
     metadata:
       labels:
         
         app.kubernetes.io/name: telemetry-docs
-        app.kubernetes.io/instance: test
+        app.kubernetes.io/instance: example
         
-        app.kubernetes.io/version: "0.11.67"
+        app.kubernetes.io/version: "0.12.5"
         app.kubernetes.io/component: telemetry-docs
       annotations:
         resource.opentelemetry.io/service.namespace: otel-demo
     spec:
-      serviceAccountName: test
+      serviceAccountName: example
       containers:
         - name: telemetry-docs
-          image: 'ghcr.io/ryanfaircloth/demo:0.11.67-telemetry-docs'
+          image: 'ghcr.io/ryanfaircloth/demo:0.12.5-telemetry-docs'
           imagePullPolicy: IfNotPresent
           ports:
             
@@ -2226,11 +2232,11 @@ kind: Deployment
 metadata:
   name: valkey-cart
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.67
+    helm.sh/chart: otel-demo-fork-0.12.5
     app.kubernetes.io/name: valkey-cart
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
     
-    app.kubernetes.io/version: "0.11.67"
+    app.kubernetes.io/version: "0.12.5"
     app.kubernetes.io/component: valkey-cart
     app.kubernetes.io/part-of: opentelemetry-demo
     app.kubernetes.io/managed-by: Helm
@@ -2241,15 +2247,15 @@ spec:
     matchLabels:
       
       app.kubernetes.io/name: valkey-cart
-      app.kubernetes.io/instance: test
+      app.kubernetes.io/instance: example
   template:
     metadata:
       labels:
         
         app.kubernetes.io/name: valkey-cart
-        app.kubernetes.io/instance: test
+        app.kubernetes.io/instance: example
         
-        app.kubernetes.io/version: "0.11.67"
+        app.kubernetes.io/version: "0.12.5"
         app.kubernetes.io/component: valkey-cart
       annotations:
         io.opentelemetry.discovery.metrics/config: |
@@ -2259,7 +2265,7 @@ spec:
         io.opentelemetry.discovery.metrics/scraper: redis
         resource.opentelemetry.io/service.namespace: otel-demo
     spec:
-      serviceAccountName: test
+      serviceAccountName: example
       containers:
         - name: valkey-cart
           image: 'valkey/valkey:9.0.1-alpine3.23'

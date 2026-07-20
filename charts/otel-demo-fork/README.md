@@ -197,8 +197,15 @@ The `opentelemetry-collector` sub-chart has no native Gateway API support, so
 this chart adds its own HTTPRoute for it (`templates/collector-httproute.yaml`),
 configured independently via a top-level `otelCollectorHTTPRoute` key (same
 shape as `components.[NAME].httpRoute`, including `rewritePath`). This is how
-a browser reaches the collector's `otlp-http` receiver directly for the
-frontend's client-side trace export; see
+a browser reaches the collector's `otlp-http` receiver for the frontend's
+client-side trace export: the frontend defaults
+`PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` to the **relative** path
+`/otlp-http/v1/traces`, which the browser resolves against whatever hostname
+served the page, so no per-deployment URL needs to be configured — but the
+same hostname must route `/otlp-http` to the collector. Publishing the
+frontend's HTTPRoute without enabling `otelCollectorHTTPRoute` (and without
+overriding the endpoint to an absolute URL) fails at template time rather
+than silently dropping browser traces; see
 [examples/public-hosted-httproute](examples/public-hosted-httproute).
 
 #### OpenTelemetry Collector via the Operator

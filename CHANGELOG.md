@@ -7,6 +7,19 @@ the release.
 
 ## Unreleased
 
+* [frontend/chart] Browser trace export was posting spans to
+  `http://localhost:4318/v1/traces` on every visitor's own machine: the
+  chart's default `PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` was an
+  absolute localhost URL that real deployments had to remember to
+  override per hostname. The endpoint now defaults to the relative path
+  `/otlp-http/v1/traces` (app fallback, compose `.env`, and chart), which
+  the browser resolves against whatever origin served the page. Since the
+  chart routes nothing implicitly, publishing the frontend's HTTPRoute
+  without `otelCollectorHTTPRoute` (and without an absolute-URL override)
+  now fails at template time instead of silently dropping browser traces.
+  Also fixed `_document.tsx` injecting the literal string `'undefined'`
+  as the endpoint when the env var is unset.
+
 * [shipping] Live-pod review of the email fixes above turned up an
   unrelated, genuine bug: checkout's `PlaceOrder` was failing continuously
   (dozens of times an hour in this environment) with `shipping quote

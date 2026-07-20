@@ -5,11 +5,11 @@ kind: OpenTelemetryCollector
 metadata:
   name: otel-collector
   labels:
-    helm.sh/chart: otel-demo-fork-0.11.67
+    helm.sh/chart: otel-demo-fork-0.12.5
     app.kubernetes.io/name: otel-demo-fork
-    app.kubernetes.io/instance: test
+    app.kubernetes.io/instance: example
     
-    app.kubernetes.io/version: "0.11.67"
+    app.kubernetes.io/version: "0.12.5"
     app.kubernetes.io/part-of: opentelemetry-demo
     app.kubernetes.io/managed-by: Helm
 spec:
@@ -32,6 +32,9 @@ spec:
           batch: {}
         tls:
           insecure: true
+    extensions:
+      health_check:
+        endpoint: '[::]:13133'
     processors:
       memory_limiter:
         check_interval: 5s
@@ -68,6 +71,14 @@ spec:
           statements:
           - set_semconv_span_name("1.37.0", "unsanitized_span_name")
     receivers:
+      jaeger:
+        protocols:
+          grpc:
+            endpoint: '[::]:14250'
+          thrift_compact:
+            endpoint: '[::]:6831'
+          thrift_http:
+            endpoint: '[::]:14268'
       kafkametrics:
         brokers:
         - kafka:9092
@@ -78,11 +89,24 @@ spec:
         - consumers
       otlp:
         protocols:
+          grpc:
+            endpoint: '[::]:4317'
           http:
             cors:
               allowed_origins:
               - http://*
               - https://*
+            endpoint: '[::]:4318'
+      prometheus:
+        config:
+          scrape_configs:
+          - job_name: opentelemetry-collector
+            scrape_interval: 10s
+            static_configs:
+            - targets:
+              - localhost:8888
+      zipkin:
+        endpoint: '[::]:9411'
     service:
       pipelines:
         logs:

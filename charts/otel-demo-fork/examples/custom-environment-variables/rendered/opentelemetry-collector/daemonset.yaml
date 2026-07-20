@@ -25,7 +25,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: e43b9432a9e712117905afec5a7b9b0730a11e63b5fbb63fb42c61b0ae8cf169
+        checksum/config: dd198f13caf985a9d5e471dc0cde4f55f08fa20f927df879d8b12d880d19a8bd
         
       labels:
         app.kubernetes.io/name: opentelemetry-collector
@@ -44,7 +44,7 @@ spec:
             - --config=/conf/relay.yaml
           securityContext:
             {}
-          image: "otel/opentelemetry-collector-contrib:0.151.0"
+          image: "otel/opentelemetry-collector-contrib:0.155.0"
           imagePullPolicy: IfNotPresent
           ports:
             
@@ -124,7 +124,11 @@ spec:
               port: 13133
           resources:
             limits:
+              cpu: 300m
               memory: 200Mi
+            requests:
+              cpu: 50m
+              memory: 100Mi
           volumeMounts:
             - mountPath: /conf
               name: opentelemetry-collector-configmap

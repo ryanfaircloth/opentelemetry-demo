@@ -13,9 +13,10 @@ opentelemetry-collector:
 
 components:
   frontend:
-    envOverrides:
-      - name: PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
-        value: https://otel-demo.example.com/otlp-http/v1/traces
+    # PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT needs no override: the chart
+    # default is the relative path /otlp-http/v1/traces, which the browser
+    # resolves against this hostname and otelCollectorHTTPRoute (below) routes
+    # to the collector.
     httpRoute:
       enabled: true
       parentRefs:

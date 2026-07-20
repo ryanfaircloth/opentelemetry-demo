@@ -727,12 +727,12 @@ components:
       # - no server-side endpoint is set here for the same reason as cart.
       - name: WEB_OTEL_SERVICE_NAME
         value: frontend-web
-      # The browser sends its own traces straight to the collector's otlp-http
-      # receiver (which allows any CORS origin) rather than through a same-origin
-      # proxy. Expects `kubectl port-forward svc/otel-collector 4318:4318` in
-      # addition to port-forwarding frontend itself; override for real deployments.
+      # Relative so the browser posts spans to whatever origin served the page,
+      # regardless of the published hostname. The serving origin must route
+      # /otlp-http to the collector's OTLP HTTP receiver — see
+      # otelCollectorHTTPRoute (wired up in the public-hosted-httproute example).
       - name: PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
-        value: http://localhost:4318/v1/traces
+        value: /otlp-http/v1/traces
       # Node's V8 heap isn't reliably cgroup-aware; without a cap it can grow
       # well past the 250Mi limit below and get OOMKilled. Cap it with
       # headroom for non-heap (buffers, native modules, Next.js server cache).

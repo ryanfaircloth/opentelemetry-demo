@@ -22,9 +22,11 @@ export default class MyDocument extends Document<{ envString: string }> {
       const baggage = propagation.getBaggage(context.active());
       const isSyntheticRequest = baggage?.getEntry('synthetic_request')?.value === 'true';
 
+      // An unset env var must inject '' (not the string 'undefined') so the
+      // browser tracer's same-origin default kicks in.
       const otlpTracesEndpoint = isSyntheticRequest
           ? `http://${OTEL_COLLECTOR_HOST}:4318/v1/traces`
-          : PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT;
+          : PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT || '';
 
       const envString = `
         window.ENV = {

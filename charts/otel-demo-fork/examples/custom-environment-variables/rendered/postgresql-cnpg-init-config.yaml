@@ -1,15 +1,16 @@
 ---
-# Source: otel-demo-fork/templates/posgresql-init-config.yaml
+# Source: otel-demo-fork/templates/postgresql-cnpg-init-config.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: postgresql-init
+  name: postgresql-cnpg-init
   namespace: default
   labels:
-    helm.sh/chart: otel-demo-fork-0.5.0
+    helm.sh/chart: otel-demo-fork-0.12.5
+    app.kubernetes.io/name: otel-demo-fork
+    app.kubernetes.io/instance: example
     
-    
-    app.kubernetes.io/version: "2.2.0"
+    app.kubernetes.io/version: "0.12.5"
     app.kubernetes.io/part-of: opentelemetry-demo
     app.kubernetes.io/managed-by: Helm
 data:
@@ -17,8 +18,6 @@ data:
   init.sql: |
     -- Copyright The OpenTelemetry Authors
     -- SPDX-License-Identifier: Apache-2.0
-  
-    CREATE USER otelu WITH PASSWORD 'otelp';
   
     -- Accounting Service: create a schema
     CREATE SCHEMA accounting;

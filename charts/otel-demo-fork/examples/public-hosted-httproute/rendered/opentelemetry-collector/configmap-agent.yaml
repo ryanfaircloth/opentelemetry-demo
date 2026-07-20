@@ -20,14 +20,14 @@ data:
     exporters:
       debug: {}
       otlp/observability-backend:
-        endpoint: otel-gateway:4317
+        endpoint: my-observability-endpoint:4317
         sending_queue:
           batch: {}
         tls:
           insecure: true
     extensions:
       health_check:
-        endpoint: ${env:MY_POD_IP}:13133
+        endpoint: '[::]:13133'
       k8s_leader_elector/k8s_cluster:
         auth_type: serviceAccount
         lease_name: k8s.cluster.receiver.opentelemetry.io
@@ -160,11 +160,11 @@ data:
       jaeger:
         protocols:
           grpc:
-            endpoint: ${env:MY_POD_IP}:14250
+            endpoint: '[::]:14250'
           thrift_compact:
-            endpoint: ${env:MY_POD_IP}:6831
+            endpoint: '[::]:6831'
           thrift_http:
-            endpoint: ${env:MY_POD_IP}:14268
+            endpoint: '[::]:14268'
       k8s_cluster:
         collection_interval: 10s
         k8s_leader_elector: k8s_leader_elector/k8s_cluster
@@ -183,13 +183,13 @@ data:
       otlp:
         protocols:
           grpc:
-            endpoint: ${env:MY_POD_IP}:4317
+            endpoint: '[::]:4317'
           http:
             cors:
               allowed_origins:
               - http://*
               - https://*
-            endpoint: ${env:MY_POD_IP}:4318
+            endpoint: '[::]:4318'
       prometheus:
         config:
           scrape_configs:
@@ -197,14 +197,14 @@ data:
             scrape_interval: 10s
             static_configs:
             - targets:
-              - ${env:MY_POD_IP}:8888
+              - localhost:8888
       receiver_creator/metrics:
         discovery:
           enabled: true
         watch_observers:
         - k8s_observer
       zipkin:
-        endpoint: ${env:MY_POD_IP}:9411
+        endpoint: '[::]:9411'
     service:
       extensions:
       - health_check

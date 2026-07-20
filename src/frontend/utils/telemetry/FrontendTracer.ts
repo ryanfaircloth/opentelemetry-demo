@@ -33,7 +33,10 @@ const FrontendTracer = async () => {
       new SessionIdProcessor(),
       new BatchSpanProcessor(
           new OTLPTraceExporter({
-            url: NEXT_PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT || 'http://localhost:4318/v1/traces',
+            // Relative URLs resolve against the page origin, so the default
+            // works on any published hostname as long as the same origin
+            // routes /otlp-http to the collector's OTLP HTTP receiver.
+            url: NEXT_PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT || '/otlp-http/v1/traces',
           }),
           {
             scheduledDelayMillis: 500,
