@@ -203,7 +203,6 @@ func initDatabase() error {
 		}
 	}
 
-	bootLogger.Info("Database connection established")
 	logger.Info("Database connection established")
 	return nil
 }
