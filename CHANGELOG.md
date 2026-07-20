@@ -16,15 +16,16 @@ the release.
   example HTTPRoute all forward the path unrewritten now; deployments
   can drop their `/images` rewrite filters.
 
-* [chart] `values.schema.json` no longer demands the
-  `otlp/observability-backend` exporter endpoint when the collector
-  config is never consumed. Helm validates dependency schemas against
-  merged values unconditionally — the `condition:` gate only skips
-  rendering — so `opentelemetry-collector.enabled: false` previously
-  still failed template/install without a placeholder endpoint. The
-  requirement is now conditional: enforced when the sub-chart is enabled
-  or when `otelCollectorOperatorCR` (which reuses the config) is, and
-  waived when both are off.
+* [chart] The collector agent is now explicitly mandatory: disabling
+  both `opentelemetry-collector` and `otelCollectorOperatorCR` fails at
+  template time with a clear message instead of deploying an app whose
+  every component exports into the void (each one targets
+  `OTEL_COLLECTOR_HOST`, and the frontend proxies the browser's
+  `/otlp-http` to it). With a collector always rendering, the
+  `otlp/observability-backend` endpoint requirement in
+  `values.schema.json` stays unconditional — 0.12.11 briefly waived it
+  for a fully-disabled collector, a configuration that was never
+  actually viable and is now rejected outright.
 
 * [frontend/chart] The app now works fully — product images, feature
   flags, and browser trace export — the moment the frontend is reachable,

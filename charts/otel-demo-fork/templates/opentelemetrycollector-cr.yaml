@@ -1,4 +1,13 @@
 {{- $collector := index .Values "opentelemetry-collector" }}
+{{/*
+The collector agent is mandatory: every component exports to
+OTEL_COLLECTOR_HOST and the frontend proxies the browser's /otlp-http to it,
+so a deployment with no collector is broken by construction. Exactly one of
+the two modes must be on.
+*/}}
+{{- if and (not .Values.otelCollectorOperatorCR.enabled) (not $collector.enabled) }}
+{{- fail "this chart requires its collector agent: enable opentelemetry-collector (sub-chart Deployment/DaemonSet) or otelCollectorOperatorCR (Operator-reconciled) - disabling both leaves every component exporting into the void." }}
+{{- end }}
 {{- if .Values.otelCollectorOperatorCR.enabled }}
 {{- if $collector.enabled }}
 {{- fail "otelCollectorOperatorCR.enabled and opentelemetry-collector.enabled are mutually exclusive ways of running the collector - set opentelemetry-collector.enabled: false to use the Operator CR." }}
