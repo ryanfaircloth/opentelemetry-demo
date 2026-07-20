@@ -18,6 +18,10 @@ require "opentelemetry-exporter-otlp-metrics"
 require "opentelemetry/instrumentation/sinatra"
 
 set :port, ENV["EMAIL_PORT"]
+# Sinatra/Puma default to binding 0.0.0.0 (IPv4-only), unreachable from
+# checkout on this cluster's dual-stack pod network - bind the IPv6
+# wildcard instead, same reasoning as the health server below.
+set :bind, "::"
 # Sinatra's classic app enables Rack::CommonLogger by default, which logs an
 # access-log line for every request at a level that bypasses $console_logger
 # entirely - disable it so console output is actually governed by LOG_LEVEL.

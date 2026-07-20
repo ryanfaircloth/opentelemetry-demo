@@ -7,6 +7,24 @@ the release.
 
 ## Unreleased
 
+* [email] Live-pod console review turned up a real, continuous bug: checkout
+  logged a `WARN "failed to send order confirmation" ... connection refused`
+  every single attempt, ~13 times in a 10-minute window. Root cause -
+  `email_server.rb`'s health-check port was already fixed to bind the IPv6
+  wildcard (`"::"`) for this dual-stack cluster, but the main Sinatra app
+  (port 8080, the actual `/send_order_confirmation` endpoint) was left on
+  Sinatra's default `0.0.0.0` (IPv4-only), confirmed by Puma's own startup
+  line. checkout resolves `email` to an IPv6 address and gets refused every
+  time. Added `set :bind, "::"`, matching the health port's existing fix.
+
+* [product-catalog] Same review: `main.go`'s database-ready path logged
+  `"Database connection established"` through both `bootLogger.Info(...)`
+  (an always-visible, unfiltered handler meant only for startup diagnostics
+  before the real logging pipeline exists) and `logger.Info(...)` (the real,
+  `LOG_LEVEL`-respecting one) - the `bootLogger` call is why this INFO line
+  showed up on console despite `LOG_LEVEL=WARN`. Dropped the redundant
+  `bootLogger` call, keeping only `logger.Info`.
+
 * [chart] `opentelemetry-collector.config.exporters."otlp/observability-backend".endpoint`
   no longer has a placeholder default (`otel-gateway:4317`, which pointed
   nowhere real) - it's now enforced as required by `values.schema.json`, so
