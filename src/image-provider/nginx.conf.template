@@ -45,8 +45,15 @@ http {
         server_name _;
         server_tokens off;
 
-        root /static;
         gzip_static on;
+
+        # /images/... is the canonical public path for all assets this
+        # service provides (the webstore requests /images/products/X and
+        # /images/<logo|banner>); serve it directly so no proxy or gateway
+        # ever needs to rewrite the path. Nothing is served at the bare root.
+        location /images/ {
+            alias /static/;
+        }
 
         location /status {
             stub_status on;

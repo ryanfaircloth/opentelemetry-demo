@@ -67,7 +67,7 @@ static_resources:
                             { cluster: telemetry-docs, prefix_rewrite: "/" }
                         - match: { prefix: "/images/" }
                           route:
-                            { cluster: image-provider, prefix_rewrite: "/" }
+                            { cluster: image-provider }
                         - match: { prefix: "/flagservice/" }
                           route:
                             cluster: flagservice

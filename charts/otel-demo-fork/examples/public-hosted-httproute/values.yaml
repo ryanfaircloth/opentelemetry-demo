@@ -42,7 +42,6 @@ components:
             - path:
                 type: PathPrefix
                 value: /images
-          rewritePath: /
           port: 8081
 
   flagd:

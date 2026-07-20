@@ -7,17 +7,24 @@ import http from 'http';
 /*
  * Streams a browser request through to a backing service. The browser reaches
  * flagd, the collector's OTLP receiver, and image-provider on same-origin
- * paths (/flagservice, /otlp-http, /images); a gateway or the frontend-proxy
- * may route those paths straight to the backends, but when neither is in
- * front of us the frontend serves them itself, so a deployment needs no
- * routing wiring at all for the app to fully work. Mirrors the
- * frontend-proxy's prefix_rewrite: "/" semantics: the first path segment is
- * stripped before forwarding, and responses are piped unbuffered so flagd's
- * grpc-web event stream keeps flowing.
+ * paths (/flagservice, /otlp-http, /images); a gateway may route those paths
+ * straight to the backends, but when none does the frontend serves them
+ * itself, so a deployment needs no routing wiring at all for the app to
+ * fully work. targetPrefix is prepended to the forwarded path: backends that
+ * serve their public path natively (image-provider's /images) get it back,
+ * while backends that serve at their root (the collector's /v1/traces,
+ * flagd's grpc-web services) get the public prefix stripped. Responses are
+ * piped unbuffered so flagd's grpc-web event stream keeps flowing.
  */
-const proxyToBackend = (req: NextApiRequest, res: NextApiResponse, host: string, port: number) => {
+const proxyToBackend = (
+  req: NextApiRequest,
+  res: NextApiResponse,
+  host: string,
+  port: number,
+  targetPrefix = ''
+) => {
   const segments = req.query.path;
-  const path = '/' + (Array.isArray(segments) ? segments.join('/') : segments || '');
+  const path = targetPrefix + '/' + (Array.isArray(segments) ? segments.join('/') : segments || '');
   const queryIndex = req.url?.indexOf('?') ?? -1;
   const search = queryIndex >= 0 ? req.url?.slice(queryIndex) : '';
 

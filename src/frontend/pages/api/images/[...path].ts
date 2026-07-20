@@ -7,7 +7,7 @@ import proxyToBackend from '../../../utils/backendProxy';
 const { IMAGE_PROVIDER_HOST = 'image-provider', IMAGE_PROVIDER_PORT = '8081' } = process.env;
 
 const handler = (req: NextApiRequest, res: NextApiResponse) =>
-  proxyToBackend(req, res, IMAGE_PROVIDER_HOST, Number(IMAGE_PROVIDER_PORT));
+  proxyToBackend(req, res, IMAGE_PROVIDER_HOST, Number(IMAGE_PROVIDER_PORT), '/images');
 
 export const config = {
   api: {
