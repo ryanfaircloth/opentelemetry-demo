@@ -1,24 +1,12 @@
 {{- $httpRoute := .Values.otelCollectorHTTPRoute }}
-{{/*
-Publishing the frontend without routing its browser trace endpoint breaks
-browser telemetry silently: the browser posts spans to the relative
-PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT on the page's own origin, and this
-chart never routes a path implicitly - every path must have an explicit
-HTTPRoute. Fail fast instead.
-*/}}
 {{- $frontend := index .Values.components "frontend" }}
-{{- if and $frontend $frontend.httpRoute $frontend.httpRoute.enabled }}
-{{-   $browserEndpoint := "" }}
-{{-   range ($frontend.env | default list) }}
-{{-     if eq .name "PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT" }}{{ $browserEndpoint = printf "%v" .value }}{{- end }}
-{{-   end }}
-{{-   range ($frontend.envOverrides | default list) }}
-{{-     if eq .name "PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT" }}{{ $browserEndpoint = printf "%v" .value }}{{- end }}
-{{-   end }}
-{{-   if and (hasPrefix "/" $browserEndpoint) (not (and $httpRoute $httpRoute.enabled)) }}
-{{-     fail "components.frontend.httpRoute is enabled but otelCollectorHTTPRoute is not: browser trace export posts to the relative PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT (default /otlp-http/v1/traces), which must be routed to the collector on the same hostname. Enable otelCollectorHTTPRoute (see examples/public-hosted-httproute), or set an absolute URL via components.frontend.envOverrides." }}
-{{-   end }}
-{{- end }}
+{{/*
+This route is an optional optimization, not a requirement: the frontend
+serves the browser's same-origin /otlp-http path itself, proxying spans to
+OTEL_COLLECTOR_HOST at runtime, so browser telemetry works with no routing
+wiring at all. Enabling this route lets the gateway send /otlp-http straight
+to the collector, skipping the frontend hop.
+*/}}
 {{/*
 The route's backend defaults to the sub-chart's own in-namespace
 otel-collector Service. Deployments that bring their own collector (the

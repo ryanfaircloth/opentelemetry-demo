@@ -728,9 +728,10 @@ components:
       - name: WEB_OTEL_SERVICE_NAME
         value: frontend-web
       # Relative so the browser posts spans to whatever origin served the page,
-      # regardless of the published hostname. The serving origin must route
-      # /otlp-http to the collector's OTLP HTTP receiver — see
-      # otelCollectorHTTPRoute (wired up in the public-hosted-httproute example).
+      # regardless of the published hostname. The frontend serves /otlp-http
+      # itself (proxying to OTEL_COLLECTOR_HOST), so this works with no
+      # routing wiring; a gateway may route /otlp-http straight to the
+      # collector instead — see otelCollectorHTTPRoute.
       - name: PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
         value: /otlp-http/v1/traces
       # Node's V8 heap isn't reliably cgroup-aware; without a cap it can grow
@@ -1548,11 +1549,11 @@ opentelemetry-collector:
                     insecure: true
 
 
-## The opentelemetry-collector sub-chart has no native Gateway API support,
-## so this chart adds its own HTTPRoute (templates/collector-httproute.yaml)
-## for exposing the collector's otlp-http receiver (port 4318), e.g. so a
-## browser can reach it directly for frontend's client-side trace export.
-## Same shape as components[].httpRoute; disabled by default.
+## Optional: routes /otlp-http at the gateway straight to the collector's
+## otlp-http receiver (port 4318), skipping the frontend hop. Browser trace
+## export works without this - the frontend serves /otlp-http itself and
+## proxies to OTEL_COLLECTOR_HOST - so enable it purely as a data-path
+## optimization. Same shape as components[].httpRoute; disabled by default.
 ##
 ## The paths are the chart's responsibility: with no rules configured, the
 ## route serves the canonical /otlp-http -> collector:4318 (prefix stripped)

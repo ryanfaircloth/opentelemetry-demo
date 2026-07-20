@@ -273,8 +273,11 @@ services:
       - OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
       - WEB_OTEL_SERVICE_NAME=frontend-web
       - OTEL_COLLECTOR_HOST
+      - OTEL_COLLECTOR_PORT_HTTP
       - FLAGD_HOST
       - FLAGD_PORT
+      - IMAGE_PROVIDER_HOST
+      - IMAGE_PROVIDER_PORT
     healthcheck:
       test: ["CMD", "/nodejs/bin/node", "-e", "require('net').connect(${FRONTEND_PORT},require('os').hostname(),function(){process.exit(0)}).on('error',function(){process.exit(1)})"]
       start_period: 60s

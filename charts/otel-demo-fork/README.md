@@ -193,29 +193,27 @@ platform's existing backend; see
 
 #### OpenTelemetry Collector HTTPRoute
 
-The `opentelemetry-collector` sub-chart has no native Gateway API support, so
-this chart adds its own HTTPRoute for it (`templates/collector-httproute.yaml`),
-configured independently via a top-level `otelCollectorHTTPRoute` key (same
-shape as `components.[NAME].httpRoute`, including `rewritePath`). This is how
-a browser reaches the collector's `otlp-http` receiver for the frontend's
-client-side trace export: the frontend defaults
-`PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` to the **relative** path
-`/otlp-http/v1/traces`, which the browser resolves against whatever hostname
-served the page, so no per-deployment URL needs to be configured — but the
-same hostname must route `/otlp-http` to the collector. Publishing the
-frontend's HTTPRoute without enabling `otelCollectorHTTPRoute` (and without
-overriding the endpoint to an absolute URL) fails at template time rather
-than silently dropping browser traces; see
-[examples/public-hosted-httproute](examples/public-hosted-httproute).
+The browser reaches the collector's `otlp-http` receiver for the frontend's
+client-side trace export on a **same-origin relative** path: the frontend
+defaults `PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` to
+`/otlp-http/v1/traces`, resolved against whatever hostname served the page.
+No routing wiring is required for this to work — the frontend serves
+`/otlp-http` itself (along with `/flagservice` and `/images`), proxying to
+`OTEL_COLLECTOR_HOST` (flagd, image-provider) at runtime. Publishing just the
+frontend therefore gives a fully working store including browser telemetry.
 
-The route's paths are the chart's responsibility, not the consumer's: with
-no `rules` configured it serves the canonical `/otlp-http` →
-collector:4318 (prefix stripped) wiring the browser export posts to, and
-`parentRefs`/`hostnames` default to the frontend httpRoute's when that is
-enabled — so alongside a published frontend, `otelCollectorHTTPRoute.enabled:
-true` is a complete configuration. When the frontend is published outside the
-chart, set `parentRefs`/`hostnames` explicitly (rendering fails fast when
-neither is available rather than emitting a pathless route).
+`otelCollectorHTTPRoute` (`templates/collector-httproute.yaml`, same shape as
+`components.[NAME].httpRoute`) is an optional optimization on top: it routes
+`/otlp-http` at the gateway straight to the collector, skipping the frontend
+hop. Its paths are the chart's responsibility, not the consumer's: with no
+`rules` configured it serves the canonical `/otlp-http` → collector:4318
+(prefix stripped) wiring, and `parentRefs`/`hostnames` default to the
+frontend httpRoute's when that is enabled — so alongside a published
+frontend, `otelCollectorHTTPRoute.enabled: true` is a complete configuration.
+When the frontend is published outside the chart, set
+`parentRefs`/`hostnames` explicitly (rendering fails fast when neither is
+available rather than emitting a pathless route); see
+[examples/public-hosted-httproute](examples/public-hosted-httproute).
 
 The route targets the sub-chart's own in-namespace `otel-collector` Service
 by default. Deployments that bring their own collector (sub-chart disabled,

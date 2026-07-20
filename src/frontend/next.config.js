@@ -30,6 +30,19 @@ const {
 const nextConfig = {
   reactStrictMode: true,
   output: 'standalone',
+  // Same-origin browser paths for flagd, the collector's OTLP receiver, and
+  // image-provider. A gateway/frontend-proxy in front of us may route these
+  // straight to the backends; when none does, the requests fall through to
+  // these API-route proxies (utils/backendProxy.ts) so the app fully works
+  // with no external routing wiring. Static mappings only - the backend
+  // hosts are resolved from env at runtime inside the API routes, which is
+  // what keeps this compatible with `output: standalone` (rewrites are baked
+  // at build time, env reads in API routes are not).
+  rewrites: async () => [
+    { source: '/otlp-http/:path*', destination: '/api/otlp-http/:path*' },
+    { source: '/flagservice/:path*', destination: '/api/flagservice/:path*' },
+    { source: '/images/:path*', destination: '/api/images/:path*' },
+  ],
   compiler: {
     styledComponents: true,
   },

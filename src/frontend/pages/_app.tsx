@@ -33,8 +33,9 @@ if (typeof window !== 'undefined') {
     // Set context prior to provider init to avoid multiple http calls
     OpenFeature.setContext({ targetingKey: session.userId, ...session }).then(() => {
       /**
-       * We connect to flagd through the envoy proxy, straight from the browser,
-       * for this we need to know the current hostname and port.
+       * We connect to flagd on a same-origin /flagservice path: a gateway or
+       * frontend-proxy may route it straight to flagd, and otherwise the
+       * frontend's own proxy route serves it (see next.config.js rewrites).
        */
 
       const useTLS = window.location.protocol === 'https:';

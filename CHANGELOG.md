@@ -7,6 +7,19 @@ the release.
 
 ## Unreleased
 
+* [frontend/chart] The app now works fully — product images, feature
+  flags, and browser trace export — the moment the frontend is reachable,
+  with zero routing wiring. The frontend serves its browser-facing
+  same-origin paths itself via streaming proxy API routes (static Next.js
+  rewrites `/otlp-http`, `/flagservice`, `/images` → runtime proxies to
+  `OTEL_COLLECTOR_HOST`, `FLAGD_HOST`, `IMAGE_PROVIDER_HOST`), replacing
+  the removed frontend-proxy hop that k8s deployments previously had to
+  reproduce with per-path HTTPRoute rules. A gateway may still route
+  those paths straight to the backends as a data-path optimization —
+  `otelCollectorHTTPRoute` remains for exactly that — and the chart's
+  template-time guard requiring it alongside a published frontend is
+  gone, since there is no longer a broken state to guard against.
+
 * [chart] The collector HTTPRoute's paths are now the chart's
   responsibility instead of the consumer's: enabling
   `otelCollectorHTTPRoute` without `rules` previously rendered a route
