@@ -16,6 +16,33 @@ import http from 'http';
  * flagd's grpc-web services) get the public prefix stripped. Responses are
  * piped unbuffered so flagd's grpc-web event stream keeps flowing.
  */
+// Hop-by-hop headers (RFC 9110 §7.6.1) describe a single connection and must
+// not be forwarded: Node frames each leg itself, and copying the backend's
+// transfer-encoding while piping the already-decoded body corrupts streaming
+// responses (flagd's EventStream never parses). accept-encoding is dropped
+// too so backends answer with identity encoding - these bodies are framed
+// protocol data or already-compressed images, and an encoded stream would
+// have to be decoded here to stay parseable.
+const HOP_BY_HOP_HEADERS = [
+  'accept-encoding',
+  'connection',
+  'keep-alive',
+  'proxy-authenticate',
+  'proxy-authorization',
+  'te',
+  'trailer',
+  'transfer-encoding',
+  'upgrade',
+];
+
+const withoutHopByHopHeaders = (headers: http.IncomingHttpHeaders) => {
+  const result = { ...headers };
+  for (const name of HOP_BY_HOP_HEADERS) {
+    delete result[name];
+  }
+  return result;
+};
+
 const proxyToBackend = (
   req: NextApiRequest,
   res: NextApiResponse,
@@ -34,10 +61,17 @@ const proxyToBackend = (
       port,
       path: `${path}${search}`,
       method: req.method,
-      headers: { ...req.headers, host: `${host}:${port}` },
+      headers: { ...withoutHopByHopHeaders(req.headers), host: `${host}:${port}` },
     },
     backendRes => {
-      res.writeHead(backendRes.statusCode || 502, backendRes.headers);
+      const headers = withoutHopByHopHeaders(backendRes.headers);
+      // no-transform keeps Next's compression middleware (and any cache in
+      // front) from re-encoding the body: compressing a flagd event stream
+      // buffers it, so the browser never sees an event until the stream ends.
+      headers['cache-control'] = [backendRes.headers['cache-control'], 'no-transform']
+        .filter(Boolean)
+        .join(', ');
+      res.writeHead(backendRes.statusCode || 502, headers);
       backendRes.pipe(res);
     }
   );

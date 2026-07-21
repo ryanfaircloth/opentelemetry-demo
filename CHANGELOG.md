@@ -7,6 +7,22 @@ the release.
 
 ## Unreleased
 
+* [frontend] The browser's flagd connection now actually works through
+  the frontend's /flagservice proxy. Two proxy bugs starved the
+  provider's EventStream so `FlagdWebProvider` never became ready: the
+  backend's hop-by-hop headers (notably `transfer-encoding`) were
+  forwarded verbatim while Node re-framed the body, and Next.js's
+  compression middleware gzip-buffered the stream (JSON-flavored connect
+  responses are "compressible"), holding back every event until the
+  stream closed. The proxy now strips hop-by-hop headers both
+  directions, requests identity encoding from backends, and marks
+  responses `Cache-Control: no-transform` so nothing re-encodes them.
+  Verified end-to-end by running the real `FlagdWebProvider` (0.7.4,
+  latest — already fully compatible with flagd, no library updates
+  needed) against a real flagd v0.16.0 binary through the running
+  frontend: provider ready, flags resolve with targeting. Compose's
+  flagd image is aligned from v0.14.2 to the chart's v0.16.0.
+
 * [image-provider] `/images/...` is now the canonical path end-to-end:
   nginx serves it natively (`location /images/ { alias /static/; }`,
   nothing at the bare root) instead of expecting every proxy and gateway
