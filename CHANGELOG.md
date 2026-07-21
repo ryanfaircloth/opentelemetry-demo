@@ -9,12 +9,16 @@ the release.
 
 * [quote] Composer now refuses to install any guzzle ≤ 7.15.1 (fresh
   Packagist security advisories block the whole 7.x line), which broke
-  the image build on the exact `7.13.2` pin. Bumped to guzzle `8.0.0`
-  and dropped `php-http/guzzle7-adapter`: nothing in quote references
-  either directly — guzzle exists solely as the PSR-18 client
-  `php-http/discovery` hands to the OTel exporter, guzzle 8 provides
-  `psr/http-client-implementation` itself, and the adapter (capped at
-  guzzle `^7.0`) was legacy HTTPlug glue nothing requires.
+  the image build on the exact `7.13.2` pin — and guzzle 8 is
+  unreachable too, since its `psr7 ^3.0` needs `psr/http-message ^2.0`
+  while `react/http` (quote's HTTP server) tops out at `^1.0`. Guzzle
+  and the legacy `php-http/guzzle7-adapter` are removed outright:
+  nothing in quote references either — guzzle existed solely as the
+  PSR-18 client `php-http/discovery` hands to the OTel exporter. That
+  role is now filled by `symfony/http-client` (provides
+  `psr/http-client-implementation`, no psr/http-message constraint)
+  plus `nyholm/psr7` for its preferred PSR-17 factory path, both
+  compatible with react's psr/http-message 1.x world.
 
 * [frontend] The browser's flagd connection now actually works through
   the frontend's /flagservice proxy. Two proxy bugs starved the
