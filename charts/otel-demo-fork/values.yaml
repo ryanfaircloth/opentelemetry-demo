@@ -1647,3 +1647,32 @@ opentelemetry-collector:
 ## are mutually exclusive ways of running the same collector.
 otelCollectorOperatorCR:
   enabled: false
+
+## Arbitrary extra Kubernetes objects rendered alongside the chart's own
+## manifests, for anything the demo deployment needs that the chart has no
+## first-class option for (NetworkPolicies, ExternalSecrets, extra ConfigMaps,
+## Gateways, ...). Each entry is either a YAML object or a string; both are
+## passed through Helm templating (tpl), so values and helpers like
+## {{ .Release.Namespace }} can be referenced. Strings are useful to guard an
+## object with its own condition. Objects render in the release namespace
+## unless they set metadata.namespace themselves.
+additionalObjects: []
+# additionalObjects:
+#   - apiVersion: v1
+#     kind: ConfigMap
+#     metadata:
+#       name: extra-config
+#     data:
+#       key: value
+#   - |
+#     {{ if index .Values "opentelemetry-collector" "enabled" }}
+#     apiVersion: networking.k8s.io/v1
+#     kind: NetworkPolicy
+#     metadata:
+#       name: allow-otlp
+#     spec:
+#       podSelector: {}
+#       ingress:
+#         - ports:
+#             - port: 4317
+#     {{ end }}

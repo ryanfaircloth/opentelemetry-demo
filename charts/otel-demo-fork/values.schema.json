@@ -49,6 +49,20 @@
     },
     "otelCollectorOperatorCR": {
       "$ref": "#/definitions/OperatorCR"
+    },
+    "additionalObjects": {
+      "description": "A list of additional Kubernetes objects to render alongside the chart's own manifests. Each entry is either a YAML object or a string; both are passed through Helm templating (tpl).",
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "type": "object"
+          },
+          {
+            "type": "string"
+          }
+        ]
+      }
     }
   },
   "required": [

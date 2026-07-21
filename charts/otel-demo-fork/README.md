@@ -243,3 +243,36 @@ deployment mechanism changes. The sub-chart's presets (`hostMetrics`,
 `annotationDiscovery`) have no CRD equivalent, so switching to this mode means
 configuring any receivers/RBAC they provided yourself. See
 [examples/operator-managed-collector](examples/operator-managed-collector).
+
+### Additional objects
+
+`additionalObjects` renders arbitrary extra Kubernetes objects alongside the
+chart's own manifests — for anything the deployment needs that the chart has
+no first-class option for (NetworkPolicies, ExternalSecrets, extra ConfigMaps,
+a Gateway, ...). Each list entry is either a YAML object or a string; both are
+passed through Helm templating (`tpl`), so entries can reference values and
+built-ins like `{{ .Release.Namespace }}`. String entries are useful to wrap
+an object in its own condition. Objects land in the release namespace unless
+they set `metadata.namespace` themselves.
+
+```yaml
+additionalObjects:
+  - apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: extra-config
+    data:
+      environment: "{{ .Release.Name }}"
+  - |
+    {{ if index .Values "opentelemetry-collector" "enabled" }}
+    apiVersion: networking.k8s.io/v1
+    kind: NetworkPolicy
+    metadata:
+      name: allow-otlp
+    spec:
+      podSelector: {}
+      ingress:
+        - ports:
+            - port: 4317
+    {{ end }}
+```
