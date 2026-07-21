@@ -28,13 +28,15 @@ export default class MyDocument extends Document<{ envString: string }> {
           ? `http://${OTEL_COLLECTOR_HOST}:4318/v1/traces`
           : PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT || '';
 
-      const envString = `
-        window.ENV = {
-          NEXT_PUBLIC_PLATFORM: '${ENV_PLATFORM}',
-          NEXT_PUBLIC_OTEL_SERVICE_NAME: '${WEB_OTEL_SERVICE_NAME}',
-          NEXT_PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: '${otlpTracesEndpoint}',
-          IS_SYNTHETIC_REQUEST: '${isSyntheticRequest}',
-        };`;
+      const env = {
+        NEXT_PUBLIC_PLATFORM: ENV_PLATFORM || '',
+        NEXT_PUBLIC_OTEL_SERVICE_NAME: WEB_OTEL_SERVICE_NAME || '',
+        NEXT_PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: otlpTracesEndpoint,
+        IS_SYNTHETIC_REQUEST: String(isSyntheticRequest),
+      };
+      // Escapes every '<' so no env value can break out of the inline
+      // script tag (e.g. via '</script>').
+      const envString = `window.ENV = ${JSON.stringify(env).replace(/</g, '\\u003c')};`;
       return {
         ...initialProps,
         styles: [initialProps.styles, sheet.getStyleElement()],

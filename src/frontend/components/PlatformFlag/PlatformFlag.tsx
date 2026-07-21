@@ -3,9 +3,10 @@
 
 import * as S from './PlatformFlag.styled';
 
-const { NEXT_PUBLIC_PLATFORM = 'local' } = typeof window !== 'undefined' ? window.ENV : {};
-
-const platform = NEXT_PUBLIC_PLATFORM;
+// Server and client read the same ENV_PLATFORM value through different
+// channels, so SSR output and hydration agree.
+const platform =
+  (typeof window !== 'undefined' ? window.ENV?.NEXT_PUBLIC_PLATFORM : process.env.ENV_PLATFORM) || 'local';
 
 const PlatformFlag = () => {
   return (
