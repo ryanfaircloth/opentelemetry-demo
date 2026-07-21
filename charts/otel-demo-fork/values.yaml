@@ -320,7 +320,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.12.18-accounting"
+      tag: "0.12.19-accounting"
     useDefault:
       env: true
     podAnnotations:
@@ -369,7 +369,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.12.18-ad"
+      tag: "0.12.19-ad"
     useDefault:
       env: true
     service:
@@ -434,7 +434,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.12.18-cart"
+      tag: "0.12.19-cart"
     useDefault:
       env: true
     service:
@@ -502,7 +502,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.12.18-checkout"
+      tag: "0.12.19-checkout"
     useDefault:
       env: true
     service:
@@ -568,7 +568,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.12.18-currency"
+      tag: "0.12.19-currency"
     useDefault:
       env: true
     service:
@@ -616,7 +616,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.12.18-email"
+      tag: "0.12.19-email"
     useDefault:
       env: true
     service:
@@ -662,7 +662,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.12.18-fraud-detection"
+      tag: "0.12.19-fraud-detection"
     useDefault:
       env: true
     podAnnotations:
@@ -701,7 +701,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.12.18-frontend"
+      tag: "0.12.19-frontend"
     useDefault:
       env: true
     service:
@@ -793,7 +793,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.12.18-image-provider"
+      tag: "0.12.19-image-provider"
     useDefault:
       env: true
     # The webstore browser fetches product images from same-origin /images,
@@ -850,7 +850,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.12.18-load-generator"
+      tag: "0.12.19-load-generator"
     useDefault:
       env: true
     service:
@@ -898,7 +898,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.12.18-payment"
+      tag: "0.12.19-payment"
     useDefault:
       env: true
     service:
@@ -952,7 +952,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.12.18-product-catalog"
+      tag: "0.12.19-product-catalog"
     useDefault:
       env: true
     service:
@@ -1008,7 +1008,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.12.18-quote"
+      tag: "0.12.19-quote"
     useDefault:
       env: true
     service:
@@ -1054,7 +1054,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.12.18-recommendation"
+      tag: "0.12.19-recommendation"
     useDefault:
       env: true
     service:
@@ -1107,7 +1107,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.12.18-shipping"
+      tag: "0.12.19-shipping"
     useDefault:
       env: true
     service:
@@ -1149,7 +1149,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.12.18-telemetry-docs"
+      tag: "0.12.19-telemetry-docs"
     useDefault:
       env: true
     service:
@@ -1263,7 +1263,7 @@ components:
         # be deployed via this chart.
         imageOverride:
           repository: "ghcr.io/ryanfaircloth/demo"
-          tag: "0.12.18-flagd-ui"
+          tag: "0.12.19-flagd-ui"
         useDefault:
           env: true
         service:
@@ -1319,7 +1319,7 @@ components:
     enabled: true
     imageOverride:
       repository: "ghcr.io/ryanfaircloth/demo"
-      tag: "0.12.18-kafka"
+      tag: "0.12.19-kafka"
     useDefault:
       env: true
     replicas: 1
