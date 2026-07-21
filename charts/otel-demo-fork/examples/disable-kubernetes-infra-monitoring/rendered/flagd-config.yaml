@@ -6,11 +6,11 @@ metadata:
   name: flagd-config
   namespace: default
   labels:
-    helm.sh/chart: otel-demo-fork-0.12.13
+    helm.sh/chart: otel-demo-fork-0.12.14
     app.kubernetes.io/name: otel-demo-fork
     app.kubernetes.io/instance: example
     
-    app.kubernetes.io/version: "0.12.13"
+    app.kubernetes.io/version: "0.12.14"
     app.kubernetes.io/part-of: opentelemetry-demo
     app.kubernetes.io/managed-by: Helm
 data:
