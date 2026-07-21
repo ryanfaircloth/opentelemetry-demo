@@ -7,6 +7,15 @@ the release.
 
 ## Unreleased
 
+* [quote] Composer now refuses to install any guzzle ≤ 7.15.1 (fresh
+  Packagist security advisories block the whole 7.x line), which broke
+  the image build on the exact `7.13.2` pin. Bumped to guzzle `8.0.0`
+  and dropped `php-http/guzzle7-adapter`: nothing in quote references
+  either directly — guzzle exists solely as the PSR-18 client
+  `php-http/discovery` hands to the OTel exporter, guzzle 8 provides
+  `psr/http-client-implementation` itself, and the adapter (capped at
+  guzzle `^7.0`) was legacy HTTPlug glue nothing requires.
+
 * [frontend] The browser's flagd connection now actually works through
   the frontend's /flagservice proxy. Two proxy bugs starved the
   provider's EventStream so `FlagdWebProvider` never became ready: the
