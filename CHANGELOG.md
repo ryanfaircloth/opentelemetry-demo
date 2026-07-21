@@ -7,6 +7,20 @@ the release.
 
 ## Unreleased
 
+* [chart] HTTPRoute rules support Gateway API `timeouts`
+  (`request`/`backendRequest`), which chart-routed flagd requires:
+  gateway implementations apply a default per-request timeout (Envoy
+  Gateway: 15s) that severs flagd's long-lived grpc-web EventStream, so
+  browser flags would load once and never update — the failure the old
+  frontend-proxy Envoy config guarded against with `timeout: 0s` on
+  exactly this route, and the chart previously could not express. The
+  public-hosted-httproute example now carries the canonical
+  `/flagservice → flagd:8013` rule (rewrite `/`, `timeouts.request:
+  0s`). Verified with the real FlagdWebProvider on both data paths —
+  direct to flagd (what the gateway route carries) and through the
+  frontend's proxy: stream held open, a live flag-file flip pushed a
+  ConfigurationChanged event and re-evaluated within a second.
+
 * [quote] Composer now refuses to install any guzzle ≤ 7.15.1 (fresh
   Packagist security advisories block the whole 7.x line), which broke
   the image build on the exact `7.13.2` pin — and guzzle 8 is

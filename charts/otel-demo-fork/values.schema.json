@@ -753,6 +753,19 @@
               },
               "port": {
                 "type": "integer"
+              },
+              "timeouts": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "request": {
+                    "type": "string",
+                    "description": "Gateway API HTTPRouteRule request timeout; '0s' disables it (required for long-lived streams like flagd's EventStream)."
+                  },
+                  "backendRequest": {
+                    "type": "string"
+                  }
+                }
               }
             },
             "required": [
@@ -873,6 +886,19 @@
                     },
                     "port": {
                       "type": "integer"
+                    },
+                    "timeouts": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "request": {
+                          "type": "string",
+                          "description": "Gateway API HTTPRouteRule request timeout; '0s' disables it (required for long-lived streams like flagd's EventStream)."
+                        },
+                        "backendRequest": {
+                          "type": "string"
+                        }
+                      }
                     }
                   },
                   "required": [
@@ -1237,6 +1263,19 @@
               },
               "port": {
                 "type": "integer"
+              },
+              "timeouts": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "request": {
+                    "type": "string",
+                    "description": "Gateway API HTTPRouteRule request timeout; '0s' disables it (required for long-lived streams like flagd's EventStream)."
+                  },
+                  "backendRequest": {
+                    "type": "string"
+                  }
+                }
               }
             },
             "required": [
@@ -1357,6 +1396,19 @@
                     },
                     "port": {
                       "type": "integer"
+                    },
+                    "timeouts": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "request": {
+                          "type": "string",
+                          "description": "Gateway API HTTPRouteRule request timeout; '0s' disables it (required for long-lived streams like flagd's EventStream)."
+                        },
+                        "backendRequest": {
+                          "type": "string"
+                        }
+                      }
                     }
                   },
                   "required": [

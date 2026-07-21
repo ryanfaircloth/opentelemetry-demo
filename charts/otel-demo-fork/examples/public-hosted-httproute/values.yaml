@@ -58,6 +58,20 @@ components:
                 value: /feature
           rewritePath: /
           port: 4000
+        # The browser evaluates feature flags over a long-lived grpc-web
+        # EventStream on same-origin /flagservice. Routing it here sends it
+        # straight to flagd; without this rule it still works through the
+        # frontend's own /flagservice proxy. timeouts.request "0s" disables
+        # the gateway's default per-request timeout, which would otherwise
+        # sever the stream (Envoy Gateway defaults to 15s).
+        - matches:
+            - path:
+                type: PathPrefix
+                value: /flagservice
+          rewritePath: /
+          port: 8013
+          timeouts:
+            request: 0s
 
   load-generator:
     httpRoute:

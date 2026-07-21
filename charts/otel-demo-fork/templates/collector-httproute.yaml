@@ -104,6 +104,15 @@ spec:
           namespace: {{ $backendNamespace }}
           {{- end }}
           port: {{ .port }}
+      {{- if .timeouts }}
+      timeouts:
+        {{- with .timeouts.request }}
+        request: {{ . }}
+        {{- end }}
+        {{- with .timeouts.backendRequest }}
+        backendRequest: {{ . }}
+        {{- end }}
+      {{- end }}
     {{- end }}
 {{- end}}
 {{- $grantEnabled := true }}

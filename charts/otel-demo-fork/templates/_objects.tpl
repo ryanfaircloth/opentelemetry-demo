@@ -332,6 +332,20 @@ spec:
       backendRefs:
         - name: {{ $.name }}
           port: {{ .port }}
+      {{- if .timeouts }}
+      {{/*
+      Gateway API implementations apply a default per-request timeout that
+      kills long-lived streams (flagd's grpc-web EventStream). "0s" disables
+      the timeout per the Gateway API spec.
+      */}}
+      timeouts:
+        {{- with .timeouts.request }}
+        request: {{ . }}
+        {{- end }}
+        {{- with .timeouts.backendRequest }}
+        backendRequest: {{ . }}
+        {{- end }}
+      {{- end }}
     {{- end }}
 {{- end}}
 {{- end}}
