@@ -7,6 +7,21 @@ the release.
 
 ## Unreleased
 
+* [frontend/chart] The frontend is the app only — its backend proxies
+  (`/otlp-http`, `/flagservice`, `/images` pass-throughs added in 0.12.9)
+  are removed; the gateway's chart-owned HTTPRoutes are the one and only
+  data path for the browser's same-origin needs. The chart now ships
+  complete default rules for flagd (`/feature` and `/flagservice`, both
+  prefix-rewritten — flagd serves at its root — with
+  `timeouts.request: 0s` on the flag EventStream) and image-provider
+  (`/images`, served natively, no rewrite), and every component httpRoute
+  inherits `parentRefs`/`hostnames` from the frontend's, so
+  `httpRoute.enabled: true` per component is a complete configuration.
+  Publishing the frontend's httpRoute without the collector, flagd, or
+  image-provider routes fails at template time — with no frontend
+  fallback there is no silently-degraded state left.
+
+
 * [chart] HTTPRoute rules support Gateway API `timeouts`
   (`request`/`backendRequest`), which chart-routed flagd requires:
   gateway implementations apply a default per-request timeout (Envoy

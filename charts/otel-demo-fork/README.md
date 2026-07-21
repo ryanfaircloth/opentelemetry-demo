@@ -193,26 +193,27 @@ platform's existing backend; see
 
 #### OpenTelemetry Collector HTTPRoute
 
-The browser reaches the collector's `otlp-http` receiver for the frontend's
-client-side trace export on a **same-origin relative** path: the frontend
-defaults `PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` to
-`/otlp-http/v1/traces`, resolved against whatever hostname served the page.
-No routing wiring is required for this to work — the frontend serves
-`/otlp-http` itself (along with `/flagservice` and `/images`), proxying to
-`OTEL_COLLECTOR_HOST` (flagd, image-provider) at runtime. Publishing just the
-frontend therefore gives a fully working store including browser telemetry.
+The frontend is the app only — it proxies nothing. The browser depends on
+three same-origin paths, each routed at the gateway by chart-owned
+HTTPRoutes whose rules (paths, rewrites, ports, timeouts) ship in the chart,
+with `parentRefs`/`hostnames` inherited from the frontend's httpRoute:
 
-`otelCollectorHTTPRoute` (`templates/collector-httproute.yaml`, same shape as
-`components.[NAME].httpRoute`) is an optional optimization on top: it routes
-`/otlp-http` at the gateway straight to the collector, skipping the frontend
-hop. Its paths are the chart's responsibility, not the consumer's: with no
-`rules` configured it serves the canonical `/otlp-http` → collector:4318
-(prefix stripped) wiring, and `parentRefs`/`hostnames` default to the
-frontend httpRoute's when that is enabled — so alongside a published
-frontend, `otelCollectorHTTPRoute.enabled: true` is a complete configuration.
-When the frontend is published outside the chart, set
-`parentRefs`/`hostnames` explicitly (rendering fails fast when neither is
-available rather than emitting a pathless route); see
+- `/otlp-http` → the collector (`otelCollectorHTTPRoute`): the frontend
+  defaults `PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` to the relative
+  `/otlp-http/v1/traces`, resolved against whatever hostname served the page.
+- `/flagservice` (and `/feature`) → flagd (`components.flagd.httpRoute`):
+  default rules carry the required prefix rewrite (flagd serves at its root)
+  and `timeouts.request: 0s` — the browser's flag EventStream is one
+  long-lived request, and gateway default timeouts (Envoy Gateway: 15s)
+  would sever it.
+- `/images` → image-provider (`components.image-provider.httpRoute`):
+  served natively at `/images`, no rewrite.
+
+Alongside a published frontend, `enabled: true` on each is a complete
+configuration — and a required one: publishing the frontend's httpRoute
+fails at template time until all three browser-path routes are enabled
+(the absolute-URL override on the browser trace endpoint remains the escape
+hatch for collectors routed outside the chart). See
 [examples/public-hosted-httproute](examples/public-hosted-httproute).
 
 The route targets the sub-chart's own in-namespace `otel-collector` Service

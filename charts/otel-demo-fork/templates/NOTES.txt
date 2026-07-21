@@ -59,13 +59,15 @@
   Feature Flags UI     http://localhost:4000/
   Load Generator UI    http://localhost:8089/
 
-  The webstore is fully self-contained on its own origin: the browser's
+  The frontend serves the app only - it proxies nothing. The browser's
   same-origin paths (/images product images, /flagservice feature flags,
-  /otlp-http trace export) are served by the frontend itself, which proxies
-  them to image-provider, flagd, and the collector - so the single frontend
-  port-forward above gives a fully working store. A Gateway may route those
-  same paths straight to the backends to skip the frontend hop (see
-  examples/public-hosted-httproute and otelCollectorHTTPRoute in values.yaml).
+  /otlp-http trace export) resolve only when a Gateway routes them to
+  image-provider, flagd, and the collector on the frontend's hostname, so
+  the bare frontend port-forward above shows the store without images,
+  flags, or browser traces. The full experience requires a Gateway API
+  Gateway and the chart's HTTPRoutes (see examples/public-hosted-httproute;
+  publishing the frontend's httpRoute fails fast until the browser-path
+  routes are enabled too).
 
   This chart deploys the demo application and its own instrumentation agent
   only. Point the collector's otlp/observability-backend exporter at your

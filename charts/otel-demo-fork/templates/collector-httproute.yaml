@@ -1,12 +1,34 @@
 {{- $httpRoute := .Values.otelCollectorHTTPRoute }}
 {{- $frontend := index .Values.components "frontend" }}
 {{/*
-This route is an optional optimization, not a requirement: the frontend
-serves the browser's same-origin /otlp-http path itself, proxying spans to
-OTEL_COLLECTOR_HOST at runtime, so browser telemetry works with no routing
-wiring at all. Enabling this route lets the gateway send /otlp-http straight
-to the collector, skipping the frontend hop.
+The frontend is the app only - it proxies nothing. Every same-origin path the
+browser depends on (/otlp-http trace export, /flagservice feature flags,
+/images product images) must be routed at the gateway, so publishing the
+frontend's httpRoute without those routes ships a silently broken store.
+Fail fast instead. The absolute-URL override on
+PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT remains the escape hatch for
+collectors routed outside the chart.
 */}}
+{{- if and $frontend $frontend.httpRoute $frontend.httpRoute.enabled }}
+{{-   $browserEndpoint := "" }}
+{{-   range ($frontend.env | default list) }}
+{{-     if eq .name "PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT" }}{{ $browserEndpoint = printf "%v" .value }}{{- end }}
+{{-   end }}
+{{-   range ($frontend.envOverrides | default list) }}
+{{-     if eq .name "PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT" }}{{ $browserEndpoint = printf "%v" .value }}{{- end }}
+{{-   end }}
+{{-   if and (hasPrefix "/" $browserEndpoint) (not (and $httpRoute $httpRoute.enabled)) }}
+{{-     fail "components.frontend.httpRoute is enabled but otelCollectorHTTPRoute is not: the frontend proxies nothing, so the browser's trace export (relative PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT, default /otlp-http/v1/traces) needs the gateway to route /otlp-http to the collector. Enable otelCollectorHTTPRoute, or set an absolute URL via components.frontend.envOverrides." }}
+{{-   end }}
+{{-   $flagd := index .Values.components "flagd" }}
+{{-   if and $flagd $flagd.enabled (not (and $flagd.httpRoute $flagd.httpRoute.enabled)) }}
+{{-     fail "components.frontend.httpRoute is enabled but components.flagd.httpRoute is not: the frontend proxies nothing, so the browser's feature flags need the gateway to route /flagservice to flagd. Set components.flagd.httpRoute.enabled: true (rules default to the chart's canonical /feature and /flagservice wiring), or disable the flagd component." }}
+{{-   end }}
+{{-   $imageProvider := index .Values.components "image-provider" }}
+{{-   if and $imageProvider $imageProvider.enabled (not (and $imageProvider.httpRoute $imageProvider.httpRoute.enabled)) }}
+{{-     fail "components.frontend.httpRoute is enabled but components.image-provider.httpRoute is not: the frontend proxies nothing, so product images need the gateway to route /images to image-provider. Set components.image-provider.httpRoute.enabled: true (rules default to the chart's canonical /images wiring), or disable the image-provider component." }}
+{{-   end }}
+{{- end }}
 {{/*
 The route's backend defaults to the sub-chart's own in-namespace
 otel-collector Service. Deployments that bring their own collector (the

@@ -33,9 +33,9 @@ if (typeof window !== 'undefined') {
     // Set context prior to provider init to avoid multiple http calls
     OpenFeature.setContext({ targetingKey: session.userId, ...session }).then(() => {
       /**
-       * We connect to flagd on a same-origin /flagservice path: a gateway or
-       * frontend-proxy may route it straight to flagd, and otherwise the
-       * frontend's own proxy route serves it (see next.config.js rewrites).
+       * We connect to flagd on a same-origin /flagservice path, routed to
+       * flagd by the gateway (or compose's frontend-proxy). The frontend
+       * serves no backend paths itself - it is the app only.
        */
 
       const useTLS = window.location.protocol === 'https:';

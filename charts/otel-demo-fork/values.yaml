@@ -728,10 +728,10 @@ components:
       - name: WEB_OTEL_SERVICE_NAME
         value: frontend-web
       # Relative so the browser posts spans to whatever origin served the page,
-      # regardless of the published hostname. The frontend serves /otlp-http
-      # itself (proxying to OTEL_COLLECTOR_HOST), so this works with no
-      # routing wiring; a gateway may route /otlp-http straight to the
-      # collector instead — see otelCollectorHTTPRoute.
+      # regardless of the published hostname. The frontend proxies nothing:
+      # the gateway must route /otlp-http to the collector — see
+      # otelCollectorHTTPRoute, which is required (fail-fast) whenever the
+      # frontend's httpRoute is published.
       - name: PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
         value: /otlp-http/v1/traces
       # Node's V8 heap isn't reliably cgroup-aware; without a cap it can grow
@@ -780,6 +780,19 @@ components:
       tag: "0.12.16-image-provider"
     useDefault:
       env: true
+    # The webstore browser fetches product images from same-origin /images,
+    # which image-provider serves natively (no rewrite). Rules are the
+    # chart's; parentRefs/hostnames inherit from the frontend httpRoute, so
+    # alongside a published frontend `enabled: true` is complete - and
+    # required: publishing the frontend without this route fails fast.
+    httpRoute:
+      enabled: false
+      rules:
+        - matches:
+            - path:
+                type: PathPrefix
+                value: /images
+          port: 8081
     service:
       port: 8081
     podAnnotations:
@@ -1161,6 +1174,34 @@ components:
       tag: "v0.16.0"
     useDefault:
       env: true
+    # Canonical browser-facing rules, owned by the chart. /flagservice is
+    # flagd's grpc-web evaluation service: flagd serves at its root and has
+    # no path-prefix option, so the prefix MUST be stripped (rewritePath),
+    # and the browser's EventStream is one long-lived request, so the
+    # gateway's default per-request timeout MUST be disabled
+    # (timeouts.request: 0s - Envoy Gateway defaults to 15s and would sever
+    # the stream). /feature is the flagd-ui admin UI (Phoenix, also served
+    # at its root). parentRefs/hostnames inherit from the frontend
+    # httpRoute, so alongside a published frontend `enabled: true` is
+    # complete - and required: publishing the frontend without this route
+    # fails fast.
+    httpRoute:
+      enabled: false
+      rules:
+        - matches:
+            - path:
+                type: PathPrefix
+                value: /feature
+          rewritePath: /
+          port: 4000
+        - matches:
+            - path:
+                type: PathPrefix
+                value: /flagservice
+          rewritePath: /
+          port: 8013
+          timeouts:
+            request: 0s
     replicas: 1
     ports:
       - name: rpc
@@ -1549,11 +1590,11 @@ opentelemetry-collector:
                     insecure: true
 
 
-## Optional: routes /otlp-http at the gateway straight to the collector's
-## otlp-http receiver (port 4318), skipping the frontend hop. Browser trace
-## export works without this - the frontend serves /otlp-http itself and
-## proxies to OTEL_COLLECTOR_HOST - so enable it purely as a data-path
-## optimization. Same shape as components[].httpRoute; disabled by default.
+## Routes /otlp-http at the gateway to the collector's otlp-http receiver
+## (port 4318). The frontend proxies nothing, so this route is REQUIRED
+## whenever the frontend's httpRoute is published (template fails fast
+## without it, unless the browser endpoint is overridden to an absolute
+## URL). Same shape as components[].httpRoute; disabled by default.
 ##
 ## The paths are the chart's responsibility: with no rules configured, the
 ## route serves the canonical /otlp-http -> collector:4318 (prefix stripped)

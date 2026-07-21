@@ -30,48 +30,23 @@ components:
                 value: /
           port: 8080
 
+  # /images (product images) - rules, parentRefs, and hostnames all come
+  # from the chart: rules default to the canonical /images -> 8081 wiring
+  # (served natively by image-provider, no rewrite) and parentRefs/hostnames
+  # inherit from the frontend httpRoute above.
   image-provider:
     httpRoute:
       enabled: true
-      parentRefs:
-        - name: otel-demo-gateway
-      hostnames:
-        - otel-demo.example.com
-      rules:
-        - matches:
-            - path:
-                type: PathPrefix
-                value: /images
-          port: 8081
 
+  # /feature (flags admin UI) and /flagservice (the browser's grpc-web flag
+  # evaluation) - the chart's default rules carry the required prefix
+  # rewrites (flagd serves at its root, no prefix option) and
+  # timeouts.request: 0s on /flagservice (the EventStream is one long-lived
+  # request; Envoy Gateway's 15s default would sever it). parentRefs/
+  # hostnames inherit from the frontend httpRoute above.
   flagd:
     httpRoute:
       enabled: true
-      parentRefs:
-        - name: otel-demo-gateway
-      hostnames:
-        - otel-demo.example.com
-      rules:
-        - matches:
-            - path:
-                type: PathPrefix
-                value: /feature
-          rewritePath: /
-          port: 4000
-        # The browser evaluates feature flags over a long-lived grpc-web
-        # EventStream on same-origin /flagservice. Routing it here sends it
-        # straight to flagd; without this rule it still works through the
-        # frontend's own /flagservice proxy. timeouts.request "0s" disables
-        # the gateway's default per-request timeout, which would otherwise
-        # sever the stream (Envoy Gateway defaults to 15s).
-        - matches:
-            - path:
-                type: PathPrefix
-                value: /flagservice
-          rewritePath: /
-          port: 8013
-          timeouts:
-            request: 0s
 
   load-generator:
     httpRoute:

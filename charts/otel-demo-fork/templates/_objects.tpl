@@ -262,11 +262,29 @@ Demo component HTTPRoute template (Gateway API)
 {{- end }}
 {{- end }}
 {{- if and $hasHTTPRoute (or .ports $hasServicePorts) }}
+{{/*
+parentRefs/hostnames are deployment facts; when a route omits them they are
+inherited from the frontend's httpRoute so the component's routes merge onto
+the same virtual host - alongside a published frontend, `enabled: true` plus
+the chart's default rules is a complete configuration. A route with no
+parentRefs from either source fails fast instead of rendering unattached.
+*/}}
+{{- $inheritParentRefs := list }}
+{{- $inheritHostnames := list }}
+{{- if and .frontendHTTPRoute .frontendHTTPRoute.enabled }}
+{{-   $inheritParentRefs = .frontendHTTPRoute.parentRefs | default list }}
+{{-   $inheritHostnames = .frontendHTTPRoute.hostnames | default list }}
+{{- end }}
 {{- $httpRoutes := list .httpRoute }}
 {{- if .httpRoute.additionalHTTPRoutes }}
 {{-   $httpRoutes = concat $httpRoutes .httpRoute.additionalHTTPRoutes -}}
 {{- end }}
 {{- range $httpRoutes }}
+{{- $parentRefs := .parentRefs | default $inheritParentRefs }}
+{{- $hostnames := .hostnames | default $inheritHostnames }}
+{{- if not $parentRefs }}
+{{-   fail (printf "components.%s.httpRoute is enabled but has no parentRefs and there is no enabled components.frontend.httpRoute to inherit them from - set parentRefs to your Gateway." $.name) }}
+{{- end }}
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -284,7 +302,7 @@ metadata:
   {{- end }}
 spec:
   parentRefs:
-    {{- range .parentRefs }}
+    {{- range $parentRefs }}
     - name: {{ .name }}
       {{- with .namespace }}
       namespace: {{ . }}
@@ -293,9 +311,9 @@ spec:
       sectionName: {{ . }}
       {{- end }}
     {{- end }}
-  {{- if .hostnames }}
+  {{- if $hostnames }}
   hostnames:
-    {{- range .hostnames }}
+    {{- range $hostnames }}
     - {{ . | quote }}
     {{- end }}
   {{- end }}

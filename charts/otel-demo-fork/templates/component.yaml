@@ -13,6 +13,7 @@
     {{- $config := set . "defaultValues" $.Values.default }}
     {{- $config := set . "kafkaAccess" $kafkaAccess }}
     {{- $config := set . "postgresAccess" $postgresAccess }}
+    {{- $config := set . "frontendHTTPRoute" ((index $.Values.components "frontend").httpRoute | default dict) }}
 
     {{/* The bundled single-broker Kafka is deprecated legacy-mode-only: it is
     force-disabled whenever kafkaAccess.mode is not "legacy", regardless of
