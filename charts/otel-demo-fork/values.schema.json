@@ -405,6 +405,15 @@
             },
             "podAnnotations": {
               "type": "object"
+            },
+            "parameters": {
+              "type": "object"
+            },
+            "sharedPreloadLibraries": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             }
           }
         }

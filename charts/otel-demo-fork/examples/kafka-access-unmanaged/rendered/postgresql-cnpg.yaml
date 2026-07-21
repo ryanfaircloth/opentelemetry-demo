@@ -27,6 +27,12 @@ spec:
     requests:
       cpu: 50m
       memory: 128Mi
+  postgresql:
+    shared_preload_libraries:
+      - pg_stat_statements
+    parameters:
+      log_min_duration_statement: "0"
+      pg_stat_statements.track: "all"
   bootstrap:
     initdb:
       database: otel

@@ -30,6 +30,19 @@ spec:
   resources:
     {{- $cnpg.resources | toYaml | nindent 4 }}
   {{- end }}
+  {{- if or $cnpg.parameters $cnpg.sharedPreloadLibraries }}
+  postgresql:
+    {{- with $cnpg.sharedPreloadLibraries }}
+    shared_preload_libraries:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with $cnpg.parameters }}
+    parameters:
+      {{- range $k, $v := . }}
+      {{ $k }}: {{ $v | quote }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
   bootstrap:
     initdb:
       database: otel

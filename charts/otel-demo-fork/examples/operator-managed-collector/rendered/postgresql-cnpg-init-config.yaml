@@ -19,6 +19,10 @@ data:
     -- Copyright The OpenTelemetry Authors
     -- SPDX-License-Identifier: Apache-2.0
   
+    -- Preloaded via the CNPG Cluster's shared_preload_libraries; create the
+    -- extension so the query-statistics view is available in this database.
+    CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+  
     -- Accounting Service: create a schema
     CREATE SCHEMA accounting;
     GRANT USAGE ON SCHEMA accounting TO otelu;

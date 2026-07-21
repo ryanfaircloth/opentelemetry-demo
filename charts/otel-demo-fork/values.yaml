@@ -118,6 +118,22 @@ postgresAccess:
       limits:
         cpu: 500m
         memory: 256Mi
+    # PostgreSQL server settings rendered into the CNPG Cluster's
+    # spec.postgresql.parameters. log_min_duration_statement=0 logs every
+    # completed statement (with its duration) to the pod's stdout - CNPG always
+    # captures Postgres stderr and re-emits it as JSON on stdout, so no log
+    # file, sidecar or shared volume is involved. product-catalog's otelsql
+    # SQLCommenter appends the W3C traceparent to each SQL statement, so that
+    # trace context appears in the logged statement text and can be correlated
+    # back to the originating trace by whatever collects the pod's logs.
+    parameters:
+      log_min_duration_statement: "0"
+      pg_stat_statements.track: all
+    # Extensions to preload (spec.postgresql.shared_preload_libraries). The cnpg
+    # init SQL (postgresql/cnpg/init.sql) also runs CREATE EXTENSION
+    # pg_stat_statements so the statistics view is queryable in the app database.
+    sharedPreloadLibraries:
+      - pg_stat_statements
     # CNPG's superuser role is always named "postgres" and is disabled by
     # default. It's enabled here (with this fixed demo password, stored in a
     # chart-managed Secret referenced via spec.superuserSecret) so the
