@@ -1,0 +1,17 @@
+{{/* product-catalog configures its OTel SDK via file-based configuration
+(go.opentelemetry.io/contrib/otelconf), selected by OTEL_CONFIG_FILE. This
+ConfigMap carries config/otel-config.yml and is mounted at /otel-config.yml by
+the component's mountedConfigMaps (see values.yaml). Without it otelconf builds
+a no-op SDK. */}}
+{{- if (index .Values.components "product-catalog").enabled -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: product-catalog-otelconf
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "otel-demo.labels" . | nindent 4 }}
+data:
+  otel-config.yml: |
+{{ .Files.Get "config/otel-config.yml" | indent 4 }}
+{{- end }}

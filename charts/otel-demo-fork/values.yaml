@@ -982,8 +982,27 @@ components:
         value: database
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: http://$(OTEL_COLLECTOR_NAME):4317
+      # product-catalog configures its OTel SDK through file-based configuration
+      # (go.opentelemetry.io/contrib/otelconf), which reads ONLY the file named
+      # by OTEL_CONFIG_FILE and ignores the usual OTEL_* SDK env vars. That file
+      # comes from the product-catalog-otelconf ConfigMap mounted below; without
+      # it otelconf builds a no-op SDK (no traces/metrics/logs and no context
+      # propagation - so otelsql's SQLCommenter injects no traceparent either).
+      - name: OTEL_CONFIG_FILE
+        value: /otel-config.yml
+      # Consumed via ${OTEL_RESOURCE_ATTRIBUTES} in otel-config.yml; service.name
+      # still comes from OTEL_SERVICE_NAME (default.env). Adds the namespace.
+      - name: OTEL_RESOURCE_ATTRIBUTES
+        value: service.namespace=otel-demo
       - name: LOG_LEVEL
         value: WARN
+    # Mounts the OTel SDK file config (see OTEL_CONFIG_FILE above) rendered by
+    # templates/product-catalog-otelconf-config.yaml from config/otel-config.yml.
+    mountedConfigMaps:
+      - name: otelconf
+        mountPath: /otel-config.yml
+        subPath: otel-config.yml
+        existingConfigMap: product-catalog-otelconf
     resources:
       requests:
         cpu: 10m

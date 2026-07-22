@@ -1815,8 +1815,12 @@ spec:
               value: database
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
               value: http://$(OTEL_COLLECTOR_NAME):4317
+            - name: OTEL_CONFIG_FILE
+              value: /otel-config.yml
             - name: LOG_LEVEL
               value: WARN
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: service.namespace=otel-demo
             
             
             - name: DB_HOST
@@ -1866,7 +1870,13 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 10
           volumeMounts:
+            - name: otelconf
+              mountPath: /otel-config.yml
+              subPath: otel-config.yml
       volumes:
+        - name: otelconf
+          configMap:
+            name: product-catalog-otelconf
 ---
 # Source: otel-demo-fork/templates/component.yaml
 apiVersion: apps/v1
